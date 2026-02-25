@@ -13,5 +13,7 @@
   "then": {
     "type": "askAgent",
     "prompt": "Analyze the modified SQL file for:\n1. Syntax errors and PostgreSQL compatibility\n2. Naming conventions (snake_case for tables/columns, proper prefixes)\n3. Missing indexes on foreign keys\n4. Foreign key constraints with proper CASCADE rules\n5. Check constraints for data validation\n6. Proper use of ENUM types vs VARCHAR\n7. Missing NOT NULL constraints where appropriate\n8. Index strategy (trigram for text search, composite for common queries)\n9. Migration rollback compatibility\n\nProvide specific recommendations for improvements and flag any critical issues that could cause production problems."
-  }
+  },
+  "workspaceFolderName": "AiBakeRehash",
+  "shortName": "database-schema-validator"
 }

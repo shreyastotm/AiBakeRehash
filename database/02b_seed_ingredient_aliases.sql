@@ -1,392 +1,418 @@
 -- Seed Data: Ingredient Aliases
--- This script populates the ingredient_aliases table with alternative names,
--- abbreviations, regional variations, brand names, and Hindi transliterations
--- for common baking ingredients
+-- Alternative names, abbreviations, regional variations, and Hindi transliterations
+-- Uses ON CONFLICT to skip duplicates (some ingredients share alias names)
 
--- Disable triggers temporarily for faster insertion
-ALTER TABLE ingredient_aliases DISABLE TRIGGER ALL;
-
--- Clear existing data (if any)
+-- Clear existing aliases
 DELETE FROM ingredient_aliases;
 
--- Insert ingredient aliases
--- Format: (ingredient_master_id, alias_name, alias_type, locale)
--- Note: ingredient_master_id will be resolved via subquery using ingredient name
+-- Helper: insert alias with conflict handling
+-- If alias_name already exists, skip it (first-come wins)
+
+-- FLOUR ALIASES
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'AP flour', 'abbreviation', 'en' FROM ingredient_master WHERE name = 'all-purpose flour'
+  ON CONFLICT (alias_name) DO NOTHING;
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'APF', 'abbreviation', 'en' FROM ingredient_master WHERE name = 'all-purpose flour'
+  ON CONFLICT (alias_name) DO NOTHING;
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'plain flour', 'regional', 'en-GB' FROM ingredient_master WHERE name = 'all-purpose flour'
+  ON CONFLICT (alias_name) DO NOTHING;
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'refined flour', 'common', 'en' FROM ingredient_master WHERE name = 'all-purpose flour'
+  ON CONFLICT (alias_name) DO NOTHING;
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'white flour', 'common', 'en' FROM ingredient_master WHERE name = 'all-purpose flour'
+  ON CONFLICT (alias_name) DO NOTHING;
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'मैदा', 'regional', 'hi-IN' FROM ingredient_master WHERE name = 'all-purpose flour'
+  ON CONFLICT (alias_name) DO NOTHING;
 
 INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
-SELECT im.id, alias_name, alias_type, locale FROM (
-  VALUES
-  -- FLOUR ALIASES
-  -- All-purpose flour
-  ((SELECT id FROM ingredient_master WHERE name = 'all-purpose flour'), 'AP flour', 'abbreviation', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'all-purpose flour'), 'APF', 'abbreviation', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'all-purpose flour'), 'plain flour', 'regional', 'en-GB'),
-  ((SELECT id FROM ingredient_master WHERE name = 'all-purpose flour'), 'maida', 'regional', 'hi-IN'),
-  ((SELECT id FROM ingredient_master WHERE name = 'all-purpose flour'), 'refined flour', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'all-purpose flour'), 'white flour', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'all-purpose flour'), 'मैदा', 'regional', 'hi-IN'),
-  
-  -- Bread flour
-  ((SELECT id FROM ingredient_master WHERE name = 'bread flour'), 'strong flour', 'regional', 'en-GB'),
-  ((SELECT id FROM ingredient_master WHERE name = 'bread flour'), 'high protein flour', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'bread flour'), 'bread making flour', 'common', 'en'),
-  
-  -- Cake flour
-  ((SELECT id FROM ingredient_master WHERE name = 'cake flour'), 'soft flour', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'cake flour'), 'pastry flour', 'regional', 'en-US'),
-  
-  -- Whole wheat flour
-  ((SELECT id FROM ingredient_master WHERE name = 'whole wheat flour'), 'wholemeal flour', 'regional', 'en-GB'),
-  ((SELECT id FROM ingredient_master WHERE name = 'whole wheat flour'), 'atta', 'regional', 'hi-IN'),
-  ((SELECT id FROM ingredient_master WHERE name = 'whole wheat flour'), 'whole meal', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'whole wheat flour'), 'brown flour', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'whole wheat flour'), 'आटा', 'regional', 'hi-IN'),
-  
-  -- Maida (already in master, but adding aliases)
-  ((SELECT id FROM ingredient_master WHERE name = 'maida'), 'refined flour', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'maida'), 'all-purpose flour', 'regional', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'maida'), 'plain flour', 'regional', 'en-GB'),
-  
-  -- Atta (already in master, but adding aliases)
-  ((SELECT id FROM ingredient_master WHERE name = 'atta'), 'whole wheat flour', 'regional', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'atta'), 'wholemeal flour', 'regional', 'en-GB'),
-  ((SELECT id FROM ingredient_master WHERE name = 'atta'), 'chapati flour', 'common', 'en'),
-  
-  -- Besan
-  ((SELECT id FROM ingredient_master WHERE name = 'besan'), 'gram flour', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'besan'), 'chickpea flour', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'besan'), 'chick pea flour', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'besan'), 'bengal gram flour', 'regional', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'besan'), 'बेसन', 'regional', 'hi-IN'),
-  
-  -- Sooji
-  ((SELECT id FROM ingredient_master WHERE name = 'sooji'), 'semolina', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'sooji'), 'suji', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'sooji'), 'rava', 'regional', 'hi-IN'),
-  ((SELECT id FROM ingredient_master WHERE name = 'sooji'), 'सूजी', 'regional', 'hi-IN'),
-  
-  -- Rice flour
-  ((SELECT id FROM ingredient_master WHERE name = 'rice flour'), 'rice powder', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'rice flour'), 'ground rice', 'common', 'en'),
-  
-  -- Cornstarch
-  ((SELECT id FROM ingredient_master WHERE name = 'cornstarch'), 'corn flour', 'regional', 'en-GB'),
-  ((SELECT id FROM ingredient_master WHERE name = 'cornstarch'), 'maize starch', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'cornstarch'), 'cornflour', 'common', 'en'),
-  
-  -- FAT ALIASES
-  -- Butter
-  ((SELECT id FROM ingredient_master WHERE name = 'butter'), 'unsalted butter', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'butter'), 'salted butter', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'butter'), 'sweet butter', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'butter'), 'मक्खन', 'regional', 'hi-IN'),
-  
-  -- Ghee
-  ((SELECT id FROM ingredient_master WHERE name = 'ghee'), 'clarified butter', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'ghee'), 'pure ghee', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'ghee'), 'घी', 'regional', 'hi-IN'),
-  
-  -- Desi ghee
-  ((SELECT id FROM ingredient_master WHERE name = 'desi ghee'), 'desi clarified butter', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'desi ghee'), 'देसी घी', 'regional', 'hi-IN'),
-  ((SELECT id FROM ingredient_master WHERE name = 'desi ghee'), 'ghee', 'common', 'en'),
-  
-  -- Vegetable oil
-  ((SELECT id FROM ingredient_master WHERE name = 'vegetable oil'), 'cooking oil', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'vegetable oil'), 'neutral oil', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'vegetable oil'), 'oil', 'common', 'en'),
-  
-  -- Coconut oil
-  ((SELECT id FROM ingredient_master WHERE name = 'coconut oil'), 'virgin coconut oil', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'coconut oil'), 'VCO', 'abbreviation', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'coconut oil'), 'नारियल का तेल', 'regional', 'hi-IN'),
-  
-  -- Olive oil
-  ((SELECT id FROM ingredient_master WHERE name = 'olive oil'), 'extra virgin olive oil', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'olive oil'), 'EVOO', 'abbreviation', 'en'),
-  
-  -- Shortening
-  ((SELECT id FROM ingredient_master WHERE name = 'shortening'), 'vegetable shortening', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'shortening'), 'baking shortening', 'common', 'en'),
-  
-  -- Mawa
-  ((SELECT id FROM ingredient_master WHERE name = 'mawa'), 'khoya', 'regional', 'hi-IN'),
-  ((SELECT id FROM ingredient_master WHERE name = 'mawa'), 'dried milk solids', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'mawa'), 'मावा', 'regional', 'hi-IN'),
-  ((SELECT id FROM ingredient_master WHERE name = 'mawa'), 'खोया', 'regional', 'hi-IN'),
-  
-  -- SUGAR ALIASES
-  -- Granulated sugar
-  ((SELECT id FROM ingredient_master WHERE name = 'granulated sugar'), 'white sugar', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'granulated sugar'), 'caster sugar', 'regional', 'en-GB'),
-  ((SELECT id FROM ingredient_master WHERE name = 'granulated sugar'), 'superfine sugar', 'regional', 'en-US'),
-  ((SELECT id FROM ingredient_master WHERE name = 'granulated sugar'), 'sugar', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'granulated sugar'), 'चीनी', 'regional', 'hi-IN'),
-  
-  -- Brown sugar
-  ((SELECT id FROM ingredient_master WHERE name = 'brown sugar'), 'soft brown sugar', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'brown sugar'), 'muscovado sugar', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'brown sugar'), 'dark brown sugar', 'common', 'en'),
-  
-  -- Powdered sugar
-  ((SELECT id FROM ingredient_master WHERE name = 'powdered sugar'), 'icing sugar', 'regional', 'en-GB'),
-  ((SELECT id FROM ingredient_master WHERE name = 'powdered sugar'), 'confectioners sugar', 'regional', 'en-US'),
-  ((SELECT id FROM ingredient_master WHERE name = 'powdered sugar'), 'icing powder', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'powdered sugar'), 'powdered icing sugar', 'common', 'en'),
-  
-  -- Honey
-  ((SELECT id FROM ingredient_master WHERE name = 'honey'), 'raw honey', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'honey'), 'pure honey', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'honey'), 'शहद', 'regional', 'hi-IN'),
-  
-  -- Jaggery
-  ((SELECT id FROM ingredient_master WHERE name = 'jaggery'), 'gur', 'regional', 'hi-IN'),
-  ((SELECT id FROM ingredient_master WHERE name = 'jaggery'), 'unrefined sugar', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'jaggery'), 'गुड़', 'regional', 'hi-IN'),
-  
-  -- Molasses
-  ((SELECT id FROM ingredient_master WHERE name = 'molasses'), 'blackstrap molasses', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'molasses'), 'treacle', 'regional', 'en-GB'),
-  
-  -- LEAVENING ALIASES
-  -- Baking powder
-  ((SELECT id FROM ingredient_master WHERE name = 'baking powder'), 'BP', 'abbreviation', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'baking powder'), 'double acting baking powder', 'common', 'en'),
-  
-  -- Baking soda
-  ((SELECT id FROM ingredient_master WHERE name = 'baking soda'), 'bicarbonate of soda', 'regional', 'en-GB'),
-  ((SELECT id FROM ingredient_master WHERE name = 'baking soda'), 'sodium bicarbonate', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'baking soda'), 'BS', 'abbreviation', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'baking soda'), 'मीठा सोडा', 'regional', 'hi-IN'),
-  
-  -- Instant yeast
-  ((SELECT id FROM ingredient_master WHERE name = 'instant yeast'), 'rapid rise yeast', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'instant yeast'), 'bread machine yeast', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'instant yeast'), 'SAF yeast', 'brand', 'en'),
-  
-  -- Active dry yeast
-  ((SELECT id FROM ingredient_master WHERE name = 'active dry yeast'), 'dry yeast', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'active dry yeast'), 'ADY', 'abbreviation', 'en'),
-  
-  -- Cream of tartar
-  ((SELECT id FROM ingredient_master WHERE name = 'cream of tartar'), 'potassium bitartrate', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'cream of tartar'), 'tartar', 'common', 'en'),
-  
-  -- DAIRY ALIASES
-  -- Milk
-  ((SELECT id FROM ingredient_master WHERE name = 'milk'), 'whole milk', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'milk'), 'fresh milk', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'milk'), 'दूध', 'regional', 'hi-IN'),
-  
-  -- Buttermilk
-  ((SELECT id FROM ingredient_master WHERE name = 'buttermilk'), 'cultured buttermilk', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'buttermilk'), 'छाछ', 'regional', 'hi-IN'),
-  
-  -- Yogurt
-  ((SELECT id FROM ingredient_master WHERE name = 'yogurt'), 'curd', 'regional', 'hi-IN'),
-  ((SELECT id FROM ingredient_master WHERE name = 'yogurt'), 'plain yogurt', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'yogurt'), 'दही', 'regional', 'hi-IN'),
-  
-  -- Sour cream
-  ((SELECT id FROM ingredient_master WHERE name = 'sour cream'), 'soured cream', 'regional', 'en-GB'),
-  
-  -- Cream cheese
-  ((SELECT id FROM ingredient_master WHERE name = 'cream cheese'), 'Philadelphia cream cheese', 'brand', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'cream cheese'), 'soft cheese', 'common', 'en'),
-  
-  -- Paneer
-  ((SELECT id FROM ingredient_master WHERE name = 'paneer'), 'cottage cheese', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'paneer'), 'Indian cheese', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'paneer'), 'पनीर', 'regional', 'hi-IN'),
-  
-  -- Khoya
-  ((SELECT id FROM ingredient_master WHERE name = 'khoya'), 'mawa', 'regional', 'hi-IN'),
-  ((SELECT id FROM ingredient_master WHERE name = 'khoya'), 'dried milk solids', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'khoya'), 'खोया', 'regional', 'hi-IN'),
-  
-  -- Condensed milk
-  ((SELECT id FROM ingredient_master WHERE name = 'condensed milk'), 'sweetened condensed milk', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'condensed milk'), 'SCM', 'abbreviation', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'condensed milk'), 'मीठा दूध', 'regional', 'hi-IN'),
-  
-  -- Egg
-  ((SELECT id FROM ingredient_master WHERE name = 'egg'), 'large egg', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'egg'), 'अंडा', 'regional', 'hi-IN'),
-  
-  -- LIQUID ALIASES
-  -- Water
-  ((SELECT id FROM ingredient_master WHERE name = 'water'), 'filtered water', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'water'), 'पानी', 'regional', 'hi-IN'),
-  
-  -- Apple juice
-  ((SELECT id FROM ingredient_master WHERE name = 'apple juice'), 'fresh apple juice', 'common', 'en'),
-  
-  -- Orange juice
-  ((SELECT id FROM ingredient_master WHERE name = 'orange juice'), 'fresh orange juice', 'common', 'en'),
-  
-  -- Lemon juice
-  ((SELECT id FROM ingredient_master WHERE name = 'lemon juice'), 'fresh lemon juice', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'lemon juice'), 'नींबू का रस', 'regional', 'hi-IN'),
-  
-  -- Rose water
-  ((SELECT id FROM ingredient_master WHERE name = 'rose water'), 'gulab jal', 'regional', 'hi-IN'),
-  ((SELECT id FROM ingredient_master WHERE name = 'rose water'), 'rose essence', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'rose water'), 'गुलाब जल', 'regional', 'hi-IN'),
-  
-  -- NUT ALIASES
-  -- Almond flour
-  ((SELECT id FROM ingredient_master WHERE name = 'almond flour'), 'ground almonds', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'almond flour'), 'almond meal', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'almond flour'), 'बादाम का आटा', 'regional', 'hi-IN'),
-  
-  -- Almond
-  ((SELECT id FROM ingredient_master WHERE name = 'almond'), 'almonds', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'almond'), 'बादाम', 'regional', 'hi-IN'),
-  
-  -- Walnut
-  ((SELECT id FROM ingredient_master WHERE name = 'walnut'), 'walnuts', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'walnut'), 'अखरोट', 'regional', 'hi-IN'),
-  
-  -- Cashew
-  ((SELECT id FROM ingredient_master WHERE name = 'cashew'), 'cashews', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'cashew'), 'काजू', 'regional', 'hi-IN'),
-  
-  -- Peanut
-  ((SELECT id FROM ingredient_master WHERE name = 'peanut'), 'peanuts', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'peanut'), 'groundnut', 'regional', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'peanut'), 'मूंगफली', 'regional', 'hi-IN'),
-  
-  -- Coconut
-  ((SELECT id FROM ingredient_master WHERE name = 'coconut'), 'shredded coconut', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'coconut'), 'desiccated coconut', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'coconut'), 'नारियल', 'regional', 'hi-IN'),
-  
-  -- SPICE ALIASES
-  -- Cardamom
-  ((SELECT id FROM ingredient_master WHERE name = 'cardamom'), 'elaichi', 'regional', 'hi-IN'),
-  ((SELECT id FROM ingredient_master WHERE name = 'cardamom'), 'green cardamom', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'cardamom'), 'इलायची', 'regional', 'hi-IN'),
-  
-  -- Cinnamon
-  ((SELECT id FROM ingredient_master WHERE name = 'cinnamon'), 'dalchini', 'regional', 'hi-IN'),
-  ((SELECT id FROM ingredient_master WHERE name = 'cinnamon'), 'ground cinnamon', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'cinnamon'), 'दालचीनी', 'regional', 'hi-IN'),
-  
-  -- Vanilla extract
-  ((SELECT id FROM ingredient_master WHERE name = 'vanilla extract'), 'pure vanilla extract', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'vanilla extract'), 'vanilla essence', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'vanilla extract'), 'वनीला', 'regional', 'hi-IN'),
-  
-  -- Saffron
-  ((SELECT id FROM ingredient_master WHERE name = 'saffron'), 'kesar', 'regional', 'hi-IN'),
-  ((SELECT id FROM ingredient_master WHERE name = 'saffron'), 'zafran', 'regional', 'hi-IN'),
-  ((SELECT id FROM ingredient_master WHERE name = 'saffron'), 'केसर', 'regional', 'hi-IN'),
-  ((SELECT id FROM ingredient_master WHERE name = 'saffron'), 'ज़ाफ़रान', 'regional', 'hi-IN'),
-  
-  -- Nutmeg
-  ((SELECT id FROM ingredient_master WHERE name = 'nutmeg'), 'jaiphal', 'regional', 'hi-IN'),
-  ((SELECT id FROM ingredient_master WHERE name = 'nutmeg'), 'ground nutmeg', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'nutmeg'), 'जायफल', 'regional', 'hi-IN'),
-  
-  -- Ginger powder
-  ((SELECT id FROM ingredient_master WHERE name = 'ginger powder'), 'dried ginger', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'ginger powder'), 'sonth', 'regional', 'hi-IN'),
-  ((SELECT id FROM ingredient_master WHERE name = 'ginger powder'), 'सोंठ', 'regional', 'hi-IN'),
-  
-  -- Turmeric
-  ((SELECT id FROM ingredient_master WHERE name = 'turmeric'), 'haldi', 'regional', 'hi-IN'),
-  ((SELECT id FROM ingredient_master WHERE name = 'turmeric'), 'turmeric powder', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'turmeric'), 'हल्दी', 'regional', 'hi-IN'),
-  
-  -- Clove
-  ((SELECT id FROM ingredient_master WHERE name = 'clove'), 'laung', 'regional', 'hi-IN'),
-  ((SELECT id FROM ingredient_master WHERE name = 'clove'), 'cloves', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'clove'), 'लौंग', 'regional', 'hi-IN'),
-  
-  -- Black pepper
-  ((SELECT id FROM ingredient_master WHERE name = 'black pepper'), 'kali mirch', 'regional', 'hi-IN'),
-  ((SELECT id FROM ingredient_master WHERE name = 'black pepper'), 'ground black pepper', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'black pepper'), 'काली मिर्च', 'regional', 'hi-IN'),
-  
-  -- Salt
-  ((SELECT id FROM ingredient_master WHERE name = 'salt'), 'table salt', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'salt'), 'sea salt', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'salt'), 'नमक', 'regional', 'hi-IN'),
-  
-  -- Baking chocolate
-  ((SELECT id FROM ingredient_master WHERE name = 'baking chocolate'), 'unsweetened chocolate', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'baking chocolate'), 'dark chocolate', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'baking chocolate'), 'चॉकलेट', 'regional', 'hi-IN'),
-  
-  -- Cocoa powder
-  ((SELECT id FROM ingredient_master WHERE name = 'cocoa powder'), 'unsweetened cocoa powder', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'cocoa powder'), 'dutch cocoa', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'cocoa powder'), 'कोको पाउडर', 'regional', 'hi-IN'),
-  
-  -- FRUIT ALIASES
-  -- Raisin
-  ((SELECT id FROM ingredient_master WHERE name = 'raisin'), 'dried grapes', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'raisin'), 'किशमिश', 'regional', 'hi-IN'),
-  
-  -- Date
-  ((SELECT id FROM ingredient_master WHERE name = 'date'), 'dates', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'date'), 'खजूर', 'regional', 'hi-IN'),
-  
-  -- Banana
-  ((SELECT id FROM ingredient_master WHERE name = 'banana'), 'bananas', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'banana'), 'केला', 'regional', 'hi-IN'),
-  
-  -- Apple
-  ((SELECT id FROM ingredient_master WHERE name = 'apple'), 'apples', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'apple'), 'सेब', 'regional', 'hi-IN'),
-  
-  -- Blueberry
-  ((SELECT id FROM ingredient_master WHERE name = 'blueberry'), 'blueberries', 'common', 'en'),
-  
-  -- Strawberry
-  ((SELECT id FROM ingredient_master WHERE name = 'strawberry'), 'strawberries', 'common', 'en'),
-  
-  -- Cranberry
-  ((SELECT id FROM ingredient_master WHERE name = 'cranberry'), 'cranberries', 'common', 'en'),
-  
-  -- Lemon
-  ((SELECT id FROM ingredient_master WHERE name = 'lemon'), 'lemons', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'lemon'), 'नींबू', 'regional', 'hi-IN'),
-  
-  -- OTHER ALIASES
-  -- Vanilla bean
-  ((SELECT id FROM ingredient_master WHERE name = 'vanilla bean'), 'vanilla pod', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'vanilla bean'), 'vanilla beans', 'common', 'en'),
-  
-  -- Gelatin
-  ((SELECT id FROM ingredient_master WHERE name = 'gelatin'), 'powdered gelatin', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'gelatin'), 'gelatin powder', 'common', 'en'),
-  
-  -- Cornmeal
-  ((SELECT id FROM ingredient_master WHERE name = 'cornmeal'), 'polenta', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'cornmeal'), 'corn meal', 'common', 'en'),
-  
-  -- Tapioca starch
-  ((SELECT id FROM ingredient_master WHERE name = 'tapioca starch'), 'tapioca flour', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'tapioca starch'), 'tapioca powder', 'common', 'en'),
-  ((SELECT id FROM ingredient_master WHERE name = 'tapioca starch'), 'sabudana', 'regional', 'hi-IN'),
-  ((SELECT id FROM ingredient_master WHERE name = 'tapioca starch'), 'साबूदाना', 'regional', 'hi-IN')
-) AS alias_data(ingredient_id, alias_name, alias_type, locale)
-JOIN ingredient_master im ON im.id = alias_data.ingredient_id;
+  SELECT id, 'strong flour', 'regional', 'en-GB' FROM ingredient_master WHERE name = 'bread flour'
+  ON CONFLICT (alias_name) DO NOTHING;
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'high protein flour', 'common', 'en' FROM ingredient_master WHERE name = 'bread flour'
+  ON CONFLICT (alias_name) DO NOTHING;
 
--- Re-enable triggers
-ALTER TABLE ingredient_aliases ENABLE TRIGGER ALL;
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'soft flour', 'common', 'en' FROM ingredient_master WHERE name = 'cake flour'
+  ON CONFLICT (alias_name) DO NOTHING;
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'pastry flour', 'regional', 'en-US' FROM ingredient_master WHERE name = 'cake flour'
+  ON CONFLICT (alias_name) DO NOTHING;
 
--- Verify insertion
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'wholemeal flour', 'regional', 'en-GB' FROM ingredient_master WHERE name = 'whole wheat flour'
+  ON CONFLICT (alias_name) DO NOTHING;
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'whole meal', 'common', 'en' FROM ingredient_master WHERE name = 'whole wheat flour'
+  ON CONFLICT (alias_name) DO NOTHING;
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'brown flour', 'common', 'en' FROM ingredient_master WHERE name = 'whole wheat flour'
+  ON CONFLICT (alias_name) DO NOTHING;
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'आटा', 'regional', 'hi-IN' FROM ingredient_master WHERE name = 'whole wheat flour'
+  ON CONFLICT (alias_name) DO NOTHING;
+
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'chapati flour', 'common', 'en' FROM ingredient_master WHERE name = 'atta'
+  ON CONFLICT (alias_name) DO NOTHING;
+
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'gram flour', 'common', 'en' FROM ingredient_master WHERE name = 'besan'
+  ON CONFLICT (alias_name) DO NOTHING;
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'chickpea flour', 'common', 'en' FROM ingredient_master WHERE name = 'besan'
+  ON CONFLICT (alias_name) DO NOTHING;
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'bengal gram flour', 'regional', 'en' FROM ingredient_master WHERE name = 'besan'
+  ON CONFLICT (alias_name) DO NOTHING;
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'बेसन', 'regional', 'hi-IN' FROM ingredient_master WHERE name = 'besan'
+  ON CONFLICT (alias_name) DO NOTHING;
+
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'semolina', 'common', 'en' FROM ingredient_master WHERE name = 'sooji'
+  ON CONFLICT (alias_name) DO NOTHING;
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'suji', 'common', 'en' FROM ingredient_master WHERE name = 'sooji'
+  ON CONFLICT (alias_name) DO NOTHING;
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'rava', 'regional', 'hi-IN' FROM ingredient_master WHERE name = 'sooji'
+  ON CONFLICT (alias_name) DO NOTHING;
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'सूजी', 'regional', 'hi-IN' FROM ingredient_master WHERE name = 'sooji'
+  ON CONFLICT (alias_name) DO NOTHING;
+
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'rice powder', 'common', 'en' FROM ingredient_master WHERE name = 'rice flour'
+  ON CONFLICT (alias_name) DO NOTHING;
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'ground rice', 'common', 'en' FROM ingredient_master WHERE name = 'rice flour'
+  ON CONFLICT (alias_name) DO NOTHING;
+
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'corn flour', 'regional', 'en-GB' FROM ingredient_master WHERE name = 'cornstarch'
+  ON CONFLICT (alias_name) DO NOTHING;
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'maize starch', 'common', 'en' FROM ingredient_master WHERE name = 'cornstarch'
+  ON CONFLICT (alias_name) DO NOTHING;
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'cornflour', 'common', 'en' FROM ingredient_master WHERE name = 'cornstarch'
+  ON CONFLICT (alias_name) DO NOTHING;
+
+-- FAT ALIASES
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'unsalted butter', 'common', 'en' FROM ingredient_master WHERE name = 'butter'
+  ON CONFLICT (alias_name) DO NOTHING;
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'salted butter', 'common', 'en' FROM ingredient_master WHERE name = 'butter'
+  ON CONFLICT (alias_name) DO NOTHING;
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'मक्खन', 'regional', 'hi-IN' FROM ingredient_master WHERE name = 'butter'
+  ON CONFLICT (alias_name) DO NOTHING;
+
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'clarified butter', 'common', 'en' FROM ingredient_master WHERE name = 'ghee'
+  ON CONFLICT (alias_name) DO NOTHING;
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'pure ghee', 'common', 'en' FROM ingredient_master WHERE name = 'ghee'
+  ON CONFLICT (alias_name) DO NOTHING;
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'घी', 'regional', 'hi-IN' FROM ingredient_master WHERE name = 'ghee'
+  ON CONFLICT (alias_name) DO NOTHING;
+
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'देसी घी', 'regional', 'hi-IN' FROM ingredient_master WHERE name = 'desi ghee'
+  ON CONFLICT (alias_name) DO NOTHING;
+
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'cooking oil', 'common', 'en' FROM ingredient_master WHERE name = 'vegetable oil'
+  ON CONFLICT (alias_name) DO NOTHING;
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'neutral oil', 'common', 'en' FROM ingredient_master WHERE name = 'vegetable oil'
+  ON CONFLICT (alias_name) DO NOTHING;
+
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'virgin coconut oil', 'common', 'en' FROM ingredient_master WHERE name = 'coconut oil'
+  ON CONFLICT (alias_name) DO NOTHING;
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'VCO', 'abbreviation', 'en' FROM ingredient_master WHERE name = 'coconut oil'
+  ON CONFLICT (alias_name) DO NOTHING;
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'नारियल का तेल', 'regional', 'hi-IN' FROM ingredient_master WHERE name = 'coconut oil'
+  ON CONFLICT (alias_name) DO NOTHING;
+
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'extra virgin olive oil', 'common', 'en' FROM ingredient_master WHERE name = 'olive oil'
+  ON CONFLICT (alias_name) DO NOTHING;
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'EVOO', 'abbreviation', 'en' FROM ingredient_master WHERE name = 'olive oil'
+  ON CONFLICT (alias_name) DO NOTHING;
+
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'dried milk solids', 'common', 'en' FROM ingredient_master WHERE name = 'mawa'
+  ON CONFLICT (alias_name) DO NOTHING;
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'मावा', 'regional', 'hi-IN' FROM ingredient_master WHERE name = 'mawa'
+  ON CONFLICT (alias_name) DO NOTHING;
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'खोया', 'regional', 'hi-IN' FROM ingredient_master WHERE name = 'mawa'
+  ON CONFLICT (alias_name) DO NOTHING;
+
+-- SUGAR ALIASES
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'white sugar', 'common', 'en' FROM ingredient_master WHERE name = 'granulated sugar'
+  ON CONFLICT (alias_name) DO NOTHING;
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'caster sugar', 'regional', 'en-GB' FROM ingredient_master WHERE name = 'granulated sugar'
+  ON CONFLICT (alias_name) DO NOTHING;
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'sugar', 'common', 'en' FROM ingredient_master WHERE name = 'granulated sugar'
+  ON CONFLICT (alias_name) DO NOTHING;
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'चीनी', 'regional', 'hi-IN' FROM ingredient_master WHERE name = 'granulated sugar'
+  ON CONFLICT (alias_name) DO NOTHING;
+
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'dark brown sugar', 'common', 'en' FROM ingredient_master WHERE name = 'brown sugar'
+  ON CONFLICT (alias_name) DO NOTHING;
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'muscovado sugar', 'common', 'en' FROM ingredient_master WHERE name = 'brown sugar'
+  ON CONFLICT (alias_name) DO NOTHING;
+
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'icing sugar', 'regional', 'en-GB' FROM ingredient_master WHERE name = 'powdered sugar'
+  ON CONFLICT (alias_name) DO NOTHING;
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'confectioners sugar', 'regional', 'en-US' FROM ingredient_master WHERE name = 'powdered sugar'
+  ON CONFLICT (alias_name) DO NOTHING;
+
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'शहद', 'regional', 'hi-IN' FROM ingredient_master WHERE name = 'honey'
+  ON CONFLICT (alias_name) DO NOTHING;
+
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'gur', 'regional', 'hi-IN' FROM ingredient_master WHERE name = 'jaggery'
+  ON CONFLICT (alias_name) DO NOTHING;
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'गुड़', 'regional', 'hi-IN' FROM ingredient_master WHERE name = 'jaggery'
+  ON CONFLICT (alias_name) DO NOTHING;
+
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'treacle', 'regional', 'en-GB' FROM ingredient_master WHERE name = 'molasses'
+  ON CONFLICT (alias_name) DO NOTHING;
+
+-- LEAVENING ALIASES
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'bicarbonate of soda', 'regional', 'en-GB' FROM ingredient_master WHERE name = 'baking soda'
+  ON CONFLICT (alias_name) DO NOTHING;
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'मीठा सोडा', 'regional', 'hi-IN' FROM ingredient_master WHERE name = 'baking soda'
+  ON CONFLICT (alias_name) DO NOTHING;
+
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'rapid rise yeast', 'common', 'en' FROM ingredient_master WHERE name = 'instant yeast'
+  ON CONFLICT (alias_name) DO NOTHING;
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'SAF yeast', 'brand', 'en' FROM ingredient_master WHERE name = 'instant yeast'
+  ON CONFLICT (alias_name) DO NOTHING;
+
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'dry yeast', 'common', 'en' FROM ingredient_master WHERE name = 'active dry yeast'
+  ON CONFLICT (alias_name) DO NOTHING;
+
+-- DAIRY ALIASES
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'whole milk', 'common', 'en' FROM ingredient_master WHERE name = 'milk'
+  ON CONFLICT (alias_name) DO NOTHING;
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'दूध', 'regional', 'hi-IN' FROM ingredient_master WHERE name = 'milk'
+  ON CONFLICT (alias_name) DO NOTHING;
+
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'छाछ', 'regional', 'hi-IN' FROM ingredient_master WHERE name = 'buttermilk'
+  ON CONFLICT (alias_name) DO NOTHING;
+
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'curd', 'regional', 'hi-IN' FROM ingredient_master WHERE name = 'yogurt'
+  ON CONFLICT (alias_name) DO NOTHING;
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'दही', 'regional', 'hi-IN' FROM ingredient_master WHERE name = 'yogurt'
+  ON CONFLICT (alias_name) DO NOTHING;
+
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'पनीर', 'regional', 'hi-IN' FROM ingredient_master WHERE name = 'paneer'
+  ON CONFLICT (alias_name) DO NOTHING;
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'cottage cheese', 'common', 'en' FROM ingredient_master WHERE name = 'paneer'
+  ON CONFLICT (alias_name) DO NOTHING;
+
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'sweetened condensed milk', 'common', 'en' FROM ingredient_master WHERE name = 'condensed milk'
+  ON CONFLICT (alias_name) DO NOTHING;
+
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'large egg', 'common', 'en' FROM ingredient_master WHERE name = 'egg'
+  ON CONFLICT (alias_name) DO NOTHING;
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'अंडा', 'regional', 'hi-IN' FROM ingredient_master WHERE name = 'egg'
+  ON CONFLICT (alias_name) DO NOTHING;
+
+-- SPICE ALIASES
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'elaichi', 'regional', 'hi-IN' FROM ingredient_master WHERE name = 'cardamom'
+  ON CONFLICT (alias_name) DO NOTHING;
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'इलायची', 'regional', 'hi-IN' FROM ingredient_master WHERE name = 'cardamom'
+  ON CONFLICT (alias_name) DO NOTHING;
+
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'dalchini', 'regional', 'hi-IN' FROM ingredient_master WHERE name = 'cinnamon'
+  ON CONFLICT (alias_name) DO NOTHING;
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'दालचीनी', 'regional', 'hi-IN' FROM ingredient_master WHERE name = 'cinnamon'
+  ON CONFLICT (alias_name) DO NOTHING;
+
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'vanilla essence', 'common', 'en' FROM ingredient_master WHERE name = 'vanilla extract'
+  ON CONFLICT (alias_name) DO NOTHING;
+
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'kesar', 'regional', 'hi-IN' FROM ingredient_master WHERE name = 'saffron'
+  ON CONFLICT (alias_name) DO NOTHING;
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'केसर', 'regional', 'hi-IN' FROM ingredient_master WHERE name = 'saffron'
+  ON CONFLICT (alias_name) DO NOTHING;
+
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'jaiphal', 'regional', 'hi-IN' FROM ingredient_master WHERE name = 'nutmeg'
+  ON CONFLICT (alias_name) DO NOTHING;
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'जायफल', 'regional', 'hi-IN' FROM ingredient_master WHERE name = 'nutmeg'
+  ON CONFLICT (alias_name) DO NOTHING;
+
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'sonth', 'regional', 'hi-IN' FROM ingredient_master WHERE name = 'ginger powder'
+  ON CONFLICT (alias_name) DO NOTHING;
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'सोंठ', 'regional', 'hi-IN' FROM ingredient_master WHERE name = 'ginger powder'
+  ON CONFLICT (alias_name) DO NOTHING;
+
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'haldi', 'regional', 'hi-IN' FROM ingredient_master WHERE name = 'turmeric'
+  ON CONFLICT (alias_name) DO NOTHING;
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'हल्दी', 'regional', 'hi-IN' FROM ingredient_master WHERE name = 'turmeric'
+  ON CONFLICT (alias_name) DO NOTHING;
+
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'laung', 'regional', 'hi-IN' FROM ingredient_master WHERE name = 'clove'
+  ON CONFLICT (alias_name) DO NOTHING;
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'लौंग', 'regional', 'hi-IN' FROM ingredient_master WHERE name = 'clove'
+  ON CONFLICT (alias_name) DO NOTHING;
+
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'kali mirch', 'regional', 'hi-IN' FROM ingredient_master WHERE name = 'black pepper'
+  ON CONFLICT (alias_name) DO NOTHING;
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'काली मिर्च', 'regional', 'hi-IN' FROM ingredient_master WHERE name = 'black pepper'
+  ON CONFLICT (alias_name) DO NOTHING;
+
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'नमक', 'regional', 'hi-IN' FROM ingredient_master WHERE name = 'salt'
+  ON CONFLICT (alias_name) DO NOTHING;
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'sea salt', 'common', 'en' FROM ingredient_master WHERE name = 'salt'
+  ON CONFLICT (alias_name) DO NOTHING;
+
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'dark chocolate', 'common', 'en' FROM ingredient_master WHERE name = 'baking chocolate'
+  ON CONFLICT (alias_name) DO NOTHING;
+
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'unsweetened cocoa', 'common', 'en' FROM ingredient_master WHERE name = 'cocoa powder'
+  ON CONFLICT (alias_name) DO NOTHING;
+
+-- NUT ALIASES
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'ground almonds', 'common', 'en' FROM ingredient_master WHERE name = 'almond flour'
+  ON CONFLICT (alias_name) DO NOTHING;
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'almond meal', 'common', 'en' FROM ingredient_master WHERE name = 'almond flour'
+  ON CONFLICT (alias_name) DO NOTHING;
+
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'बादाम', 'regional', 'hi-IN' FROM ingredient_master WHERE name = 'almond'
+  ON CONFLICT (alias_name) DO NOTHING;
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'काजू', 'regional', 'hi-IN' FROM ingredient_master WHERE name = 'cashew'
+  ON CONFLICT (alias_name) DO NOTHING;
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'अखरोट', 'regional', 'hi-IN' FROM ingredient_master WHERE name = 'walnut'
+  ON CONFLICT (alias_name) DO NOTHING;
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'मूंगफली', 'regional', 'hi-IN' FROM ingredient_master WHERE name = 'peanut'
+  ON CONFLICT (alias_name) DO NOTHING;
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'groundnut', 'regional', 'en' FROM ingredient_master WHERE name = 'peanut'
+  ON CONFLICT (alias_name) DO NOTHING;
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'desiccated coconut', 'common', 'en' FROM ingredient_master WHERE name = 'coconut'
+  ON CONFLICT (alias_name) DO NOTHING;
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'नारियल', 'regional', 'hi-IN' FROM ingredient_master WHERE name = 'coconut'
+  ON CONFLICT (alias_name) DO NOTHING;
+
+-- FRUIT ALIASES
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'किशमिश', 'regional', 'hi-IN' FROM ingredient_master WHERE name = 'raisin'
+  ON CONFLICT (alias_name) DO NOTHING;
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'खजूर', 'regional', 'hi-IN' FROM ingredient_master WHERE name = 'date'
+  ON CONFLICT (alias_name) DO NOTHING;
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'केला', 'regional', 'hi-IN' FROM ingredient_master WHERE name = 'banana'
+  ON CONFLICT (alias_name) DO NOTHING;
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'सेब', 'regional', 'hi-IN' FROM ingredient_master WHERE name = 'apple'
+  ON CONFLICT (alias_name) DO NOTHING;
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'नींबू', 'regional', 'hi-IN' FROM ingredient_master WHERE name = 'lemon'
+  ON CONFLICT (alias_name) DO NOTHING;
+
+-- LIQUID ALIASES
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'पानी', 'regional', 'hi-IN' FROM ingredient_master WHERE name = 'water'
+  ON CONFLICT (alias_name) DO NOTHING;
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'gulab jal', 'regional', 'hi-IN' FROM ingredient_master WHERE name = 'rose water'
+  ON CONFLICT (alias_name) DO NOTHING;
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'गुलाब जल', 'regional', 'hi-IN' FROM ingredient_master WHERE name = 'rose water'
+  ON CONFLICT (alias_name) DO NOTHING;
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'नींबू का रस', 'regional', 'hi-IN' FROM ingredient_master WHERE name = 'lemon juice'
+  ON CONFLICT (alias_name) DO NOTHING;
+
+-- OTHER ALIASES
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'vanilla pod', 'common', 'en' FROM ingredient_master WHERE name = 'vanilla bean'
+  ON CONFLICT (alias_name) DO NOTHING;
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'gelatin powder', 'common', 'en' FROM ingredient_master WHERE name = 'gelatin'
+  ON CONFLICT (alias_name) DO NOTHING;
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'polenta', 'common', 'en' FROM ingredient_master WHERE name = 'cornmeal'
+  ON CONFLICT (alias_name) DO NOTHING;
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'tapioca flour', 'common', 'en' FROM ingredient_master WHERE name = 'tapioca starch'
+  ON CONFLICT (alias_name) DO NOTHING;
+INSERT INTO ingredient_aliases (ingredient_master_id, alias_name, alias_type, locale)
+  SELECT id, 'साबूदाना', 'regional', 'hi-IN' FROM ingredient_master WHERE name = 'tapioca starch'
+  ON CONFLICT (alias_name) DO NOTHING;
+
+-- Verify
 SELECT COUNT(*) as total_aliases FROM ingredient_aliases;
-
--- Display sample aliases for verification
-SELECT 
-  im.name as ingredient_name,
-  ia.alias_name,
-  ia.alias_type,
-  ia.locale
-FROM ingredient_aliases ia
-JOIN ingredient_master im ON im.id = ia.ingredient_master_id
-ORDER BY im.name, ia.alias_type, ia.locale
-LIMIT 50;

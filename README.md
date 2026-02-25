@@ -101,6 +101,8 @@ The database is built across multiple migration scripts:
 
 ### Seed Data (`database/02_seed_data.sql`)
 
+- Uses transactions (`BEGIN`/`COMMIT`) and `TRUNCATE ... CASCADE` for safe, idempotent re-runs
+- Individual `INSERT` statements per ingredient for easier maintenance
 - **70+ common baking ingredients** with complete data:
   - Flours (10): all-purpose, bread, cake, whole wheat, maida, atta, besan, sooji, rice, cornstarch
   - Fats (8): butter, ghee, desi ghee, vegetable oil, coconut oil, olive oil, shortening, mawa
@@ -131,19 +133,12 @@ The database is built across multiple migration scripts:
 - **Common Issues** (10+): flat cookies, dense bread, cracked cakes, soggy bottoms, burnt edges, gummy bread, bread not rising, sunken center, dry cake, tough pastry, shrinking pastry
 - **Water Activity Reference**: typical aw ranges for crackers, cookies, cakes, breads, pastries, confections, donuts, brownies, muffins, biscuits, scones, macarons, meringues, tarts, cheesecake, fudge, granola, bread pudding, custard tarts, soufflé
 
-### Test Data (`database/03_test_data.sql`)
+### Test Data (`database/03_test_data.sql` v1.1)
 
+- Uses explicit enum casts for PostgreSQL compatibility
+- Idempotent cleanup (DELETE cascade by user email) before insertion
 - **3 test users** with different preferences (metric, hybrid, cups)
-- **9 sample recipes** across categories (bread, cookies, cakes)
-- **Recipe ingredients** with proper quantities and units
-- **Recipe sections and steps** with timing and temperature
-- **Recipe versions** with change summaries
-- **Journal entries** with photos, ratings, and notes
-- **Inventory items** with various stock levels
-- **Suppliers** with contact information
-- **Audio notes** with transcriptions
-- **Timer instances** with completion status
-- **Nutrition cache** entries
+- **9 sample recipes** across categories (bread, cookies, cakes) with full relational data (ingredients, sections, steps, versions, journal entries, inventory, suppliers, purchases, audio notes, timers, nutrition cache)
 
 ### MVP Costing & Pricing (`database/05_mvp_costing.sql`)
 
@@ -418,13 +413,17 @@ Each ingredient includes:
 - Water activity reference ranges for 20+ product categories
 
 ### ✅ Test Data
-- 3 test users with different preferences
-- 9 sample recipes across categories
-- Recipe ingredients, sections, and steps
-- Recipe versions and journal entries
-- Inventory items and suppliers
-- Audio notes and timers
-- Nutrition cache entries
+- 3 test users with different preferences (metric, hybrid, cups)
+- 9 sample recipes across categories (bread, cookies, cakes)
+- Recipe ingredients for Whole Wheat Bread, Chocolate Chip Cookies, and Vanilla Sponge Cake
+- Recipe sections and steps for Chocolate Chip Cookies (prep, bake, cool)
+- Recipe versions and journal entries with photos and ratings
+- Inventory items (10 entries across all users) and suppliers (4 entries)
+- Purchase history (4 entries) and audio notes (2 entries)
+- Timer instances (2 completed timers) and nutrition cache (2 recipes)
+- Verification query for all entity counts
+- Idempotent cleanup with DELETE cascade by user email
+- Explicit enum casts for PostgreSQL compatibility
 
 ### ✅ Database Functions
 - `search_ingredient()` - Fuzzy ingredient search with trigram matching

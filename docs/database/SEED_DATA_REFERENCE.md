@@ -261,6 +261,8 @@ The seed data includes:
 
 ## Test Data
 
+The test data script (`03_test_data.sql` v1.1) provides minimal baseline data for development. It uses explicit enum casts for PostgreSQL compatibility and idempotent DELETE-based cleanup keyed on `@example.com` user emails.
+
 ### Test Users (3)
 
 1. **Priya Sharma** (priya@example.com)
@@ -288,36 +290,49 @@ The seed data includes:
 **Cookies (3)**
 - Chocolate Chip Cookies (600g yield, 24 servings)
 - Eggless Butter Cookies (400g yield, 20 servings)
-- Cardamom Shortbread (350g yield, 16 servings)
+- Cardamom Shortbread (350g yield, 16 servings, draft status)
 
 **Cakes (3)**
 - Vanilla Sponge Cake (500g yield, 8 servings)
 - Chocolate Mud Cake (700g yield, 10 servings)
-- Carrot Cake (800g yield, 12 servings)
+- Carrot Cake (800g yield, 12 servings, draft status)
 
-### Inventory Items (10)
+### Recipe Ingredients
+- Whole Wheat Bread: 4 ingredients (whole wheat flour, water, salt, instant yeast)
+- Chocolate Chip Cookies: 9 ingredients (flour, butter, sugars, egg, vanilla, baking soda, salt, chocolate)
+- Vanilla Sponge Cake: 6 ingredients (flour, sugar, butter, eggs, vanilla, baking powder)
 
-- All-purpose flour: 5000g @ ₹0.40/g
-- Bread flour: 3000g @ ₹0.45/g
-- Butter: 500g @ ₹45.00/g
-- Sugar: 2000g @ ₹0.50/g
-- Instant yeast: 50g @ ₹5.00/g
-- Baking powder: 200g @ ₹2.00/g
-- Vanilla extract: 100ml @ ₹15.00/ml
-- Baking chocolate: 300g @ ₹8.00/g
-- Salt: 500g @ ₹0.20/g
-- All-purpose flour (second user): 2000g @ ₹0.40/g
+### Recipe Sections & Steps
+- Chocolate Chip Cookies: 3 sections (prep, bake, cool) with 8 steps including temperatures and durations
 
-### Suppliers (4)
+### Recipe Versions & Journal Entries
+- 4 recipe versions (2 for Chocolate Chip Cookies, 2 for Vanilla Sponge Cake)
+- 5 journal entries with photos, ratings, and private notes
 
-1. Local Flour Mill (Delhi)
-2. Dairy Direct (Delhi)
-3. Wholesale Bakery Supplies (Mumbai)
-4. Premium Ingredients Co (Bangalore)
+### Inventory & Suppliers
+- 10 inventory items across all 3 users with costs, expiration dates, and reorder levels
+- 4 suppliers with contact details and notes
+
+### Purchase History
+- 4 purchase records tracking bulk and monthly stock purchases in INR
+
+### Audio Notes
+- 2 audio notes for Chocolate Chip Cookies (prep and bake stages) with transcriptions
+
+### Timer Instances
+- 2 completed timer instances for Chocolate Chip Cookies (creaming and baking steps)
+
+### Nutrition Cache
+- 2 cached nutrition entries (Chocolate Chip Cookies and Vanilla Sponge Cake) with per-100g and per-serving values
+
+### Verification Query
+- The script ends with a verification query that counts all entities across 13 tables
 
 ## Deployment
 
 ### Load Seed Data
+
+The seed data scripts use transactions (`BEGIN`/`COMMIT`) and `TRUNCATE ... CASCADE` for safe re-runs. This ensures foreign key dependencies are handled correctly and partial failures are rolled back automatically.
 
 ```bash
 # Run all migrations and seed data
@@ -357,6 +372,22 @@ psql -U aibake_user -d aibake_db -c "SELECT COUNT(*) FROM users;"
 # Check test recipes
 psql -U aibake_user -d aibake_db -c "SELECT COUNT(*) FROM recipes;"
 # Expected: 9
+
+# Check recipe ingredients
+psql -U aibake_user -d aibake_db -c "SELECT COUNT(*) FROM recipe_ingredients;"
+# Expected: 19
+
+# Check suppliers
+psql -U aibake_user -d aibake_db -c "SELECT COUNT(*) FROM suppliers;"
+# Expected: 4
+
+# Check inventory items
+psql -U aibake_user -d aibake_db -c "SELECT COUNT(*) FROM inventory_items;"
+# Expected: 10
+
+# Check nutrition cache
+psql -U aibake_user -d aibake_db -c "SELECT COUNT(*) FROM recipe_nutrition_cache;"
+# Expected: 2
 ```
 
 ## Notes
@@ -368,4 +399,7 @@ psql -U aibake_user -d aibake_db -c "SELECT COUNT(*) FROM recipes;"
 - Nutrition data uses JSONB format: `{"energy_kcal": 364, "protein_g": 10, ...}`
 - Test data includes realistic recipes with proper ingredient quantities
 - Ingredient aliases support multiple languages and regional variations
+- Seed scripts are wrapped in transactions (`BEGIN`/`COMMIT`) for atomicity
+- `TRUNCATE ... CASCADE` is used instead of `DELETE` to handle foreign key dependencies safely
+- Each ingredient uses an individual `INSERT` statement for clarity and easier maintenance
 
