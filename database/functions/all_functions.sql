@@ -9,7 +9,7 @@
 -- Requirements: 48.1, 48.2
 -- ============================================================================
 
-CREATE OR REPLACE FUNCTION search_ingredient(query TEXT)
+CREATE OR REPLACE FUNCTION search_ingredient(p_query TEXT)
 RETURNS TABLE (
   ingredient_id UUID,
   ingredient_name TEXT,
@@ -25,11 +25,11 @@ BEGIN
     im.id,
     im.name,
     'canonical'::TEXT as match_type,
-    similarity(im.name, query) as similarity_score,
+    similarity(im.name, p_query) as similarity_score,
     im.category::TEXT,
     im.default_density_g_per_ml
   FROM ingredient_master im
-  WHERE im.name % query  -- trigram operator for fuzzy match
+  WHERE im.name % p_query
   
   UNION ALL
   
@@ -38,12 +38,12 @@ BEGIN
     im.id,
     im.name,
     'alias'::TEXT as match_type,
-    similarity(ia.alias_name, query) as similarity_score,
+    similarity(ia.alias_name, p_query) as similarity_score,
     im.category::TEXT,
     im.default_density_g_per_ml
   FROM ingredient_aliases ia
   JOIN ingredient_master im ON ia.ingredient_master_id = im.id
-  WHERE ia.alias_name % query  -- trigram operator for fuzzy match
+  WHERE ia.alias_name % p_query
   
   ORDER BY similarity_score DESC, ingredient_name ASC;
 END;
@@ -64,7 +64,7 @@ CREATE INDEX IF NOT EXISTS idx_ingredient_aliases_name_trgm
 -- Requirements: 48.2, 18.4
 -- ============================================================================
 
-CREATE OR REPLACE FUNCTION get_recipe_ingredients_expanded(recipe_id UUID)
+CREATE OR REPLACE FUNCTION get_recipe_ingredients_expanded(p_recipe_id UUID)
 RETURNS TABLE (
   ingredient_id UUID,
   ingredient_name TEXT,
@@ -77,7 +77,7 @@ RETURNS TABLE (
   component_ingredient_name TEXT,
   component_quantity_grams NUMERIC,
   component_percentage NUMERIC,
-  position INTEGER
+  "position" INTEGER
 ) AS $$
 BEGIN
   RETURN QUERY
@@ -97,7 +97,7 @@ BEGIN
     ri.position
   FROM recipe_ingredients ri
   JOIN ingredient_master im ON ri.ingredient_master_id = im.id
-  WHERE ri.recipe_id = recipe_id
+  WHERE ri.recipe_id = p_recipe_id
     AND NOT EXISTS (
       SELECT 1 FROM composite_ingredients ci 
       WHERE ci.ingredient_master_id = ri.ingredient_master_id
@@ -124,9 +124,9 @@ BEGIN
   JOIN composite_ingredients ci ON ci.ingredient_master_id = im.id
   JOIN composite_ingredient_components cic ON cic.composite_ingredient_id = ci.id
   JOIN ingredient_master cim ON cic.component_ingredient_id = cim.id
-  WHERE ri.recipe_id = recipe_id
+  WHERE ri.recipe_id = p_recipe_id
   
-  ORDER BY position ASC, is_composite DESC, component_ingredient_name ASC;
+  ORDER BY "position" ASC, is_composite DESC, component_ingredient_name ASC;
 END;
 $$ LANGUAGE plpgsql STABLE;
 
@@ -138,7 +138,7 @@ $$ LANGUAGE plpgsql STABLE;
 -- Requirements: 48.3, 18.5
 -- ============================================================================
 
-CREATE OR REPLACE FUNCTION calculate_composite_nutrition(composite_ingredient_id UUID)
+CREATE OR REPLACE FUNCTION calculate_composite_nutrition(p_composite_ingredient_id UUID)
 RETURNS TABLE (
   energy_kcal NUMERIC,
   protein_g NUMERIC,
@@ -150,49 +150,24 @@ DECLARE
   v_total_percentage NUMERIC;
 BEGIN
   -- Validate that component percentages sum to 100
-  SELECT COALESCE(SUM(percentage), 0) INTO v_total_percentage
-  FROM composite_ingredient_components
-  WHERE composite_ingredient_id = composite_ingredient_id;
+  SELECT COALESCE(SUM(cic.percentage), 0) INTO v_total_percentage
+  FROM composite_ingredient_components cic
+  WHERE cic.composite_ingredient_id = p_composite_ingredient_id;
   
   IF v_total_percentage != 100 THEN
-    RAISE EXCEPTION 'Composite ingredient components must sum to 100%%, current total: %%', v_total_percentage;
+    RAISE EXCEPTION 'Composite ingredient components must sum to 100%%, current total: %', v_total_percentage;
   END IF;
   
   RETURN QUERY
   SELECT 
-    ROUND(
-      SUM(
-        COALESCE((im.nutrition_per_100g->>'energy_kcal')::NUMERIC, 0) * (cic.percentage / 100)
-      )::NUMERIC, 
-      2
-    ) as energy_kcal,
-    ROUND(
-      SUM(
-        COALESCE((im.nutrition_per_100g->>'protein_g')::NUMERIC, 0) * (cic.percentage / 100)
-      )::NUMERIC, 
-      2
-    ) as protein_g,
-    ROUND(
-      SUM(
-        COALESCE((im.nutrition_per_100g->>'fat_g')::NUMERIC, 0) * (cic.percentage / 100)
-      )::NUMERIC, 
-      2
-    ) as fat_g,
-    ROUND(
-      SUM(
-        COALESCE((im.nutrition_per_100g->>'carbs_g')::NUMERIC, 0) * (cic.percentage / 100)
-      )::NUMERIC, 
-      2
-    ) as carbs_g,
-    ROUND(
-      SUM(
-        COALESCE((im.nutrition_per_100g->>'fiber_g')::NUMERIC, 0) * (cic.percentage / 100)
-      )::NUMERIC, 
-      2
-    ) as fiber_g
+    ROUND(SUM(COALESCE((im.nutrition_per_100g->>'energy_kcal')::NUMERIC, 0) * (cic.percentage / 100))::NUMERIC, 2) as energy_kcal,
+    ROUND(SUM(COALESCE((im.nutrition_per_100g->>'protein_g')::NUMERIC, 0) * (cic.percentage / 100))::NUMERIC, 2) as protein_g,
+    ROUND(SUM(COALESCE((im.nutrition_per_100g->>'fat_g')::NUMERIC, 0) * (cic.percentage / 100))::NUMERIC, 2) as fat_g,
+    ROUND(SUM(COALESCE((im.nutrition_per_100g->>'carbs_g')::NUMERIC, 0) * (cic.percentage / 100))::NUMERIC, 2) as carbs_g,
+    ROUND(SUM(COALESCE((im.nutrition_per_100g->>'fiber_g')::NUMERIC, 0) * (cic.percentage / 100))::NUMERIC, 2) as fiber_g
   FROM composite_ingredient_components cic
   JOIN ingredient_master im ON cic.component_ingredient_id = im.id
-  WHERE cic.composite_ingredient_id = composite_ingredient_id;
+  WHERE cic.composite_ingredient_id = p_composite_ingredient_id;
 END;
 $$ LANGUAGE plpgsql STABLE;
 
@@ -205,35 +180,30 @@ $$ LANGUAGE plpgsql STABLE;
 -- Requirements: 48.4, 16.5
 -- ============================================================================
 
-CREATE OR REPLACE FUNCTION calculate_hydration_percentage(recipe_id UUID)
+CREATE OR REPLACE FUNCTION calculate_hydration_percentage(p_recipe_id UUID)
 RETURNS NUMERIC AS $$
 DECLARE
   v_flour_weight NUMERIC;
   v_liquid_weight NUMERIC;
   v_hydration NUMERIC;
 BEGIN
-  -- Sum all flour category ingredients
   SELECT COALESCE(SUM(ri.quantity_grams), 0) INTO v_flour_weight
   FROM recipe_ingredients ri
   JOIN ingredient_master im ON ri.ingredient_master_id = im.id
-  WHERE ri.recipe_id = recipe_id
+  WHERE ri.recipe_id = p_recipe_id
     AND im.category = 'flour';
   
-  -- Sum all liquid and dairy category ingredients
   SELECT COALESCE(SUM(ri.quantity_grams), 0) INTO v_liquid_weight
   FROM recipe_ingredients ri
   JOIN ingredient_master im ON ri.ingredient_master_id = im.id
-  WHERE ri.recipe_id = recipe_id
+  WHERE ri.recipe_id = p_recipe_id
     AND im.category IN ('liquid', 'dairy');
   
-  -- Return NULL for non-dough recipes (zero flour)
   IF v_flour_weight = 0 THEN
     RETURN NULL;
   END IF;
   
-  -- Calculate hydration percentage
   v_hydration := (v_liquid_weight / v_flour_weight) * 100;
-  
   RETURN ROUND(v_hydration::NUMERIC, 2);
 END;
 $$ LANGUAGE plpgsql STABLE;
@@ -246,14 +216,13 @@ $$ LANGUAGE plpgsql STABLE;
 -- Requirements: 48.6, 23.8
 -- ============================================================================
 
-CREATE OR REPLACE FUNCTION get_recipe_with_details(recipe_id UUID)
+CREATE OR REPLACE FUNCTION get_recipe_with_details(p_recipe_id UUID)
 RETURNS JSON AS $$
 DECLARE
   v_recipe JSON;
   v_ingredients JSON;
   v_sections JSON;
 BEGIN
-  -- Get base recipe data
   SELECT json_build_object(
     'id', r.id,
     'user_id', r.user_id,
@@ -275,9 +244,8 @@ BEGIN
     'updated_at', r.updated_at
   ) INTO v_recipe
   FROM recipes r
-  WHERE r.id = recipe_id;
+  WHERE r.id = p_recipe_id;
   
-  -- Get ingredients with master data
   SELECT json_agg(
     json_build_object(
       'id', ri.id,
@@ -299,9 +267,8 @@ BEGIN
   ) INTO v_ingredients
   FROM recipe_ingredients ri
   JOIN ingredient_master im ON ri.ingredient_master_id = im.id
-  WHERE ri.recipe_id = recipe_id;
+  WHERE ri.recipe_id = p_recipe_id;
   
-  -- Get sections with steps
   SELECT json_agg(
     json_build_object(
       'id', rs.id,
@@ -327,9 +294,8 @@ BEGIN
     ORDER BY rs.position ASC
   ) INTO v_sections
   FROM recipe_sections rs
-  WHERE rs.recipe_id = recipe_id;
+  WHERE rs.recipe_id = p_recipe_id;
   
-  -- Combine all data
   RETURN v_recipe || json_build_object(
     'ingredients', COALESCE(v_ingredients, '[]'::json),
     'sections', COALESCE(v_sections, '[]'::json)

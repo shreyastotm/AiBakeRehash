@@ -74,10 +74,10 @@ COMMENT ON COLUMN recipe_journal_entries.baking_loss_percentage IS 'Percentage o
 -- Verification
 -- ============================================================================
 
-DO $
+DO $$
 BEGIN
   RAISE NOTICE 'AiBake advanced recipe fields migration complete';
   RAISE NOTICE 'Recipes table: +4 columns (target_water_activity, min_safe_water_activity, estimated_shelf_life_days, total_hydration_percentage)';
   RAISE NOTICE 'Journal entries table: +5 columns (measured_water_activity, storage_days_achieved, pre_bake_weight_grams, baking_loss_grams, baking_loss_percentage)';
   RAISE NOTICE 'Constraints: 9 check constraints added for data integrity';
-END $;
+END $$;

@@ -125,10 +125,10 @@ CREATE TRIGGER update_delivery_zones_timestamp
 -- Verification
 -- ============================================================================
 
-DO $
+DO $$
 BEGIN
   RAISE NOTICE 'AiBake costing and pricing tables created successfully';
   RAISE NOTICE 'Tables: recipe_costs, packaging_items, delivery_zones';
   RAISE NOTICE 'Indexes: 5 created (including composite index for latest cost lookup)';
   RAISE NOTICE 'Triggers: 2 updated_at triggers (packaging_items, delivery_zones)';
-END $;
+END $$;

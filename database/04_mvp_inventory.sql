@@ -139,10 +139,10 @@ CREATE TRIGGER update_inventory_items_timestamp
 -- Verification
 -- ============================================================================
 
-DO $
+DO $$
 BEGIN
   RAISE NOTICE 'AiBake inventory management tables created successfully';
   RAISE NOTICE 'Tables: suppliers, inventory_items, inventory_purchases';
   RAISE NOTICE 'Indexes: 11 created (including partial indexes for expiration and low stock)';
   RAISE NOTICE 'Triggers: 2 updated_at triggers (suppliers, inventory_items)';
-END $;
+END $$;

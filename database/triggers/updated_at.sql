@@ -63,11 +63,13 @@ CREATE OR REPLACE FUNCTION cascade_recipe_update_on_ingredient_change()
 RETURNS TRIGGER AS $$
 BEGIN
   -- Update the parent recipe's updated_at timestamp
-  UPDATE recipes
-  SET updated_at = NOW()
-  WHERE id = NEW.recipe_id;
-  
-  RETURN NEW;
+  IF TG_OP = 'DELETE' THEN
+    UPDATE recipes SET updated_at = NOW() WHERE id = OLD.recipe_id;
+    RETURN OLD;
+  ELSE
+    UPDATE recipes SET updated_at = NOW() WHERE id = NEW.recipe_id;
+    RETURN NEW;
+  END IF;
 END;
 $$ LANGUAGE plpgsql;
 
