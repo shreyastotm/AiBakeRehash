@@ -99,6 +99,52 @@ The database is built across multiple migration scripts:
 - `inventory_purchases`: Purchase history with supplier and invoice tracking
 - `suppliers`: Supplier contact information and notes
 
+### Seed Data (`database/02_seed_data.sql`)
+
+- **70+ common baking ingredients** with complete data:
+  - Flours (10): all-purpose, bread, cake, whole wheat, maida, atta, besan, sooji, rice, cornstarch
+  - Fats (8): butter, ghee, desi ghee, vegetable oil, coconut oil, olive oil, shortening, mawa
+  - Sugars (6): granulated, brown, powdered, honey, jaggery, molasses
+  - Leavening (5): baking powder, baking soda, instant yeast, active dry yeast, cream of tartar
+  - Dairy (9): milk, buttermilk, yogurt, sour cream, cream cheese, paneer, khoya, condensed milk, egg
+  - Liquids (5): water, apple juice, orange juice, lemon juice, rose water
+  - Nuts (6): almond flour, almond, walnut, cashew, peanut, coconut
+  - Spices (12): cardamom, cinnamon, vanilla extract, saffron, nutmeg, ginger powder, turmeric, clove, black pepper, salt, baking chocolate, cocoa powder
+  - Fruits (8): raisin, date, banana, apple, blueberry, strawberry, cranberry, lemon
+  - Other (4): vanilla bean, gelatin, cornmeal, tapioca starch
+
+- **Density values** for volume-to-weight conversion (g/ml)
+- **Nutrition data** per 100g: energy (kcal), protein (g), fat (g), carbs (g), fiber (g)
+- **Allergen flags**: gluten, dairy, nuts, eggs
+- **Indian ingredients**: maida, atta, besan, sooji, khoya, paneer, ghee, desi ghee, cardamom, saffron, rose water
+
+### Ingredient Aliases (`database/02b_seed_ingredient_aliases.sql`)
+
+- **Abbreviations**: AP flour, APF, BP, BS, VCO, EVOO, SCM
+- **Regional variations**: plain flour (UK), wholemeal flour (UK), strong flour (UK), etc.
+- **Brand names**: SAF yeast, Philadelphia cream cheese
+- **Common names**: refined flour, white flour, cooking oil, etc.
+- **Hindi transliterations**: मैदा (maida), आटा (atta), बेसन (besan), सूजी (sooji), घी (ghee), etc.
+
+### Reference Data (`database/04_reference_data.sql`)
+
+- **Common Issues** (10+): flat cookies, dense bread, cracked cakes, soggy bottoms, burnt edges, gummy bread, bread not rising, sunken center, dry cake, tough pastry, shrinking pastry
+- **Water Activity Reference**: typical aw ranges for crackers, cookies, cakes, breads, pastries, confections, donuts, brownies, muffins, biscuits, scones, macarons, meringues, tarts, cheesecake, fudge, granola, bread pudding, custard tarts, soufflé
+
+### Test Data (`database/03_test_data.sql`)
+
+- **3 test users** with different preferences (metric, hybrid, cups)
+- **9 sample recipes** across categories (bread, cookies, cakes)
+- **Recipe ingredients** with proper quantities and units
+- **Recipe sections and steps** with timing and temperature
+- **Recipe versions** with change summaries
+- **Journal entries** with photos, ratings, and notes
+- **Inventory items** with various stock levels
+- **Suppliers** with contact information
+- **Audio notes** with transcriptions
+- **Timer instances** with completion status
+- **Nutrition cache** entries
+
 ### MVP Costing & Pricing (`database/05_mvp_costing.sql`)
 
 - `recipe_costs`: Historical cost tracking (ingredient, overhead, packaging, labor costs in INR)
@@ -115,6 +161,51 @@ The database is built across multiple migration scripts:
 - Adds baking loss tracking to `recipe_journal_entries`: `pre_bake_weight_grams`, `baking_loss_grams`, `baking_loss_percentage`
 - Adds measured water activity and storage tracking to `recipe_journal_entries`: `measured_water_activity`, `storage_days_achieved`
 - 9 check constraints ensuring valid ranges (water activity 0.00–1.00, positive weights, percentage 0–100)
+
+## Database Functions
+
+Custom PostgreSQL functions provide specialized business logic at the database layer:
+
+### Core Functions
+
+1. **`search_ingredient(query TEXT)`** - Fuzzy search for ingredients by name or alias using trigram matching
+   - Searches both canonical names and aliases
+   - Returns ranked results with similarity scores
+   - Requirements: 48.1, 48.2
+
+2. **`get_recipe_ingredients_expanded(recipe_id UUID)`** - Returns recipe ingredients with composite ingredient breakdowns
+   - Shows component details for composite ingredients
+   - Useful for shopping lists and nutrition calculation
+   - Requirements: 48.2, 18.4
+
+3. **`calculate_composite_nutrition(composite_ingredient_id UUID)`** - Calculates weighted average nutrition for composite ingredients
+   - Validates component percentages sum to 100%
+   - Returns energy, protein, fat, carbs, fiber per 100g
+   - Requirements: 48.3, 18.5
+
+4. **`calculate_hydration_percentage(recipe_id UUID)`** - Calculates baker's percentage (water-to-flour ratio) for dough recipes
+   - Formula: (total_liquid / total_flour) × 100
+   - Returns NULL for non-dough recipes
+   - Requirements: 48.4, 16.5
+
+5. **`get_recipe_with_details(recipe_id UUID)`** - Returns complete recipe as JSON with all related data
+   - Includes ingredients, sections, steps, and metadata
+   - Single query for full recipe retrieval
+   - Requirements: 48.6, 23.8
+
+All functions are located in `database/functions/` and documented in [docs/database/functions.md](docs/database/functions.md).
+
+### Deploying Functions
+
+```bash
+# Deploy all functions at once
+psql -U aibake_user -d aibake_db -f database/functions/all_functions.sql
+
+# Or deploy individual functions
+psql -U aibake_user -d aibake_db -f database/functions/search_ingredient.sql
+psql -U aibake_user -d aibake_db -f database/functions/get_recipe_ingredients_expanded.sql
+# ... etc
+```
 
 ## Prerequisites
 
@@ -288,7 +379,98 @@ npm run dev
   - Start with: `docker-compose --profile tools up -d pgadmin`
   - Login: admin@aibake.local / admin
 
-## Development
+## Database Layer - Complete ✓
+
+The entire database layer is now complete and ready for backend implementation:
+
+### ✅ Schema & Migrations
+- Core schema with 18 tables, 44 indexes, 9 triggers
+- MVP inventory management tables
+- MVP costing and pricing tables
+- Advanced recipe fields for water activity and hydration tracking
+
+### ✅ Seed Data (70+ Ingredients)
+- **Flours**: all-purpose, bread, cake, whole wheat, maida, atta, besan, sooji, rice, cornstarch
+- **Fats**: butter, ghee, desi ghee, vegetable oil, coconut oil, olive oil, shortening, mawa
+- **Sugars**: granulated, brown, powdered, honey, jaggery, molasses
+- **Leavening**: baking powder, baking soda, instant yeast, active dry yeast, cream of tartar
+- **Dairy**: milk, buttermilk, yogurt, sour cream, cream cheese, paneer, khoya, condensed milk, egg
+- **Liquids**: water, apple juice, orange juice, lemon juice, rose water
+- **Nuts**: almond flour, almond, walnut, cashew, peanut, coconut
+- **Spices**: cardamom, cinnamon, vanilla extract, saffron, nutmeg, ginger powder, turmeric, clove, black pepper, salt, baking chocolate, cocoa powder
+- **Fruits**: raisin, date, banana, apple, blueberry, strawberry, cranberry, lemon
+- **Other**: vanilla bean, gelatin, cornmeal, tapioca starch
+
+Each ingredient includes:
+- Density values for volume-to-weight conversion
+- Nutrition data per 100g (energy, protein, fat, carbs, fiber)
+- Allergen flags (gluten, dairy, nuts, eggs)
+
+### ✅ Ingredient Aliases
+- Abbreviations (AP flour, BP, BS, VCO, EVOO, SCM)
+- Regional variations (plain flour, wholemeal flour, strong flour)
+- Brand names (SAF yeast, Philadelphia cream cheese)
+- Common names (refined flour, white flour, cooking oil)
+- Hindi transliterations (मैदा, आटा, बेसन, सूजी, घी, etc.)
+
+### ✅ Reference Data
+- Common baking issues (10+) with solutions and prevention tips
+- Water activity reference ranges for 20+ product categories
+
+### ✅ Test Data
+- 3 test users with different preferences
+- 9 sample recipes across categories
+- Recipe ingredients, sections, and steps
+- Recipe versions and journal entries
+- Inventory items and suppliers
+- Audio notes and timers
+- Nutrition cache entries
+
+### ✅ Database Functions
+- `search_ingredient()` - Fuzzy ingredient search with trigram matching
+- `get_recipe_ingredients_expanded()` - Recipe ingredient expansion with composite breakdown
+- `calculate_composite_nutrition()` - Weighted nutrition calculation
+- `calculate_hydration_percentage()` - Baker's percentage calculation
+- `get_recipe_with_details()` - Complete recipe retrieval as JSON
+
+### ✅ Database Triggers
+- `calculate_baking_loss_on_insert/update` - Auto-calculate baking loss
+- `update_*_timestamp` - Auto-update timestamps (9 triggers)
+- `validate_composite_percentages_*` - Validate composite ingredient percentages
+- `cascade_recipe_update_on_ingredient_*` - Cascade updates to parent recipe
+
+## Next Steps: Backend Implementation
+
+The database layer is complete. You can now begin implementing the backend API server:
+
+1. **Open the implementation plan**: `.kiro/specs/aibake-full-system-implementation/tasks.md`
+2. **Start with Phase 6**: Backend Setup and Core Infrastructure
+3. **Follow the task sequence**: Each task builds on previous ones
+4. **Reference requirements**: Each task includes specific requirement numbers
+
+### Quick Database Setup
+
+```bash
+# Start PostgreSQL
+docker-compose up -d postgres
+
+# Run migrations
+npm run migrate
+
+# Seed ingredients
+npm run seed
+
+# Load test data
+npm run seed:test
+
+# Verify database
+docker-compose exec postgres psql -U aibake_user -d aibake_db -c "SELECT COUNT(*) FROM ingredient_master;"
+# Should return: 70+
+```
+
+---
+
+**Database Status**: ✅ Complete and Ready for Backend Integration
 
 ### Docker Services Management
 
@@ -378,6 +560,7 @@ See [docs/deployment.md](docs/deployment.md) for detailed deployment instruction
 
 ## Documentation
 
+- [Database Functions](docs/database/functions.md) - Custom PostgreSQL functions for ingredient search, recipe expansion, nutrition calculation, and hydration analysis
 - [API Documentation](docs/api/openapi.yaml)
 - [Architecture Guide](docs/architecture/)
 - [User Guide (English)](docs/user-guide/en/)

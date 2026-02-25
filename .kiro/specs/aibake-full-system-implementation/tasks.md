@@ -327,7 +327,7 @@ aibake/
 
 ### 4. Database Layer - Functions, Triggers, and Seed Data
 
-- [ ] 4.1 Create database functions
+- [x] 4.1 Create database functions
   - Create `search_ingredient(query TEXT)` function with trigram fuzzy matching, searching both canonical names and aliases, returning ranked results with similarity scores
   - Create `get_recipe_ingredients_expanded(recipe_id UUID)` function showing composite ingredient breakdowns
   - Create `calculate_composite_nutrition(composite_ingredient_id UUID)` function computing weighted average nutrition from components
@@ -335,13 +335,13 @@ aibake/
   - Create `get_recipe_with_details(recipe_id UUID)` function returning complete recipe with ingredients, sections, steps
   - _Requirements: 48.1, 48.2, 48.3, 48.4, 48.6_
 
-- [ ] 4.2 Create database triggers
+- [x] 4.2 Create database triggers
   - Create trigger on `recipe_journal_entries` to automatically calculate `baking_loss_grams` and `baking_loss_percentage` when pre_bake_weight_grams and outcome_weight_grams are set
   - Create trigger on `recipes` and `recipe_ingredients` to update `updated_at` timestamp
   - Create trigger to validate composite ingredient component percentages sum to 100
   - _Requirements: 16.2, 18.3, 48.5_
 
-- [ ] 4.3 Create seed data script
+- [x] 4.3 Create seed data script
   - Create `database/02_seed_data.sql` with 70+ common baking ingredients (all-purpose flour, bread flour, butter, sugar, eggs, milk, yeast, etc.)
   - Include Indian ingredients (maida, atta, besan, sooji, khoya, mawa, paneer, ghee, desi ghee, cardamom, saffron, rose water)
   - Add density values (g/ml) for volume-to-weight conversion
@@ -349,19 +349,19 @@ aibake/
   - Add ingredient categories and allergen flags
   - _Requirements: 3.2, 3.6, 4.1, 4.2, 4.3, 4.4, 4.5, 107.1_
 
-- [ ] 4.4 Create ingredient aliases seed data
+- [x] 4.4 Create ingredient aliases seed data
   - Add ingredient aliases for abbreviations (AP flour → all-purpose flour, tbsp → tablespoon)
   - Add regional variations (maida → all-purpose flour, atta → whole wheat flour)
   - Add brand names and common misspellings
   - Add Hindi transliterations (elaichi → cardamom, kesar → saffron, gulab jal → rose water)
   - _Requirements: 17.1, 17.2, 107.2, 107.3, 107.6_
 
-- [ ] 4.5 Create reference data seed scripts
+- [x] 4.5 Create reference data seed scripts
   - Seed `common_issues` table with 10+ common baking problems (flat cookies, dense bread, cracked cakes, soggy bottoms, burnt edges, etc.) with solutions and prevention tips
   - Seed `water_activity_reference` table with typical aw ranges for crackers, cookies, cakes, breads, pastries, and confections
   - _Requirements: 14.2, 15.5, 75.5_
 
-- [ ] 4.6 Create test data script
+- [x] 4.6 Create test data script
   - Create `database/03_test_data.sql` with sample users, recipes, journal entries for development
   - Include diverse recipe examples (bread, cookies, cakes, pastries)
   - Include inventory items with various stock levels
