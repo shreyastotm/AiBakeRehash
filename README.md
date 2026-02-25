@@ -439,6 +439,25 @@ Each ingredient includes:
 - `validate_composite_percentages_*` - Validate composite ingredient percentages
 - `cascade_recipe_update_on_ingredient_*` - Cascade updates to parent recipe
 
+## Rate Limiting
+
+The API includes three rate limiter tiers built on `express-rate-limit`:
+
+| Limiter | Scope | Default Limit | Use Case |
+|---------|-------|---------------|----------|
+| `apiRateLimiter` | Per IP | 100 req / 15 min | All routes (global) |
+| `authRateLimiter` | Per IP | 5 req / 15 min | Auth endpoints (login, register) |
+| `userRateLimiter` | Per user (falls back to IP) | 200 req / 15 min | Authenticated API routes |
+
+Rate limit info is returned via standard `RateLimit-*` response headers.
+
+Configure via environment variables:
+
+```env
+RATE_LIMIT_WINDOW_MS=900000      # Window duration in ms (default: 15 min)
+RATE_LIMIT_MAX_REQUESTS=100      # Max requests per window (default: 100)
+```
+
 ## Next Steps: Backend Implementation
 
 The database layer is complete. You can now begin implementing the backend API server:
