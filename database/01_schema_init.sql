@@ -91,7 +91,26 @@ CREATE TYPE substitution_structural_impact AS ENUM (
 );
 
 -- ============================================================================
--- STEP 3: Create Core Tables
+-- STEP 3: Create Migration Tracking Table
+-- ============================================================================
+
+-- Schema Migrations table: tracks applied database migrations
+CREATE TABLE IF NOT EXISTS schema_migrations (
+  id SERIAL PRIMARY KEY,
+  version TEXT NOT NULL UNIQUE,
+  name TEXT NOT NULL,
+  applied_at TIMESTAMP DEFAULT NOW()
+);
+
+COMMENT ON TABLE schema_migrations IS 'Tracks applied database migrations for version control';
+COMMENT ON COLUMN schema_migrations.version IS 'Migration version identifier (e.g., 001, 002)';
+COMMENT ON COLUMN schema_migrations.name IS 'Migration name (e.g., schema_init, seed_data)';
+COMMENT ON COLUMN schema_migrations.applied_at IS 'Timestamp when the migration was applied';
+
+CREATE INDEX idx_schema_migrations_version ON schema_migrations(version);
+
+-- ============================================================================
+-- STEP 4: Create Core Tables
 -- ============================================================================
 
 -- Users table: authentication fields and preferences
@@ -131,7 +150,7 @@ COMMENT ON COLUMN ingredient_master.allergen_flags IS 'Allergen flags. Example: 
 COMMENT ON COLUMN ingredient_master.nutrition_per_100g IS 'Nutrition per 100g. Example: {"energy_kcal": 364, "protein_g": 10, "fat_g": 1, "carbs_g": 76, "fiber_g": 2.7}';
 
 -- ============================================================================
--- STEP 4: Create Recipe Management Tables
+-- STEP 5: Create Recipe Management Tables
 -- ============================================================================
 
 -- Recipes table: master recipe records
@@ -216,7 +235,7 @@ COMMENT ON COLUMN recipe_steps.temperature_celsius IS 'Temperature setting for t
 COMMENT ON COLUMN recipe_steps.dependency_step_id IS 'Reference to a prerequisite step for timer chaining';
 
 -- ============================================================================
--- STEP 4B: Create Versioning and Journal Tables
+-- STEP 5B: Create Versioning and Journal Tables
 -- ============================================================================
 
 -- Recipe Versions table: version history for recipe iterations
@@ -285,7 +304,7 @@ COMMENT ON COLUMN recipe_audio_notes.recorded_at_stage IS 'Context stage: prep, 
 COMMENT ON COLUMN recipe_audio_notes.transcription_text IS 'Auto-generated transcription of the audio content';
 
 -- ============================================================================
--- STEP 4C: Create Advanced Features Tables
+-- STEP 5C: Create Advanced Features Tables
 -- ============================================================================
 
 -- Ingredient Substitutions table: substitution rules with impact warnings
@@ -377,7 +396,7 @@ COMMENT ON COLUMN water_activity_reference.shelf_life_days IS 'Expected shelf li
 COMMENT ON COLUMN water_activity_reference.safety_notes IS 'Food safety guidance for this product category';
 
 -- ============================================================================
--- STEP 4D: Create Ingredient Alias and Composite Ingredient Tables
+-- STEP 5D: Create Ingredient Alias and Composite Ingredient Tables
 -- ============================================================================
 
 -- Ingredient Aliases table: alternative names, abbreviations, and regional variations
@@ -434,7 +453,7 @@ COMMENT ON COLUMN composite_ingredient_components.weight_grams_per_100g IS 'Gram
 COMMENT ON COLUMN composite_ingredient_components.position IS 'Display order within the composite ingredient';
 
 -- ============================================================================
--- STEP 5: Create Indexes
+-- STEP 6: Create Indexes
 -- ============================================================================
 
 -- Users indexes
@@ -527,7 +546,7 @@ CREATE INDEX idx_nutrition_cache_calculated ON recipe_nutrition_cache(calculated
 CREATE INDEX idx_common_issues_symptoms_trgm ON common_issues USING GIN (symptoms gin_trgm_ops);
 
 -- ============================================================================
--- STEP 6: Create updated_at Trigger Function
+-- STEP 7: Create updated_at Trigger Function
 -- ============================================================================
 
 CREATE OR REPLACE FUNCTION update_timestamp()

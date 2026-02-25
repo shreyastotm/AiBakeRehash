@@ -371,21 +371,21 @@ aibake/
 
 ### 5. Database Layer - Migrations and Validation
 
-- [ ] 5.1 Create migration management system
+- [x] 5.1 Create migration management system
   - Create migration tracking table `schema_migrations` with version, name, applied_at
   - Create migration runner script `scripts/migrate.ts` executing migrations in order
   - Create rollback script `scripts/rollback.ts` for downgrade scenarios
   - Validate successful execution with table counts, index counts, data counts
   - _Requirements: 3.1, 3.5, 65.6_
 
-- [ ] 5.2 Create database validation scripts
+- [x] 5.2 Create database validation scripts
   - Create validation script checking foreign key relationships
   - Create validation script checking for missing indexes on foreign keys
   - Create validation script validating enum type usage consistency
   - Create validation script generating database documentation from schema
   - _Requirements: 38.1, 38.3, 38.4, 38.5, 38.6_
 
-- [ ] 5.3 Create backup and restore scripts
+- [x] 5.3 Create backup and restore scripts
   - Create backup script `scripts/backup.sh` creating full database dumps with timestamp
   - Create incremental backup script for WAL archiving
   - Create restore script `scripts/restore.sh` recovering from backup files
@@ -401,6 +401,7 @@ aibake/
   - Verify test data loaded
   - Run database validation scripts
   - Ensure all tests pass, ask the user if questions arise.
+  - _Direct psql migration scripts created for Windows and Linux_
 
 
 ### 6. Backend Setup and Core Infrastructure

@@ -84,7 +84,8 @@ The database is built across multiple migration scripts:
 
 - 3 PostgreSQL extensions: uuid-ossp, pgcrypto, pg_trgm
 - 8 custom ENUM types
-- 18 tables across these domains:
+- 19 tables across these domains:
+  - Migration tracking: `schema_migrations` (tracks applied database migrations for version control)
   - User management: `users`
   - Ingredient data: `ingredient_master`, `ingredient_aliases`, `composite_ingredients`, `composite_ingredient_components`, `ingredient_substitutions`
   - Recipe management: `recipes`, `recipe_ingredients`, `recipe_sections`, `recipe_steps`, `recipe_versions`, `recipe_version_snapshots`
@@ -559,6 +560,7 @@ See [docs/deployment.md](docs/deployment.md) for detailed deployment instruction
 
 ## Documentation
 
+- [Database Schema Migrations](docs/database/schema-migrations.md) - Migration system for version control of database changes
 - [Database Functions](docs/database/functions.md) - Custom PostgreSQL functions for ingredient search, recipe expansion, nutrition calculation, and hydration analysis
 - [API Documentation](docs/api/openapi.yaml)
 - [Architecture Guide](docs/architecture/)
