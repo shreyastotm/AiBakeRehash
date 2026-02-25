@@ -256,14 +256,14 @@ aibake/
 
 ### 2. Database Layer - Core Schema
 
-- [ ] 2.1 Create database initialization script
+- [x] 2.1 Create database initialization script
   - Create `database/01_schema_init.sql` with PostgreSQL extensions (uuid-ossp, pgcrypto, pg_trgm)
   - Define 8 custom ENUM types (recipe_source_type, recipe_status, unit_system, section_type, ingredient_category, timer_status, substitution_moisture_impact, substitution_structural_impact)
   - Create `users` table with authentication fields and preferences (JSONB for unit_preferences)
   - Create `ingredient_master` table with name, category, density, nutrition (JSONB), allergen flags (JSONB)
   - _Requirements: 2.1, 2.2, 2.3_
 
-- [ ] 2.2 Create recipe management tables
+- [x] 2.2 Create recipe management tables
   - Create `recipes` table with title, description, servings, yield_weight_grams, status, source fields, timestamps
   - Create `recipe_ingredients` table with display_name, quantity_original, unit_original, quantity_grams, position
   - Create `recipe_sections` table with type, title, position
@@ -271,14 +271,14 @@ aibake/
   - Add foreign key constraints with CASCADE DELETE for recipe relationships
   - _Requirements: 2.1, 5.1, 5.2, 5.3, 6.1, 6.2, 6.3, 7.1, 7.2, 7.3_
 
-- [ ] 2.3 Create versioning and journal tables
+- [x] 2.3 Create versioning and journal tables
   - Create `recipe_versions` table with version_number, change_summary, created_at
   - Create `recipe_version_snapshots` table with snapshot_data (JSONB)
   - Create `recipe_journal_entries` table with bake_date, notes, private_notes, rating, outcome_weight_grams, images (JSONB array)
   - Create `recipe_audio_notes` table with audio_url, duration_seconds, transcription_text, recorded_at_stage
   - _Requirements: 2.1, 8.1, 8.2, 8.3, 9.1, 9.2, 9.3, 9.4, 10.1, 10.2_
 
-- [ ] 2.4 Create advanced features tables
+- [x] 2.4 Create advanced features tables
   - Create `ingredient_substitutions` table with original_ingredient_id, substitute_ingredient_id, ratio_multiplier, moisture_impact, structural_impact, flavor_impact
   - Create `timer_instances` table with recipe_id, step_id, duration_seconds, status, started_at
   - Create `recipe_nutrition_cache` table with nutrition_per_100g (JSONB), nutrition_per_serving (JSONB), calculated_at
@@ -286,14 +286,14 @@ aibake/
   - Create `water_activity_reference` table with product_category, typical_aw_min, typical_aw_max, shelf_life_days
   - _Requirements: 2.1, 11.1, 11.2, 12.1, 12.2, 13.2, 13.3, 14.1, 15.4_
 
-- [ ] 2.5 Create ingredient alias and composite ingredient tables
+- [x] 2.5 Create ingredient alias and composite ingredient tables
   - Create `ingredient_aliases` table with ingredient_master_id, alias_name, alias_type, locale
   - Create `composite_ingredients` table with ingredient_master_id, is_user_defined
   - Create `composite_ingredient_components` table with composite_ingredient_id, component_ingredient_id, percentage, weight_grams_per_100g
   - Add unique constraints on alias_name and composite component relationships
   - _Requirements: 17.1, 17.2, 17.3, 18.1, 18.2_
 
-- [ ] 2.6 Create indexes for performance
+- [x] 2.6 Create indexes for performance
   - Create indexes on all foreign key columns (user_id, recipe_id, ingredient_master_id, etc.)
   - Create indexes on frequently filtered columns (status, created_at, bake_date)
   - Create trigram indexes on text search fields (ingredient_master.name, ingredient_aliases.alias_name, recipes.title)
@@ -304,21 +304,21 @@ aibake/
 
 ### 3. Database Layer - MVP Extensions (Inventory, Costing, Social)
 
-- [ ] 3.1 Create inventory management tables
+- [x] 3.1 Create inventory management tables
   - Create `inventory_items` table with ingredient_master_id, quantity_on_hand, unit, cost_per_unit, currency (default 'INR'), purchase_date, expiration_date, supplier_id, min_stock_level, reorder_quantity
   - Create `inventory_purchases` table with ingredient_master_id, quantity, unit, cost, currency, supplier_id, invoice_number, purchase_date
   - Create `suppliers` table with name, contact_person, phone, email, address, notes
   - Add indexes on user_id, ingredient_master_id, expiration_date
   - _Requirements: 101.1, 113.1, 114.1_
 
-- [ ] 3.2 Create costing and pricing tables
+- [x] 3.2 Create costing and pricing tables
   - Create `recipe_costs` table with recipe_id, ingredient_cost, overhead_cost, packaging_cost, labor_cost, total_cost, currency (default 'INR'), calculated_at
   - Create `packaging_items` table with name, cost_per_unit, currency, quantity_on_hand
   - Create `delivery_zones` table with zone_name, base_charge, per_km_charge, free_delivery_threshold, currency
   - Add indexes on recipe_id, user_id
   - _Requirements: 104.1, 104.3, 115.1, 116.1_
 
-- [ ] 3.3 Add advanced recipe fields for MVP features
+- [x] 3.3 Add advanced recipe fields for MVP features
   - Add columns to `recipes` table: target_water_activity, min_safe_water_activity, estimated_shelf_life_days, total_hydration_percentage
   - Add columns to `recipe_journal_entries` table: measured_water_activity, storage_days_achieved, pre_bake_weight_grams, baking_loss_grams, baking_loss_percentage
   - Add check constraints for water_activity (0.00 to 1.00) and positive weights

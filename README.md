@@ -63,6 +63,10 @@ AiBake is a comprehensive baking recipe management platform designed specificall
 ```
 aibake/
 ├── database/          # Database migrations, functions, triggers, seed data
+│   ├── 01_schema_init.sql      # Core schema v1.1 (extensions, ENUMs, 18 tables, indexes, triggers)
+│   ├── 04_mvp_inventory.sql    # Inventory management tables (inventory_items, purchases, suppliers)
+│   ├── 05_mvp_costing.sql      # Costing & pricing tables (recipe_costs, packaging_items, delivery_zones)
+│   └── 06_mvp_advanced_recipe_fields.sql  # Water activity, hydration loss, baking loss columns
 ├── backend/           # Node.js/Express API server
 ├── frontend/          # React application
 ├── middleware/        # Business logic layer
@@ -71,6 +75,46 @@ aibake/
 ├── k8s/              # Kubernetes manifests
 └── docs/             # Documentation
 ```
+
+## Database Schema
+
+The database is built across multiple migration scripts:
+
+### Core Schema (`database/01_schema_init.sql` v1.1)
+
+- 3 PostgreSQL extensions: uuid-ossp, pgcrypto, pg_trgm
+- 8 custom ENUM types
+- 18 tables across these domains:
+  - User management: `users`
+  - Ingredient data: `ingredient_master`, `ingredient_aliases`, `composite_ingredients`, `composite_ingredient_components`, `ingredient_substitutions`
+  - Recipe management: `recipes`, `recipe_ingredients`, `recipe_sections`, `recipe_steps`, `recipe_versions`, `recipe_version_snapshots`
+  - Baking journal: `recipe_journal_entries`, `recipe_audio_notes`
+  - Advanced features: `timer_instances`, `recipe_nutrition_cache`, `common_issues`, `water_activity_reference`
+- 44 indexes (including trigram, composite, and partial indexes)
+- 9 `updated_at` auto-timestamp triggers
+
+### MVP Inventory (`database/04_mvp_inventory.sql`)
+
+- `inventory_items`: Ingredient stock tracking with costs, expiration dates, and reorder levels
+- `inventory_purchases`: Purchase history with supplier and invoice tracking
+- `suppliers`: Supplier contact information and notes
+
+### MVP Costing & Pricing (`database/05_mvp_costing.sql`)
+
+- `recipe_costs`: Historical cost tracking (ingredient, overhead, packaging, labor costs in INR)
+- `packaging_items`: Packaging materials with per-unit costs and stock levels
+- `delivery_zones`: Delivery pricing by zone with base charge, per-km rates, and free delivery thresholds
+- 5 indexes (including composite index for latest cost lookup)
+- 2 `updated_at` triggers
+- All monetary columns default to INR with non-negative check constraints
+
+### Advanced Recipe Fields (`database/06_mvp_advanced_recipe_fields.sql`)
+
+- Adds water activity tracking to `recipes`: `target_water_activity`, `min_safe_water_activity`, `estimated_shelf_life_days`
+- Adds baker's hydration percentage to `recipes`: `total_hydration_percentage`
+- Adds baking loss tracking to `recipe_journal_entries`: `pre_bake_weight_grams`, `baking_loss_grams`, `baking_loss_percentage`
+- Adds measured water activity and storage tracking to `recipe_journal_entries`: `measured_water_activity`, `storage_days_achieved`
+- 9 check constraints ensuring valid ranges (water activity 0.00–1.00, positive weights, percentage 0–100)
 
 ## Prerequisites
 
