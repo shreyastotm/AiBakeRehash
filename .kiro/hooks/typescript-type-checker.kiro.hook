@@ -1,0 +1,17 @@
+{
+  "enabled": true,
+  "name": "TypeScript Type Safety Checker",
+  "description": "Runs TypeScript compiler checks on modified TypeScript files to catch type errors, missing type definitions, and type safety issues immediately",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "*.ts",
+      "*.tsx"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Run TypeScript type checking on the modified file and analyze for:\n1. Type errors and missing type annotations\n2. Use of 'any' type (should be avoided)\n3. Missing return type declarations on functions\n4. Implicit any parameters\n5. Strict null checks violations\n6. Type assertion usage (prefer type guards)\n7. Interface vs Type usage consistency\n8. Generic type constraints\n\nReport any type safety issues and suggest proper type definitions following TypeScript best practices."
+  }
+}

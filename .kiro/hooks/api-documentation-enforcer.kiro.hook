@@ -1,0 +1,17 @@
+{
+  "enabled": true,
+  "name": "API Endpoint Documentation Enforcer",
+  "description": "Ensures API endpoints have proper JSDoc documentation and OpenAPI/Swagger annotations for automatic API documentation generation",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "backend/src/controllers/**/*.ts",
+      "backend/src/routes/**/*.ts"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Check if the modified API endpoint has proper documentation:\n\n1. JSDoc Comments:\n   - Description of what the endpoint does\n   - @param tags for all parameters\n   - @returns tag describing response structure\n   - @throws tag for possible errors\n\n2. OpenAPI/Swagger Annotations:\n   - @swagger comment block with:\n     - Endpoint path and method\n     - Summary and description\n     - Request body schema (for POST/PATCH)\n     - Response schemas (success and error cases)\n     - Authentication requirements\n     - Example requests and responses\n\n3. Validation Rules:\n   - Document required vs optional fields\n   - Data type constraints\n   - Validation rules (min/max, regex patterns)\n\n4. Error Responses:\n   - Document all possible HTTP status codes\n   - Error response format\n   - Error codes and messages\n\nIf documentation is missing or incomplete, provide a template following the project's API documentation standards.\nRemind that complete API docs are required for frontend integration and external API consumers."
+  }
+}

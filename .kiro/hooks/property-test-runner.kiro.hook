@@ -1,0 +1,21 @@
+{
+  "enabled": true,
+  "name": "Property-Based Test Runner",
+  "description": "Automatically runs property-based tests using fast-check when middleware calculation logic is modified to validate mathematical correctness",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "middleware/src/unitConverter.ts",
+      "middleware/src/recipeScaler.ts",
+      "middleware/src/nutritionCalculator.ts",
+      "middleware/src/hydrationCalculator.ts",
+      "middleware/src/costCalculator.ts",
+      "middleware/src/pricingCalculator.ts"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "The middleware calculation logic has been modified. Remind me to run property-based tests and verify:\n\nFor unitConverter.ts:\n- Property 1: Unit Conversion Round-Trip (volume→weight→volume preserves value)\n\nFor recipeScaler.ts:\n- Property 3: Recipe Scaling Proportionality (ingredient ratios preserved)\n\nFor nutritionCalculator.ts:\n- Property 4: Nutrition Calculation Consistency (sum equals total)\n\nFor hydrationCalculator.ts:\n- Property 9: Hydration Percentage Calculation (liquid/flour ratio)\n\nFor costCalculator.ts:\n- Property 22: Recipe Cost Calculation (sum of ingredient costs)\n\nFor pricingCalculator.ts:\n- Profit margin calculations and pricing formulas\n\nSuggest running: npm test -- --testPathPattern=property to execute all property-based tests.\nRemind that these tests use fast-check with minimum 100 iterations to validate mathematical correctness."
+  }
+}

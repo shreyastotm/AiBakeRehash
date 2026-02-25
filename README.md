@@ -74,26 +74,118 @@ aibake/
 
 ## Prerequisites
 
-- Node.js 18+
-- Docker and Docker Compose
-- PostgreSQL 15+
-- Redis (optional, for caching)
+Before setting up AiBake, ensure you have the following installed:
 
-## Setup Instructions
+### Required
 
-### 1. Clone the repository
+- **Node.js 18+**: JavaScript runtime for backend and build tools
+  - Download from [nodejs.org](https://nodejs.org/)
+  - Verify installation: `node --version` (should be 18.0.0 or higher)
+  
+- **npm 9+**: Package manager (comes with Node.js)
+  - Verify installation: `npm --version`
+
+- **Docker 20+**: Container platform for running services
+  - Download from [docker.com](https://www.docker.com/)
+  - Verify installation: `docker --version`
+  
+- **Docker Compose**: Multi-container orchestration (included with Docker Desktop)
+  - Verify installation: `docker-compose --version` or `docker compose version`
+
+### Optional
+
+- **PostgreSQL 15+**: If running database locally without Docker
+  - Download from [postgresql.org](https://www.postgresql.org/)
+  
+- **Redis 7+**: If running cache locally without Docker
+  - Download from [redis.io](https://redis.io/)
+
+- **Git**: Version control system
+  - Download from [git-scm.com](https://git-scm.com/)
+
+## Quick Start
+
+### Automated Setup (Recommended)
+
+The fastest way to get started is using our automated setup script:
+
+**Linux/macOS:**
+```bash
+# Clone the repository
+git clone <repository-url>
+cd aibake
+
+# Run automated setup script
+bash scripts/setup.sh
+```
+
+**Windows (PowerShell):**
+```powershell
+# Clone the repository
+git clone <repository-url>
+cd aibake
+
+# Run automated setup script
+.\scripts\setup.ps1
+```
+
+The setup script will:
+- ✓ Check all prerequisites
+- ✓ Create `.env` file with generated secrets
+- ✓ Create necessary project directories
+- ✓ Install all dependencies
+- ✓ Start Docker services (PostgreSQL, Redis)
+- ✓ Run database migrations (optional)
+
+After setup completes, start the development servers:
+
+```bash
+# Terminal 1: Start backend
+cd backend
+npm run dev
+
+# Terminal 2: Start frontend
+cd frontend
+npm run dev
+```
+
+### Manual Setup
+
+If you prefer manual setup or need more control:
+
+#### 1. Clone the repository
 
 ```bash
 git clone <repository-url>
 cd aibake
 ```
 
-### 2. Install dependencies
+#### 2. Setup environment variables
 
 ```bash
-# Install root dependencies
-npm install
+# Copy example environment file
+cp .env.example .env
 
+# Edit .env with your configuration
+# The setup script generates JWT secrets automatically,
+# but for manual setup you should generate secure secrets:
+# JWT_SECRET=$(openssl rand -base64 32)
+# JWT_REFRESH_SECRET=$(openssl rand -base64 32)
+```
+
+#### 3. Create project directories
+
+```bash
+mkdir -p database/{migrations,functions,triggers,rollback}
+mkdir -p backend/{src,tests}
+mkdir -p frontend/{src,public}
+mkdir -p middleware/{src,tests}
+mkdir -p scripts docs/api docs/architecture
+```
+
+#### 4. Install dependencies
+
+```bash
 # Install backend dependencies
 cd backend
 npm install
@@ -105,54 +197,91 @@ npm install
 # Install middleware dependencies
 cd ../middleware
 npm install
+cd ..
 ```
 
-### 3. Setup environment variables
+#### 5. Start Docker services
 
 ```bash
-# Copy example environment file
-cp .env.example .env
+# Start PostgreSQL and Redis
+docker-compose up -d postgres redis
 
-# Edit .env with your configuration
-# Required variables:
-# - DATABASE_URL
-# - JWT_SECRET
-# - REDIS_URL (optional)
-# - STORAGE_BUCKET (for cloud storage)
+# Verify services are running
+docker-compose ps
+
+# Check logs if needed
+docker-compose logs -f postgres redis
 ```
 
-### 4. Start local development environment
+#### 6. Run database migrations
 
 ```bash
-# Start PostgreSQL and Redis using Docker Compose
-docker-compose up -d
-
-# Run database migrations
+# Run migrations (once migration scripts are created)
 npm run migrate
 
 # Seed database with initial data
 npm run seed
 ```
 
-### 5. Start development servers
+#### 7. Start development servers
 
 ```bash
-# Start backend server (port 3000)
+# Terminal 1: Start backend (port 3000)
 cd backend
 npm run dev
 
-# Start frontend server (port 5173)
+# Terminal 2: Start frontend (port 5173)
 cd frontend
 npm run dev
 ```
 
-### 6. Access the application
+#### 8. Access the application
 
-- Frontend: http://localhost:5173
-- Backend API: http://localhost:3000
-- API Documentation: http://localhost:3000/api-docs
+- **Frontend**: http://localhost:5173
+- **Backend API**: http://localhost:3000
+- **API Documentation**: http://localhost:3000/api-docs
+- **pgAdmin** (optional): http://localhost:5050
+  - Start with: `docker-compose --profile tools up -d pgadmin`
+  - Login: admin@aibake.local / admin
 
 ## Development
+
+### Docker Services Management
+
+```bash
+# Start all services
+docker-compose up -d
+
+# Start specific services
+docker-compose up -d postgres redis
+
+# Stop all services
+docker-compose down
+
+# Stop and remove volumes (WARNING: deletes data)
+docker-compose down -v
+
+# View logs
+docker-compose logs -f
+
+# View logs for specific service
+docker-compose logs -f postgres
+
+# Restart services
+docker-compose restart
+
+# Check service status
+docker-compose ps
+
+# Access PostgreSQL CLI
+docker-compose exec postgres psql -U aibake_user -d aibake_db
+
+# Access Redis CLI
+docker-compose exec redis redis-cli
+
+# Start optional tools (pgAdmin)
+docker-compose --profile tools up -d pgadmin
+```
 
 ### Running tests
 

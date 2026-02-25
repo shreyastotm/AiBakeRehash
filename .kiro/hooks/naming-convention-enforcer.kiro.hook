@@ -1,0 +1,19 @@
+{
+  "enabled": true,
+  "name": "Naming Convention Enforcer",
+  "description": "Validates file and function naming follows project conventions: kebab-case for files, camelCase for functions, PascalCase for React components and TypeScript interfaces",
+  "version": "1",
+  "when": {
+    "type": "fileCreated",
+    "patterns": [
+      "**/*.ts",
+      "**/*.tsx",
+      "**/*.js",
+      "**/*.jsx"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Validate the newly created file follows AiBake naming conventions:\n\nFile Naming:\n- Source files: kebab-case (e.g., unit-converter.ts, recipe-scaler.ts)\n- React components: PascalCase (e.g., RecipeCard.tsx, IngredientList.tsx)\n- Test files: match source with .test.ts or .spec.ts suffix\n- Database files: snake_case with numeric prefix (e.g., 01_schema_init.sql)\n\nCheck the file content for:\n- Functions: camelCase (e.g., convertToGrams, scaleRecipe)\n- Classes: PascalCase (e.g., RecipeService, AuthController)\n- Interfaces/Types: PascalCase with descriptive names (e.g., RecipeIngredient, UnitConversionRequest)\n- Constants: UPPER_SNAKE_CASE (e.g., MAX_SCALING_FACTOR, DEFAULT_CURRENCY)\n- Database tables: snake_case (e.g., recipe_ingredients, inventory_items)\n- Database columns: snake_case (e.g., quantity_grams, user_id)\n\nFlag any violations and suggest corrections following the project's established patterns."
+  }
+}

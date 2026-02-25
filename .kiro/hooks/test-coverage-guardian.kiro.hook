@@ -1,0 +1,18 @@
+{
+  "enabled": true,
+  "name": "Test Coverage Guardian",
+  "description": "Warns when new code is added without corresponding test files, especially for middleware business logic and API endpoints",
+  "version": "1",
+  "when": {
+    "type": "fileCreated",
+    "patterns": [
+      "backend/src/**/*.ts",
+      "middleware/src/**/*.ts",
+      "frontend/src/**/*.tsx"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Check if a corresponding test file exists for the newly created file. Analyze:\n1. For middleware files (unitConverter, recipeScaler, etc.): Check for both unit tests and property-based tests\n2. For backend services: Check for unit tests and integration tests\n3. For API controllers: Check for integration tests\n4. For React components: Check for component tests\n5. For utility functions: Check for unit tests\n\nIf tests are missing, provide guidance on:\n- Where to create the test file (tests/unit/, tests/integration/, tests/property/)\n- What test cases should be covered\n- Whether property-based tests are needed (for calculations)\n- Suggest test structure and key scenarios to test\n\nRemind the developer that the project requires comprehensive testing, especially for business logic."
+  }
+}

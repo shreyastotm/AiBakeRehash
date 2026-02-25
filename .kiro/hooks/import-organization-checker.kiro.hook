@@ -1,0 +1,19 @@
+{
+  "enabled": true,
+  "name": "Import Organization Checker",
+  "description": "Ensures imports are organized properly with external dependencies first, then internal modules, with proper grouping and no unused imports",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "**/*.ts",
+      "**/*.tsx",
+      "**/*.js",
+      "**/*.jsx"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Analyze the import statements in the modified file:\n\n1. Import Order (should follow this structure):\n   - External dependencies (node_modules) - alphabetically sorted\n   - Blank line\n   - Internal modules from parent directories (../)\n   - Internal modules from current directory (./)\n   - Blank line\n   - Type imports (if using TypeScript)\n   - Blank line\n   - CSS/style imports (if any)\n\n2. Import Style:\n   - Use named imports over default imports where possible\n   - Group related imports from same package\n   - Avoid wildcard imports (import * as) unless necessary\n\n3. Unused Imports:\n   - Flag any imports that aren't used in the file\n   - Suggest removing them\n\n4. Circular Dependencies:\n   - Check for potential circular dependency issues\n   - Suggest refactoring if detected\n\n5. Path Aliases:\n   - Suggest using path aliases (@/components, @/utils) if configured\n   - Maintain consistency with project structure\n\nIf imports are not properly organized, provide the corrected import block following the project's conventions."
+  }
+}
