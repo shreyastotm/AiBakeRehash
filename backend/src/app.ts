@@ -183,6 +183,22 @@ import inventoryRoutes from './routes/inventory.routes';
 import costingRoutes from './routes/costing.routes';
 import supplierRoutes from './routes/supplier.routes';
 import socialRoutes from './routes/social.routes';
+import importExportRoutes from './routes/importExport.routes';
+
+// Swagger UI setup
+import swaggerUi from 'swagger-ui-express';
+import fs from 'fs';
+import path from 'path';
+import YAML from 'yaml';
+
+let swaggerDocument: Record<string, unknown> | null = null;
+try {
+  const yamlPath = path.resolve(__dirname, '../../docs/api/openapi.yaml');
+  const yamlContent = fs.readFileSync(yamlPath, 'utf8');
+  swaggerDocument = YAML.parse(yamlContent);
+} catch {
+  // OpenAPI spec not found — Swagger UI will be unavailable
+}
 
 app.use('/api/v1', authRoutes);
 app.use('/api/v1', recipeRoutes);
@@ -192,6 +208,14 @@ app.use('/api/v1', inventoryRoutes);
 app.use('/api/v1', costingRoutes);
 app.use('/api/v1', supplierRoutes);
 app.use('/api/v1', socialRoutes);
+app.use('/api/v1', importExportRoutes);
+
+// Swagger UI documentation
+if (swaggerDocument) {
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument, {
+    customSiteTitle: 'AiBake API Documentation',
+  }));
+}
 
 // ---------------------------------------------------------------------------
 // 10. Catch-all 404 (must come after all route registrations)

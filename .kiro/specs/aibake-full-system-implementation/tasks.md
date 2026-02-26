@@ -1037,7 +1037,7 @@ aibake/
 
 ### 19. Backend API - Import/Export and Documentation
 
-- [~] 19.1 Implement recipe import/export
+- [x] 19.1 Implement recipe import/export
   - Create `GET /api/v1/recipes/:id/export` endpoint exporting recipe to JSON format
   - Create `POST /api/v1/recipes/import` endpoint importing recipe from JSON
   - Support bulk export of multiple recipes
@@ -1046,7 +1046,7 @@ aibake/
   - Preserve all recipe metadata during export/import
   - _Requirements: 49.1, 49.2, 49.3, 49.4, 49.5, 49.6_
 
-- [~] 19.2 Implement recipe URL import
+- [x] 19.2 Implement recipe URL import
   - Create `POST /api/v1/recipes/import-url` endpoint
   - Extract recipe data from URLs using schema.org Recipe markup
   - Parse common recipe website formats
@@ -1055,13 +1055,13 @@ aibake/
   - Handle parsing failures with manual entry fallback
   - _Requirements: 76.1, 76.2, 76.3, 76.4, 76.5, 76.6_
 
-- [~] 19.3 Implement recipe export formats
+- [x] 19.3 Implement recipe export formats
   - Create endpoints for PDF, Markdown, and schema.org JSON-LD export
   - Include all recipe metadata, ingredients, instructions
   - Format for printing (PDF) and documentation (Markdown)
   - _Requirements: 77.1, 77.2, 77.3, 77.4, 77.5_
 
-- [~] 19.4 Generate API documentation
+- [x] 19.4 Generate API documentation
   - Create OpenAPI/Swagger specification for all endpoints
   - Document all request parameters, headers, body schemas
   - Document all response schemas and status codes
@@ -1070,21 +1070,21 @@ aibake/
   - Setup Swagger UI for interactive documentation
   - _Requirements: 41.1, 41.2, 41.3, 41.4, 41.5, 41.6_
 
-- [~] 19.5 Write integration tests for import/export
+- [x] 19.5 Write integration tests for import/export
   - Test recipe export to JSON
   - Test recipe import from JSON
   - Test recipe URL import with schema.org markup
   - Test export to PDF, Markdown, JSON-LD
   - _Requirements: 49.1, 49.2, 76.1, 77.1, 77.2_
 
-- [~] 19.6 Write property tests for import/export
+- [x] 19.6 Write property tests for import/export
   - **Property 13: Recipe Export-Import Round-Trip**
   - **Validates: Requirements 49.5, 63.6**
   - Test that export(import(recipe)) produces equivalent recipe
   - Generate random recipes, export to JSON, import, and compare
   - Use fast-check with minimum 100 iterations
 
-- [~] 19.7 Checkpoint - Backend API complete
+- [x] 19.7 Checkpoint - Backend API complete
   - All API endpoints implemented and documented
   - All integration tests passing
   - All property-based tests passing

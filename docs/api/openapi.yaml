@@ -1,0 +1,1147 @@
+openapi: 3.0.3
+info:
+  title: AiBake API
+  description: Professional baking recipe management platform API for Indian home bakers
+  version: 1.0.0
+  contact:
+    name: AiBake Support
+servers:
+  - url: http://localhost:3000/api/v1
+    description: Local development
+tags:
+  - name: Auth
+    description: Authentication and user management
+  - name: Recipes
+    description: Recipe CRUD and management
+  - name: Ingredients
+    description: Ingredient search and management
+  - name: Journal
+    description: Baking journal entries
+  - name: Inventory
+    description: Inventory tracking
+  - name: Suppliers
+    description: Supplier management
+  - name: Costing
+    description: Recipe costing and pricing
+  - name: Social
+    description: Social media export
+  - name: Import/Export
+    description: Recipe import and export
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Error:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            requestId:
+              type: string
+    Recipe:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        source_type:
+          type: string
+          enum: [manual, image, whatsapp, url]
+        servings:
+          type: integer
+        yield_weight_grams:
+          type: number
+        status:
+          type: string
+          enum: [draft, active, archived]
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    RecipeIngredient:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        display_name:
+          type: string
+        quantity_original:
+          type: number
+        unit_original:
+          type: string
+        quantity_grams:
+          type: number
+        position:
+          type: integer
+    RecipeWithDetails:
+      allOf:
+        - $ref: '#/components/schemas/Recipe'
+        - type: object
+          properties:
+            ingredients:
+              type: array
+              items:
+                $ref: '#/components/schemas/RecipeIngredient'
+            sections:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  type:
+                    type: string
+                    enum: [pre_prep, prep, bake, rest, notes]
+                  title:
+                    type: string
+                    nullable: true
+                  position:
+                    type: integer
+                  steps:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        instruction:
+                          type: string
+                        duration_seconds:
+                          type: integer
+                          nullable: true
+                        temperature_celsius:
+                          type: number
+                          nullable: true
+                        position:
+                          type: integer
+    RecipeExport:
+      type: object
+      properties:
+        aibake_version:
+          type: string
+        exported_at:
+          type: string
+          format: date-time
+        recipe:
+          type: object
+          properties:
+            title:
+              type: string
+            description:
+              type: string
+              nullable: true
+            servings:
+              type: integer
+            yield_weight_grams:
+              type: number
+            ingredients:
+              type: array
+              items:
+                $ref: '#/components/schemas/RecipeIngredient'
+    InventoryItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        ingredient_master_id:
+          type: string
+          format: uuid
+        quantity_on_hand:
+          type: number
+        unit:
+          type: string
+        cost_per_unit:
+          type: number
+        currency:
+          type: string
+          default: INR
+        expiration_date:
+          type: string
+          format: date
+          nullable: true
+    Supplier:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        contact_person:
+          type: string
+          nullable: true
+        phone:
+          type: string
+          nullable: true
+        email:
+          type: string
+          nullable: true
+
+paths:
+  # ---- Auth ----
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  minLength: 8
+                display_name:
+                  type: string
+            example:
+              email: baker@example.com
+              password: StrongPass1
+              display_name: Home Baker
+      responses:
+        '201':
+          description: User registered
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      accessToken:
+                        type: string
+                      refreshToken:
+                        type: string
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+            example:
+              email: baker@example.com
+              password: StrongPass1
+      responses:
+        '200':
+          description: Login successful
+        '401':
+          description: Invalid credentials
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Logout
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Logged out
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Refresh access token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refreshToken]
+              properties:
+                refreshToken:
+                  type: string
+      responses:
+        '200':
+          description: New access token
+        '401':
+          description: Invalid refresh token
+
+
+  # ---- Recipes ----
+  /recipes:
+    get:
+      tags: [Recipes]
+      summary: List user recipes
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [draft, active, archived]
+        - name: sort_by
+          in: query
+          schema:
+            type: string
+            enum: [created_at, updated_at, title]
+        - name: sort_order
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+      responses:
+        '200':
+          description: Recipe list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      recipes:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Recipe'
+                      total:
+                        type: integer
+                      page:
+                        type: integer
+                      limit:
+                        type: integer
+        '401':
+          description: Unauthorized
+    post:
+      tags: [Recipes]
+      summary: Create a new recipe
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title, servings, yield_weight_grams]
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+                servings:
+                  type: integer
+                  minimum: 1
+                yield_weight_grams:
+                  type: number
+                  minimum: 0.01
+                ingredients:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      ingredient_master_id:
+                        type: string
+                        format: uuid
+                      display_name:
+                        type: string
+                      quantity_original:
+                        type: number
+                      unit_original:
+                        type: string
+                      quantity_grams:
+                        type: number
+                      position:
+                        type: integer
+                sections:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      type:
+                        type: string
+                      title:
+                        type: string
+                      position:
+                        type: integer
+                      steps:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            instruction:
+                              type: string
+                            duration_seconds:
+                              type: integer
+                            temperature_celsius:
+                              type: number
+                            position:
+                              type: integer
+      responses:
+        '201':
+          description: Recipe created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/RecipeWithDetails'
+        '400':
+          description: Validation error
+
+  /recipes/{id}:
+    get:
+      tags: [Recipes]
+      summary: Get recipe by ID
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Recipe details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/RecipeWithDetails'
+        '404':
+          description: Not found
+    patch:
+      tags: [Recipes]
+      summary: Update recipe
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+                servings:
+                  type: integer
+                yield_weight_grams:
+                  type: number
+                status:
+                  type: string
+                  enum: [draft, active, archived]
+      responses:
+        '200':
+          description: Recipe updated
+        '404':
+          description: Not found
+    delete:
+      tags: [Recipes]
+      summary: Delete recipe
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Recipe deleted
+        '404':
+          description: Not found
+
+  /recipes/{id}/scale:
+    post:
+      tags: [Recipes]
+      summary: Scale recipe
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                targetYieldGrams:
+                  type: number
+                targetServings:
+                  type: integer
+      responses:
+        '200':
+          description: Scaled recipe
+
+  /recipes/{id}/versions:
+    get:
+      tags: [Recipes]
+      summary: List recipe versions
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Version list
+    post:
+      tags: [Recipes]
+      summary: Create recipe version
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                change_summary:
+                  type: string
+      responses:
+        '201':
+          description: Version created
+
+
+  # ---- Import/Export ----
+  /recipes/{id}/export:
+    get:
+      tags: [Import/Export]
+      summary: Export recipe to JSON
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Recipe export data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/RecipeExport'
+              example:
+                success: true
+                data:
+                  aibake_version: "1.0.0"
+                  exported_at: "2024-01-15T10:30:00Z"
+                  recipe:
+                    title: "Chocolate Chip Cookies"
+                    servings: 24
+                    yield_weight_grams: 600
+        '404':
+          description: Recipe not found
+
+  /recipes/export/bulk:
+    post:
+      tags: [Import/Export]
+      summary: Bulk export recipes
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [recipe_ids]
+              properties:
+                recipe_ids:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+                  minItems: 1
+                  maxItems: 50
+            example:
+              recipe_ids: ["uuid-1", "uuid-2"]
+      responses:
+        '200':
+          description: Bulk export data
+
+  /recipes/import:
+    post:
+      tags: [Import/Export]
+      summary: Import recipe from JSON
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [recipe]
+              properties:
+                recipe:
+                  type: object
+                  required: [title, servings, yield_weight_grams]
+                  properties:
+                    title:
+                      type: string
+                    description:
+                      type: string
+                    servings:
+                      type: integer
+                      minimum: 1
+                    yield_weight_grams:
+                      type: number
+                    ingredients:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          display_name:
+                            type: string
+                          quantity_original:
+                            type: number
+                          unit_original:
+                            type: string
+                          quantity_grams:
+                            type: number
+                          position:
+                            type: integer
+                    sections:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          type:
+                            type: string
+                          title:
+                            type: string
+                          position:
+                            type: integer
+                          steps:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                instruction:
+                                  type: string
+                                position:
+                                  type: integer
+      responses:
+        '201':
+          description: Recipe imported
+        '400':
+          description: Validation error
+
+  /recipes/import-url:
+    post:
+      tags: [Import/Export]
+      summary: Import recipe from URL (schema.org)
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [url, html_content]
+              properties:
+                url:
+                  type: string
+                  format: uri
+                html_content:
+                  type: string
+      responses:
+        '200':
+          description: Parsed recipe data
+        '400':
+          description: No recipe markup found
+
+  /recipes/{id}/export/markdown:
+    get:
+      tags: [Import/Export]
+      summary: Export recipe to Markdown
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Markdown content
+          content:
+            text/markdown:
+              schema:
+                type: string
+
+  /recipes/{id}/export/pdf:
+    get:
+      tags: [Import/Export]
+      summary: Export recipe to PDF (structured text)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Structured text for PDF
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  /recipes/{id}/export/jsonld:
+    get:
+      tags: [Import/Export]
+      summary: Export recipe to schema.org JSON-LD
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: JSON-LD data
+          content:
+            application/json:
+              schema:
+                type: object
+
+  # ---- Ingredients ----
+  /ingredients:
+    get:
+      tags: [Ingredients]
+      summary: List ingredients
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Ingredient list
+    post:
+      tags: [Ingredients]
+      summary: Create custom ingredient
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, category]
+              properties:
+                name:
+                  type: string
+                category:
+                  type: string
+                default_density_g_per_ml:
+                  type: number
+      responses:
+        '201':
+          description: Ingredient created
+
+  /ingredients/search:
+    get:
+      tags: [Ingredients]
+      summary: Fuzzy search ingredients
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Search results
+
+  # ---- Journal ----
+  /recipes/{id}/journal:
+    get:
+      tags: [Journal]
+      summary: List journal entries for recipe
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Journal entries
+    post:
+      tags: [Journal]
+      summary: Create journal entry
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [bake_date]
+              properties:
+                bake_date:
+                  type: string
+                  format: date
+                notes:
+                  type: string
+                rating:
+                  type: integer
+                  minimum: 1
+                  maximum: 5
+                outcome_weight_grams:
+                  type: number
+      responses:
+        '201':
+          description: Entry created
+
+  # ---- Inventory ----
+  /inventory:
+    get:
+      tags: [Inventory]
+      summary: List inventory items
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Inventory list
+    post:
+      tags: [Inventory]
+      summary: Add inventory item
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ingredient_master_id, quantity_on_hand, unit]
+              properties:
+                ingredient_master_id:
+                  type: string
+                  format: uuid
+                quantity_on_hand:
+                  type: number
+                unit:
+                  type: string
+                cost_per_unit:
+                  type: number
+                currency:
+                  type: string
+                  default: INR
+      responses:
+        '201':
+          description: Item added
+
+  /inventory/alerts:
+    get:
+      tags: [Inventory]
+      summary: Get low stock alerts
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Alert list
+
+  /inventory/deduct:
+    post:
+      tags: [Inventory]
+      summary: Deduct inventory for bake
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [recipe_id]
+              properties:
+                recipe_id:
+                  type: string
+                  format: uuid
+                scaling_factor:
+                  type: number
+                  default: 1
+      responses:
+        '200':
+          description: Deduction result
+
+  # ---- Suppliers ----
+  /suppliers:
+    get:
+      tags: [Suppliers]
+      summary: List suppliers
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Supplier list
+    post:
+      tags: [Suppliers]
+      summary: Create supplier
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+                contact_person:
+                  type: string
+                phone:
+                  type: string
+                email:
+                  type: string
+                  format: email
+      responses:
+        '201':
+          description: Supplier created
+
+  # ---- Costing ----
+  /recipes/{id}/cost/calculate:
+    post:
+      tags: [Costing]
+      summary: Calculate recipe cost
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                overhead_cost:
+                  type: number
+                packaging_cost:
+                  type: number
+                labor_cost:
+                  type: number
+                currency:
+                  type: string
+                  default: INR
+      responses:
+        '200':
+          description: Cost calculation result
+
+  /recipes/{id}/pricing:
+    post:
+      tags: [Costing]
+      summary: Calculate pricing with profit margin
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                target_profit_margin:
+                  type: number
+      responses:
+        '200':
+          description: Pricing result
+
+  # ---- Social ----
+  /social/recipe-card:
+    post:
+      tags: [Social]
+      summary: Generate recipe card for social media
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [recipe_id, format, language, include_branding]
+              properties:
+                recipe_id:
+                  type: string
+                  format: uuid
+                format:
+                  type: string
+                  enum: [instagram_story, instagram_post, whatsapp]
+                language:
+                  type: string
+                  enum: [en, hi, bilingual]
+                include_branding:
+                  type: boolean
+      responses:
+        '201':
+          description: Card generated
+
+  /social/whatsapp-format:
+    post:
+      tags: [Social]
+      summary: Format recipe for WhatsApp
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [recipe_id, content_type, language, include_image]
+              properties:
+                recipe_id:
+                  type: string
+                  format: uuid
+                content_type:
+                  type: string
+                  enum: [recipe, shopping_list, inventory_reminder]
+                language:
+                  type: string
+                  enum: [en, hi, bilingual]
+                include_image:
+                  type: boolean
+      responses:
+        '200':
+          description: Formatted text
+
+  /social/templates:
+    get:
+      tags: [Social]
+      summary: List social media templates
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Template list

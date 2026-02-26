@@ -29,7 +29,9 @@
     "pg": "^8.13.1",
     "pg-pool": "^3.7.1",
     "pino": "^9.6.0",
-    "uuid": "^11.0.5"
+    "swagger-ui-express": "^5.0.1",
+    "uuid": "^11.0.5",
+    "yaml": "^2.8.2"
   },
   "devDependencies": {
     "@types/bcrypt": "^5.0.2",
@@ -41,6 +43,7 @@
     "@types/node": "^22.10.5",
     "@types/pg": "^8.11.10",
     "@types/supertest": "^7.2.0",
+    "@types/swagger-ui-express": "^4.1.8",
     "@types/uuid": "^10.0.0",
     "@typescript-eslint/eslint-plugin": "^8.19.1",
     "@typescript-eslint/parser": "^8.19.1",

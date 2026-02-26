@@ -227,9 +227,15 @@ function handleQuery(text: string, params?: unknown[]): { rows: unknown[]; rowCo
 // Mock setup
 // ---------------------------------------------------------------------------
 
-const mockQueryFn = vi.fn().mockImplementation(handleQuery);
-const mockClientQuery = vi.fn().mockImplementation(handleQuery);
-const mockClient = { query: mockClientQuery, release: vi.fn() };
+const { mockQueryFn, mockClientQuery, mockClient } = vi.hoisted(() => {
+  const mockQueryFn = vi.fn();
+  const mockClientQuery = vi.fn();
+  const mockClient = { query: mockClientQuery, release: vi.fn() };
+  return { mockQueryFn, mockClientQuery, mockClient };
+});
+
+mockQueryFn.mockImplementation(handleQuery);
+mockClientQuery.mockImplementation(handleQuery);
 
 vi.mock('../../src/config/database', () => ({
   db: {
