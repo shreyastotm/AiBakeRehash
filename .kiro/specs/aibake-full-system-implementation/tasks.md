@@ -673,7 +673,7 @@ aibake/
 
 ### 11. Backend API - Authentication Service
 
-- [ ] 11.1 Implement user registration endpoint
+- [x] 11.1 Implement user registration endpoint
   - Create `POST /api/v1/auth/register` endpoint
   - Validate email format, password strength (min 8 chars, mixed case, numbers)
   - Hash password with bcrypt (12 rounds)
@@ -681,7 +681,7 @@ aibake/
   - Return user object (without password hash)
   - _Requirements: 22.1, 22.6, 44.5_
 
-- [ ] 11.2 Implement user login endpoint
+- [x] 11.2 Implement user login endpoint
   - Create `POST /api/v1/auth/login` endpoint
   - Validate email and password
   - Verify password with bcrypt
@@ -690,19 +690,19 @@ aibake/
   - Implement rate limiting (5 failed attempts per 15 minutes)
   - _Requirements: 22.2, 22.7, 44.6_
 
-- [ ] 11.3 Implement logout and token refresh endpoints
+- [x] 11.3 Implement logout and token refresh endpoints
   - Create `POST /api/v1/auth/logout` endpoint clearing session
   - Create `POST /api/v1/auth/refresh` endpoint generating new token from refresh token
   - Implement token blacklist for logout
   - _Requirements: 22.3_
 
-- [ ] 11.4 Implement user profile endpoints
+- [x] 11.4 Implement user profile endpoints
   - Create `GET /api/v1/users/me` endpoint returning current user profile
   - Create `PATCH /api/v1/users/me` endpoint updating user preferences (unit_preferences, default_currency, language)
   - Validate preference updates
   - _Requirements: 22.4, 22.5, 50.1, 50.2, 50.3, 50.4_
 
-- [ ] 11.5 Write integration tests for authentication
+- [x] 11.5 Write integration tests for authentication
   - Test user registration with valid and invalid data
   - Test login with correct and incorrect credentials
   - Test JWT token validation
@@ -713,7 +713,7 @@ aibake/
 
 ### 12. Backend API - Recipe Service
 
-- [ ] 12.1 Implement recipe CRUD endpoints
+- [x] 12.1 Implement recipe CRUD endpoints
   - Create `GET /api/v1/recipes` endpoint listing user recipes with pagination, filtering (status, source_type), and sorting
   - Create `GET /api/v1/recipes/:id` endpoint retrieving single recipe with all ingredients, sections, steps
   - Create `POST /api/v1/recipes` endpoint creating recipe with ingredients, sections, steps in transaction
@@ -722,7 +722,7 @@ aibake/
   - Validate user owns recipe for all operations
   - _Requirements: 23.1, 23.2, 23.3, 23.4, 23.5, 23.8_
 
-- [ ] 12.2 Implement recipe scaling endpoint
+- [x] 12.2 Implement recipe scaling endpoint
   - Create `POST /api/v1/recipes/:id/scale` endpoint
   - Accept targetYieldGrams or targetServings parameter
   - Call recipe scaler middleware
@@ -730,20 +730,20 @@ aibake/
   - Return scaled recipe with warnings
   - _Requirements: 23.7, 20.1, 20.5_
 
-- [ ] 12.3 Implement recipe versioning endpoints
+- [x] 12.3 Implement recipe versioning endpoints
   - Create `GET /api/v1/recipes/:id/versions` endpoint listing all versions
   - Create `POST /api/v1/recipes/:id/versions` endpoint creating new version with snapshot
   - Implement version comparison endpoint showing differences
   - _Requirements: 8.5, 56.1, 56.2_
 
-- [ ] 12.4 Implement recipe search and filtering
+- [x] 12.4 Implement recipe search and filtering
   - Create `GET /api/v1/recipes/search` endpoint with full-text search on title and description
   - Support filtering by status, source_type, ingredient presence
   - Support sorting by created_at, updated_at, title, rating
   - Support combining multiple filters
   - _Requirements: 51.1, 51.2, 51.3, 51.4, 51.5, 51.6_
 
-- [ ] 12.5 Write integration tests for recipe service
+- [x] 12.5 Write integration tests for recipe service
   - Test recipe creation with ingredients, sections, steps
   - Test recipe retrieval with all related data
   - Test recipe update and version creation
@@ -752,7 +752,7 @@ aibake/
   - Test recipe search and filtering
   - _Requirements: 23.1, 23.2, 23.3, 23.4, 23.5, 23.7_
 
-- [ ] 12.6 Write property tests for recipe operations
+- [x] 12.6 Write property tests for recipe operations
   - **Property 11: Recipe Versioning on Modification**
   - **Validates: Requirements 8.5**
   - Test that every recipe modification creates new version with incremented version_number
@@ -764,7 +764,7 @@ aibake/
 
 ### 13. Backend API - Ingredient Service
 
-- [ ] 13.1 Implement ingredient endpoints
+- [~] 13.1 Implement ingredient endpoints
   - Create `GET /api/v1/ingredients` endpoint listing all ingredients with pagination
   - Create `GET /api/v1/ingredients/:id` endpoint retrieving ingredient details with nutrition and density
   - Create `POST /api/v1/ingredients` endpoint for creating custom ingredients
@@ -773,7 +773,7 @@ aibake/
   - Return results with similarity scores and alias indicators
   - _Requirements: 24.1, 24.2, 24.3, 24.4, 24.5_
 
-- [ ] 13.2 Write integration tests for ingredient service
+- [~] 13.2 Write integration tests for ingredient service
   - Test ingredient listing with pagination
   - Test ingredient retrieval with details
   - Test custom ingredient creation
@@ -783,7 +783,7 @@ aibake/
 
 ### 14. Backend API - Journal Service
 
-- [ ] 14.1 Implement journal CRUD endpoints
+- [~] 14.1 Implement journal CRUD endpoints
   - Create `GET /api/v1/recipes/:id/journal` endpoint listing journal entries for recipe
   - Create `POST /api/v1/recipes/:id/journal` endpoint creating journal entry with optional inventory deduction
   - Create `PATCH /api/v1/journal/:id` endpoint updating journal entry
@@ -791,7 +791,7 @@ aibake/
   - Validate user owns recipe and journal entry
   - _Requirements: 25.1, 25.2, 25.3, 25.4_
 
-- [ ] 14.2 Implement journal image upload
+- [~] 14.2 Implement journal image upload
   - Create `POST /api/v1/journal/:id/images` endpoint accepting image uploads
   - Validate image format (JPEG, PNG, WebP) and size (max 10MB)
   - Resize images to multiple sizes (thumbnail, medium, full)
@@ -799,7 +799,7 @@ aibake/
   - Return image URLs
   - _Requirements: 25.5, 25.6, 52.1, 52.2, 52.3, 52.4, 52.5, 52.6, 52.7_
 
-- [ ] 14.3 Implement audio note upload and transcription
+- [~] 14.3 Implement audio note upload and transcription
   - Create `POST /api/v1/journal/:id/audio` endpoint accepting audio uploads
   - Validate audio format (MP3, WAV, M4A) and size
   - Upload to cloud storage
@@ -808,7 +808,7 @@ aibake/
   - Implement webhook for transcription completion
   - _Requirements: 53.1, 53.2, 53.3, 53.4, 53.5, 53.6, 53.7_
 
-- [ ] 14.4 Write integration tests for journal service
+- [~] 14.4 Write integration tests for journal service
   - Test journal entry creation with and without inventory deduction
   - Test journal entry updates
   - Test journal entry deletion
@@ -816,7 +816,7 @@ aibake/
   - Test audio upload and transcription queueing
   - _Requirements: 25.1, 25.2, 25.3, 25.4, 25.5_
 
-- [ ] 14.5 Write property tests for journal operations
+- [~] 14.5 Write property tests for journal operations
   - **Property 10: Baking Loss Calculation**
   - **Validates: Requirements 16.2**
   - Test that baking_loss_grams = pre_bake_weight - outcome_weight and baking_loss_percentage = (loss / pre_bake) × 100
@@ -828,7 +828,7 @@ aibake/
 
 ### 15. Backend API - Inventory Service
 
-- [ ] 15.1 Implement inventory CRUD endpoints
+- [~] 15.1 Implement inventory CRUD endpoints
   - Create `GET /api/v1/inventory` endpoint listing all inventory items with current stock levels
   - Create `GET /api/v1/inventory/:id` endpoint retrieving inventory item details
   - Create `POST /api/v1/inventory` endpoint adding new inventory item
@@ -836,21 +836,21 @@ aibake/
   - Create `DELETE /api/v1/inventory/:id` endpoint deleting inventory item
   - _Requirements: 101.2, 101.3, 101.4_
 
-- [ ] 15.2 Implement inventory purchase tracking
+- [~] 15.2 Implement inventory purchase tracking
   - Create `POST /api/v1/inventory/purchases` endpoint logging ingredient purchase
   - Automatically update inventory quantity_on_hand when purchase logged
   - Track purchase history with supplier, invoice, cost
   - Create `GET /api/v1/inventory/purchases` endpoint listing purchase history
   - _Requirements: 113.1, 113.2, 113.3_
 
-- [ ] 15.3 Implement inventory alerts
+- [~] 15.3 Implement inventory alerts
   - Create `GET /api/v1/inventory/alerts` endpoint listing low stock and expiring items
   - Check for items below min_stock_level
   - Check for items expiring within 7 days
   - Return alerts with ingredient name, current quantity, min level, expiration date
   - _Requirements: 102.1, 102.2, 102.3, 102.4, 102.5, 102.6_
 
-- [ ] 15.4 Implement inventory deduction endpoint
+- [~] 15.4 Implement inventory deduction endpoint
   - Create `POST /api/v1/inventory/deduct` endpoint for manual or automatic deduction
   - Accept recipe_id and scaling_factor
   - Call inventory manager middleware to calculate deductions
@@ -859,14 +859,14 @@ aibake/
   - Create low stock alerts if thresholds crossed
   - _Requirements: 103.1, 103.2, 103.3, 103.4, 103.5, 103.6_
 
-- [ ] 15.5 Implement inventory reports
+- [~] 15.5 Implement inventory reports
   - Create `GET /api/v1/inventory/reports/usage` endpoint showing consumption over time
   - Create `GET /api/v1/inventory/reports/value` endpoint calculating total inventory value
   - Group by ingredient category
   - Support date range filtering
   - _Requirements: 101.6, 101.7, 103.7_
 
-- [ ] 15.6 Write integration tests for inventory service
+- [~] 15.6 Write integration tests for inventory service
   - Test inventory item creation and updates
   - Test purchase logging and quantity updates
   - Test low stock alert generation
@@ -874,7 +874,7 @@ aibake/
   - Test inventory deduction with transaction rollback on error
   - _Requirements: 101.2, 101.3, 113.2, 102.3, 103.1_
 
-- [ ] 15.7 Write property tests for inventory operations
+- [~] 15.7 Write property tests for inventory operations
   - **Property 18: Inventory Transaction Completeness**
   - **Validates: Requirements 101.7**
   - Test that current_quantity = sum(purchases) - sum(deductions)
@@ -889,7 +889,7 @@ aibake/
 
 ### 16. Backend API - Costing and Pricing Service
 
-- [ ] 16.1 Implement recipe cost calculation endpoint
+- [~] 16.1 Implement recipe cost calculation endpoint
   - Create `POST /api/v1/recipes/:id/cost/calculate` endpoint
   - Accept overhead_cost, packaging_cost, labor_cost parameters
   - Call cost calculator middleware
@@ -898,14 +898,14 @@ aibake/
   - Store cost in recipe_costs table with timestamp
   - _Requirements: 104.1, 104.2, 104.3, 104.4, 104.5, 104.6, 104.7_
 
-- [ ] 16.2 Implement cost history and tracking
+- [~] 16.2 Implement cost history and tracking
   - Create `GET /api/v1/recipes/:id/cost` endpoint retrieving current cost
   - Create `GET /api/v1/recipes/:id/cost/history` endpoint listing historical costs
   - Display cost trends over time
   - Highlight significant cost changes (>10%)
   - _Requirements: 118.1, 118.2, 118.3, 118.4, 118.5_
 
-- [ ] 16.3 Implement pricing calculator endpoint
+- [~] 16.3 Implement pricing calculator endpoint
   - Create `POST /api/v1/recipes/:id/pricing` endpoint
   - Accept target_profit_margin_percent parameter
   - Call pricing calculator middleware
@@ -913,7 +913,7 @@ aibake/
   - Support custom selling price input with actual margin calculation
   - _Requirements: 105.1, 105.2, 105.3, 105.4_
 
-- [ ] 16.4 Implement profit margin analysis
+- [~] 16.4 Implement profit margin analysis
   - Create `GET /api/v1/costing/reports/profit-margins` endpoint
   - Calculate profit margin for each recipe
   - Rank recipes by profitability
@@ -921,7 +921,7 @@ aibake/
   - Calculate break-even quantities
   - _Requirements: 119.1, 119.2, 119.3, 119.4_
 
-- [ ] 16.5 Implement cost trend reports
+- [~] 16.5 Implement cost trend reports
   - Create `GET /api/v1/costing/reports/cost-trends` endpoint
   - Show cost changes over time with charts
   - Compare costs across different time periods
@@ -929,7 +929,7 @@ aibake/
   - Suggest pricing adjustments when costs change significantly
   - _Requirements: 118.1, 118.2, 118.3, 118.4, 118.5, 118.6_
 
-- [ ] 16.6 Write integration tests for costing service
+- [~] 16.6 Write integration tests for costing service
   - Test cost calculation with all components
   - Test cost calculation with missing inventory data (should error)
   - Test cost history tracking
@@ -937,7 +937,7 @@ aibake/
   - Test profit margin analysis
   - _Requirements: 104.1, 105.2, 119.1_
 
-- [ ] 16.7 Write property tests for costing operations
+- [~] 16.7 Write property tests for costing operations
   - **Property 23: Cost Recalculation on Price Change**
   - **Validates: Requirements 104.8**
   - Test that recipe cost updates when ingredient prices change
@@ -952,7 +952,7 @@ aibake/
 
 ### 17. Backend API - Supplier and Packaging Management
 
-- [ ] 17.1 Implement supplier CRUD endpoints
+- [~] 17.1 Implement supplier CRUD endpoints
   - Create `GET /api/v1/suppliers` endpoint listing all suppliers
   - Create `GET /api/v1/suppliers/:id` endpoint retrieving supplier details
   - Create `POST /api/v1/suppliers` endpoint adding new supplier
@@ -961,7 +961,7 @@ aibake/
   - Create `GET /api/v1/suppliers/:id/ingredients` endpoint listing ingredients from supplier
   - _Requirements: 114.1, 114.2, 114.3, 114.4, 114.5_
 
-- [ ] 17.2 Implement packaging management endpoints
+- [~] 17.2 Implement packaging management endpoints
   - Create `GET /api/v1/packaging` endpoint listing packaging items
   - Create `POST /api/v1/packaging` endpoint adding packaging item with cost
   - Create `PATCH /api/v1/packaging/:id` endpoint updating packaging item
@@ -969,21 +969,21 @@ aibake/
   - Associate packaging items with recipes
   - _Requirements: 115.1, 115.2, 115.3, 115.7_
 
-- [ ] 17.3 Implement delivery zone management
+- [~] 17.3 Implement delivery zone management
   - Create `GET /api/v1/delivery-zones` endpoint listing delivery zones
   - Create `POST /api/v1/delivery-zones` endpoint adding delivery zone with pricing
   - Create `PATCH /api/v1/delivery-zones/:id` endpoint updating zone pricing
   - Create `DELETE /api/v1/delivery-zones/:id` endpoint deleting zone
   - _Requirements: 116.1, 116.2, 116.3_
 
-- [ ] 17.4 Write integration tests for supplier and packaging
+- [~] 17.4 Write integration tests for supplier and packaging
   - Test supplier CRUD operations
   - Test packaging item management
   - Test delivery zone management
   - Test supplier-ingredient associations
   - _Requirements: 114.1, 114.2, 115.1, 116.1_
 
-- [ ] 17.5 Write property tests for delivery and bulk pricing
+- [~] 17.5 Write property tests for delivery and bulk pricing
   - **Property 26: Delivery Charge Calculation**
   - **Validates: Requirements 116.4**
   - Test delivery charge calculation with base charge, per-km charge, and free delivery threshold
@@ -995,7 +995,7 @@ aibake/
 
 ### 18. Backend API - Social Media Service
 
-- [ ] 18.1 Implement recipe card generation
+- [~] 18.1 Implement recipe card generation
   - Create `POST /api/v1/social/recipe-card` endpoint
   - Accept format (instagram_story, instagram_post, whatsapp), language (en, hi, bilingual), color scheme
   - Use image generation service (node-canvas or Puppeteer) to render recipe card
@@ -1005,14 +1005,14 @@ aibake/
   - Upload to cloud storage and return URL
   - _Requirements: 108.1, 108.2, 108.3, 108.4, 108.5, 108.6, 108.7, 108.8_
 
-- [ ] 18.2 Implement journal entry sharing
+- [~] 18.2 Implement journal entry sharing
   - Create `POST /api/v1/social/journal-card` endpoint
   - Generate shareable card with journal photos, notes, rating
   - Support hiding private notes when sharing publicly
   - Generate shareable link with preview metadata
   - _Requirements: 109.1, 109.2, 109.3, 109.7_
 
-- [ ] 18.3 Implement WhatsApp formatting
+- [~] 18.3 Implement WhatsApp formatting
   - Create `POST /api/v1/social/whatsapp-format` endpoint
   - Format recipe text for WhatsApp with proper line breaks, emojis, and structure
   - Generate shareable link with preview metadata (Open Graph tags)
@@ -1020,13 +1020,13 @@ aibake/
   - Support shopping list and inventory reminder formatting
   - _Requirements: 110.1, 110.2, 110.3, 110.4, 110.5_
 
-- [ ] 18.4 Implement social media templates
+- [~] 18.4 Implement social media templates
   - Create `GET /api/v1/social/templates` endpoint listing available templates
   - Support custom templates with user-defined colors, fonts, layouts
   - Store template preferences per user
   - _Requirements: 108.5_
 
-- [ ] 18.5 Write integration tests for social media service
+- [~] 18.5 Write integration tests for social media service
   - Test recipe card generation for all formats
   - Test bilingual card generation
   - Test WhatsApp message formatting
@@ -1037,7 +1037,7 @@ aibake/
 
 ### 19. Backend API - Import/Export and Documentation
 
-- [ ] 19.1 Implement recipe import/export
+- [~] 19.1 Implement recipe import/export
   - Create `GET /api/v1/recipes/:id/export` endpoint exporting recipe to JSON format
   - Create `POST /api/v1/recipes/import` endpoint importing recipe from JSON
   - Support bulk export of multiple recipes
@@ -1046,7 +1046,7 @@ aibake/
   - Preserve all recipe metadata during export/import
   - _Requirements: 49.1, 49.2, 49.3, 49.4, 49.5, 49.6_
 
-- [ ] 19.2 Implement recipe URL import
+- [~] 19.2 Implement recipe URL import
   - Create `POST /api/v1/recipes/import-url` endpoint
   - Extract recipe data from URLs using schema.org Recipe markup
   - Parse common recipe website formats
@@ -1055,13 +1055,13 @@ aibake/
   - Handle parsing failures with manual entry fallback
   - _Requirements: 76.1, 76.2, 76.3, 76.4, 76.5, 76.6_
 
-- [ ] 19.3 Implement recipe export formats
+- [~] 19.3 Implement recipe export formats
   - Create endpoints for PDF, Markdown, and schema.org JSON-LD export
   - Include all recipe metadata, ingredients, instructions
   - Format for printing (PDF) and documentation (Markdown)
   - _Requirements: 77.1, 77.2, 77.3, 77.4, 77.5_
 
-- [ ] 19.4 Generate API documentation
+- [~] 19.4 Generate API documentation
   - Create OpenAPI/Swagger specification for all endpoints
   - Document all request parameters, headers, body schemas
   - Document all response schemas and status codes
@@ -1070,21 +1070,21 @@ aibake/
   - Setup Swagger UI for interactive documentation
   - _Requirements: 41.1, 41.2, 41.3, 41.4, 41.5, 41.6_
 
-- [ ] 19.5 Write integration tests for import/export
+- [~] 19.5 Write integration tests for import/export
   - Test recipe export to JSON
   - Test recipe import from JSON
   - Test recipe URL import with schema.org markup
   - Test export to PDF, Markdown, JSON-LD
   - _Requirements: 49.1, 49.2, 76.1, 77.1, 77.2_
 
-- [ ] 19.6 Write property tests for import/export
+- [~] 19.6 Write property tests for import/export
   - **Property 13: Recipe Export-Import Round-Trip**
   - **Validates: Requirements 49.5, 63.6**
   - Test that export(import(recipe)) produces equivalent recipe
   - Generate random recipes, export to JSON, import, and compare
   - Use fast-check with minimum 100 iterations
 
-- [ ] 19.7 Checkpoint - Backend API complete
+- [~] 19.7 Checkpoint - Backend API complete
   - All API endpoints implemented and documented
   - All integration tests passing
   - All property-based tests passing
