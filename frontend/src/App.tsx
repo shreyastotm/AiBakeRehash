@@ -6,6 +6,7 @@ import { queryClient } from './services/queryClient'
 import { routes } from './router/routes'
 import { useCrossTabSync } from './hooks/useCrossTabSync'
 import { ErrorBoundary } from './components/ErrorBoundary'
+import { ToastProvider } from './components/common'
 
 function AppRoutes() {
   return useRoutes(routes)
@@ -27,7 +28,9 @@ function App() {
     <ErrorBoundary>
       <I18nextProvider i18n={i18n}>
         <QueryClientProvider client={queryClient}>
-          <AppContent />
+          <ToastProvider>
+            <AppContent />
+          </ToastProvider>
         </QueryClientProvider>
       </I18nextProvider>
     </ErrorBoundary>

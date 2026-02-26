@@ -1144,7 +1144,7 @@ aibake/
 
 ### 21. Frontend - Component Library
 
-- [ ] 21.1 Create base UI components
+- [x] 21.1 Create base UI components
   - Create Button component with variants (primary, secondary, danger) and sizes
   - Create Input component with validation states and error messages
   - Create Select component with search/filter capability
@@ -1156,7 +1156,7 @@ aibake/
   - All components must have minimum 44x44px touch targets for mobile
   - _Requirements: 93.1, 93.4, 93.5, 112.1_
 
-- [ ] 21.2 Create form components
+- [x] 21.2 Create form components
   - Create Form component with validation using react-hook-form
   - Create FormField component wrapping inputs with labels and errors
   - Create SearchInput component with debouncing (300ms)
@@ -1165,7 +1165,7 @@ aibake/
   - Create CurrencyInput component with INR formatting (₹1,234.56)
   - _Requirements: 27.6, 43.6, 106.2, 120.2_
 
-- [ ] 21.3 Create recipe-specific components
+- [x] 21.3 Create recipe-specific components
   - Create IngredientList component displaying ingredients with quantities and units
   - Create StepList component displaying numbered instructions
   - Create NutritionDisplay component showing nutrition facts table
@@ -1173,7 +1173,7 @@ aibake/
   - Create ScalingControl component with target yield/servings input
   - _Requirements: 29.7, 30.4, 34.1, 93.2_
 
-- [ ] 21.4 Create loading and feedback components
+- [x] 21.4 Create loading and feedback components
   - Create LoadingSpinner component for async operations
   - Create Skeleton component for content loading states
   - Create Toast/Notification component for success/error messages
@@ -1181,7 +1181,7 @@ aibake/
   - Create EmptyState component for empty lists
   - _Requirements: 27.7_
 
-- [ ] 21.5 Implement accessibility features
+- [x] 21.5 Implement accessibility features
   - Add semantic HTML to all components
   - Add ARIA labels for complex interactions
   - Implement keyboard navigation (Tab, Enter, Escape)
@@ -1190,7 +1190,7 @@ aibake/
   - Test with screen reader
   - _Requirements: 61.1, 61.2, 61.3, 61.4, 61.5, 93.6_
 
-- [ ] 21.6 Document component library
+- [x] 21.6 Document component library
   - Create Storybook setup for component documentation
   - Add stories for all components with usage examples
   - Document props and variants

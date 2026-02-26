@@ -98,6 +98,29 @@ VITE_API_URL=http://localhost:3000/api/v1
 VITE_APP_NAME=AiBake
 ```
 
+## UI Components
+
+### Button
+
+`src/components/common/Button.tsx`
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `variant` | `'primary' \| 'secondary' \| 'danger' \| 'outline' \| 'ghost'` | `'primary'` | Visual style |
+| `size` | `'sm' \| 'md' \| 'lg'` | `'md'` | Button size (all enforce 44px min touch target) |
+| `loading` | `boolean` | `false` | Shows spinner and disables the button |
+| `disabled` | `boolean` | — | Disables the button |
+| `className` | `string` | `''` | Additional Tailwind classes |
+
+```tsx
+<Button variant="primary" size="md">Save Recipe</Button>
+<Button variant="danger" onClick={handleDelete}>Delete</Button>
+<Button loading={isSaving}>Saving...</Button>
+<Button variant="outline" disabled>Unavailable</Button>
+```
+
+All buttons include focus ring styles for keyboard navigation.
+
 ## Technologies
 
 - **React 18** - UI library
