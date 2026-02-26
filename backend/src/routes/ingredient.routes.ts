@@ -1,4 +1,4 @@
-﻿import { Router } from 'express';
+import { Router } from 'express';
 import { body, param, query } from 'express-validator';
 import { validate } from '../middleware/validate';
 import { requireAuth } from '../middleware/auth';
