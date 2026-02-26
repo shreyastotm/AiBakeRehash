@@ -181,6 +181,7 @@ import ingredientRoutes from './routes/ingredient.routes';
 import journalRoutes from './routes/journal.routes';
 import inventoryRoutes from './routes/inventory.routes';
 import costingRoutes from './routes/costing.routes';
+import supplierRoutes from './routes/supplier.routes';
 
 app.use('/api/v1', authRoutes);
 app.use('/api/v1', recipeRoutes);
@@ -188,6 +189,7 @@ app.use('/api/v1', ingredientRoutes);
 app.use('/api/v1', journalRoutes);
 app.use('/api/v1', inventoryRoutes);
 app.use('/api/v1', costingRoutes);
+app.use('/api/v1', supplierRoutes);
 
 // ---------------------------------------------------------------------------
 // 10. Catch-all 404 (must come after all route registrations)

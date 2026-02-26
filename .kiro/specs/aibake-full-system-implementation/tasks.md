@@ -952,7 +952,7 @@ aibake/
 
 ### 17. Backend API - Supplier and Packaging Management
 
-- [~] 17.1 Implement supplier CRUD endpoints
+- [x] 17.1 Implement supplier CRUD endpoints
   - Create `GET /api/v1/suppliers` endpoint listing all suppliers
   - Create `GET /api/v1/suppliers/:id` endpoint retrieving supplier details
   - Create `POST /api/v1/suppliers` endpoint adding new supplier
@@ -961,7 +961,7 @@ aibake/
   - Create `GET /api/v1/suppliers/:id/ingredients` endpoint listing ingredients from supplier
   - _Requirements: 114.1, 114.2, 114.3, 114.4, 114.5_
 
-- [~] 17.2 Implement packaging management endpoints
+- [x] 17.2 Implement packaging management endpoints
   - Create `GET /api/v1/packaging` endpoint listing packaging items
   - Create `POST /api/v1/packaging` endpoint adding packaging item with cost
   - Create `PATCH /api/v1/packaging/:id` endpoint updating packaging item
@@ -969,21 +969,21 @@ aibake/
   - Associate packaging items with recipes
   - _Requirements: 115.1, 115.2, 115.3, 115.7_
 
-- [~] 17.3 Implement delivery zone management
+- [x] 17.3 Implement delivery zone management
   - Create `GET /api/v1/delivery-zones` endpoint listing delivery zones
   - Create `POST /api/v1/delivery-zones` endpoint adding delivery zone with pricing
   - Create `PATCH /api/v1/delivery-zones/:id` endpoint updating zone pricing
   - Create `DELETE /api/v1/delivery-zones/:id` endpoint deleting zone
   - _Requirements: 116.1, 116.2, 116.3_
 
-- [~] 17.4 Write integration tests for supplier and packaging
+- [x] 17.4 Write integration tests for supplier and packaging
   - Test supplier CRUD operations
   - Test packaging item management
   - Test delivery zone management
   - Test supplier-ingredient associations
   - _Requirements: 114.1, 114.2, 115.1, 116.1_
 
-- [~] 17.5 Write property tests for delivery and bulk pricing
+- [x] 17.5 Write property tests for delivery and bulk pricing
   - **Property 26: Delivery Charge Calculation**
   - **Validates: Requirements 116.4**
   - Test delivery charge calculation with base charge, per-km charge, and free delivery threshold
