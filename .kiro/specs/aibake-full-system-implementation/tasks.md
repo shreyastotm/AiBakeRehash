@@ -889,7 +889,7 @@ aibake/
 
 ### 16. Backend API - Costing and Pricing Service
 
-- [~] 16.1 Implement recipe cost calculation endpoint
+- [x] 16.1 Implement recipe cost calculation endpoint
   - Create `POST /api/v1/recipes/:id/cost/calculate` endpoint
   - Accept overhead_cost, packaging_cost, labor_cost parameters
   - Call cost calculator middleware
@@ -898,14 +898,14 @@ aibake/
   - Store cost in recipe_costs table with timestamp
   - _Requirements: 104.1, 104.2, 104.3, 104.4, 104.5, 104.6, 104.7_
 
-- [~] 16.2 Implement cost history and tracking
+- [x] 16.2 Implement cost history and tracking
   - Create `GET /api/v1/recipes/:id/cost` endpoint retrieving current cost
   - Create `GET /api/v1/recipes/:id/cost/history` endpoint listing historical costs
   - Display cost trends over time
   - Highlight significant cost changes (>10%)
   - _Requirements: 118.1, 118.2, 118.3, 118.4, 118.5_
 
-- [~] 16.3 Implement pricing calculator endpoint
+- [x] 16.3 Implement pricing calculator endpoint
   - Create `POST /api/v1/recipes/:id/pricing` endpoint
   - Accept target_profit_margin_percent parameter
   - Call pricing calculator middleware
@@ -913,7 +913,7 @@ aibake/
   - Support custom selling price input with actual margin calculation
   - _Requirements: 105.1, 105.2, 105.3, 105.4_
 
-- [~] 16.4 Implement profit margin analysis
+- [x] 16.4 Implement profit margin analysis
   - Create `GET /api/v1/costing/reports/profit-margins` endpoint
   - Calculate profit margin for each recipe
   - Rank recipes by profitability
@@ -921,7 +921,7 @@ aibake/
   - Calculate break-even quantities
   - _Requirements: 119.1, 119.2, 119.3, 119.4_
 
-- [~] 16.5 Implement cost trend reports
+- [x] 16.5 Implement cost trend reports
   - Create `GET /api/v1/costing/reports/cost-trends` endpoint
   - Show cost changes over time with charts
   - Compare costs across different time periods
@@ -929,7 +929,7 @@ aibake/
   - Suggest pricing adjustments when costs change significantly
   - _Requirements: 118.1, 118.2, 118.3, 118.4, 118.5, 118.6_
 
-- [~] 16.6 Write integration tests for costing service
+- [x] 16.6 Write integration tests for costing service
   - Test cost calculation with all components
   - Test cost calculation with missing inventory data (should error)
   - Test cost history tracking
@@ -937,7 +937,7 @@ aibake/
   - Test profit margin analysis
   - _Requirements: 104.1, 105.2, 119.1_
 
-- [~] 16.7 Write property tests for costing operations
+- [x] 16.7 Write property tests for costing operations
   - **Property 23: Cost Recalculation on Price Change**
   - **Validates: Requirements 104.8**
   - Test that recipe cost updates when ingredient prices change
