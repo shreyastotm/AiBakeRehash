@@ -764,7 +764,7 @@ aibake/
 
 ### 13. Backend API - Ingredient Service
 
-- [~] 13.1 Implement ingredient endpoints
+- [x] 13.1 Implement ingredient endpoints
   - Create `GET /api/v1/ingredients` endpoint listing all ingredients with pagination
   - Create `GET /api/v1/ingredients/:id` endpoint retrieving ingredient details with nutrition and density
   - Create `POST /api/v1/ingredients` endpoint for creating custom ingredients
@@ -773,7 +773,7 @@ aibake/
   - Return results with similarity scores and alias indicators
   - _Requirements: 24.1, 24.2, 24.3, 24.4, 24.5_
 
-- [~] 13.2 Write integration tests for ingredient service
+- [x] 13.2 Write integration tests for ingredient service
   - Test ingredient listing with pagination
   - Test ingredient retrieval with details
   - Test custom ingredient creation
@@ -783,7 +783,7 @@ aibake/
 
 ### 14. Backend API - Journal Service
 
-- [~] 14.1 Implement journal CRUD endpoints
+- [x] 14.1 Implement journal CRUD endpoints
   - Create `GET /api/v1/recipes/:id/journal` endpoint listing journal entries for recipe
   - Create `POST /api/v1/recipes/:id/journal` endpoint creating journal entry with optional inventory deduction
   - Create `PATCH /api/v1/journal/:id` endpoint updating journal entry
@@ -791,7 +791,7 @@ aibake/
   - Validate user owns recipe and journal entry
   - _Requirements: 25.1, 25.2, 25.3, 25.4_
 
-- [~] 14.2 Implement journal image upload
+- [x] 14.2 Implement journal image upload
   - Create `POST /api/v1/journal/:id/images` endpoint accepting image uploads
   - Validate image format (JPEG, PNG, WebP) and size (max 10MB)
   - Resize images to multiple sizes (thumbnail, medium, full)
@@ -799,7 +799,7 @@ aibake/
   - Return image URLs
   - _Requirements: 25.5, 25.6, 52.1, 52.2, 52.3, 52.4, 52.5, 52.6, 52.7_
 
-- [~] 14.3 Implement audio note upload and transcription
+- [x] 14.3 Implement audio note upload and transcription
   - Create `POST /api/v1/journal/:id/audio` endpoint accepting audio uploads
   - Validate audio format (MP3, WAV, M4A) and size
   - Upload to cloud storage
@@ -808,7 +808,7 @@ aibake/
   - Implement webhook for transcription completion
   - _Requirements: 53.1, 53.2, 53.3, 53.4, 53.5, 53.6, 53.7_
 
-- [~] 14.4 Write integration tests for journal service
+- [x] 14.4 Write integration tests for journal service
   - Test journal entry creation with and without inventory deduction
   - Test journal entry updates
   - Test journal entry deletion
@@ -816,7 +816,7 @@ aibake/
   - Test audio upload and transcription queueing
   - _Requirements: 25.1, 25.2, 25.3, 25.4, 25.5_
 
-- [~] 14.5 Write property tests for journal operations
+- [x] 14.5 Write property tests for journal operations
   - **Property 10: Baking Loss Calculation**
   - **Validates: Requirements 16.2**
   - Test that baking_loss_grams = pre_bake_weight - outcome_weight and baking_loss_percentage = (loss / pre_bake) × 100
