@@ -1,5 +1,8 @@
 import React from 'react'
+
 import { useLocalization } from '../../hooks/useLocalization'
+
+import type { TFunction } from 'i18next'
 
 export interface RecipeStep {
   id: string
@@ -87,7 +90,7 @@ export const StepList: React.FC<StepListProps> = ({
 interface StepItemProps {
   step: RecipeStep
   index: number
-  t: (key: string, fallback?: string) => string
+  t: TFunction
 }
 
 const StepItem: React.FC<StepItemProps> = ({ step, index, t }) => (
