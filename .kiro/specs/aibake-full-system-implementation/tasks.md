@@ -995,7 +995,7 @@ aibake/
 
 ### 18. Backend API - Social Media Service
 
-- [~] 18.1 Implement recipe card generation
+- [x] 18.1 Implement recipe card generation
   - Create `POST /api/v1/social/recipe-card` endpoint
   - Accept format (instagram_story, instagram_post, whatsapp), language (en, hi, bilingual), color scheme
   - Use image generation service (node-canvas or Puppeteer) to render recipe card
@@ -1005,14 +1005,14 @@ aibake/
   - Upload to cloud storage and return URL
   - _Requirements: 108.1, 108.2, 108.3, 108.4, 108.5, 108.6, 108.7, 108.8_
 
-- [~] 18.2 Implement journal entry sharing
+- [x] 18.2 Implement journal entry sharing
   - Create `POST /api/v1/social/journal-card` endpoint
   - Generate shareable card with journal photos, notes, rating
   - Support hiding private notes when sharing publicly
   - Generate shareable link with preview metadata
   - _Requirements: 109.1, 109.2, 109.3, 109.7_
 
-- [~] 18.3 Implement WhatsApp formatting
+- [x] 18.3 Implement WhatsApp formatting
   - Create `POST /api/v1/social/whatsapp-format` endpoint
   - Format recipe text for WhatsApp with proper line breaks, emojis, and structure
   - Generate shareable link with preview metadata (Open Graph tags)
@@ -1020,13 +1020,13 @@ aibake/
   - Support shopping list and inventory reminder formatting
   - _Requirements: 110.1, 110.2, 110.3, 110.4, 110.5_
 
-- [~] 18.4 Implement social media templates
+- [x] 18.4 Implement social media templates
   - Create `GET /api/v1/social/templates` endpoint listing available templates
   - Support custom templates with user-defined colors, fonts, layouts
   - Store template preferences per user
   - _Requirements: 108.5_
 
-- [~] 18.5 Write integration tests for social media service
+- [x] 18.5 Write integration tests for social media service
   - Test recipe card generation for all formats
   - Test bilingual card generation
   - Test WhatsApp message formatting
