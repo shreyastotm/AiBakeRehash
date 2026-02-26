@@ -828,7 +828,7 @@ aibake/
 
 ### 15. Backend API - Inventory Service
 
-- [~] 15.1 Implement inventory CRUD endpoints
+- [x] 15.1 Implement inventory CRUD endpoints
   - Create `GET /api/v1/inventory` endpoint listing all inventory items with current stock levels
   - Create `GET /api/v1/inventory/:id` endpoint retrieving inventory item details
   - Create `POST /api/v1/inventory` endpoint adding new inventory item
@@ -836,21 +836,21 @@ aibake/
   - Create `DELETE /api/v1/inventory/:id` endpoint deleting inventory item
   - _Requirements: 101.2, 101.3, 101.4_
 
-- [~] 15.2 Implement inventory purchase tracking
+- [x] 15.2 Implement inventory purchase tracking
   - Create `POST /api/v1/inventory/purchases` endpoint logging ingredient purchase
   - Automatically update inventory quantity_on_hand when purchase logged
   - Track purchase history with supplier, invoice, cost
   - Create `GET /api/v1/inventory/purchases` endpoint listing purchase history
   - _Requirements: 113.1, 113.2, 113.3_
 
-- [~] 15.3 Implement inventory alerts
+- [x] 15.3 Implement inventory alerts
   - Create `GET /api/v1/inventory/alerts` endpoint listing low stock and expiring items
   - Check for items below min_stock_level
   - Check for items expiring within 7 days
   - Return alerts with ingredient name, current quantity, min level, expiration date
   - _Requirements: 102.1, 102.2, 102.3, 102.4, 102.5, 102.6_
 
-- [~] 15.4 Implement inventory deduction endpoint
+- [x] 15.4 Implement inventory deduction endpoint
   - Create `POST /api/v1/inventory/deduct` endpoint for manual or automatic deduction
   - Accept recipe_id and scaling_factor
   - Call inventory manager middleware to calculate deductions
@@ -859,14 +859,14 @@ aibake/
   - Create low stock alerts if thresholds crossed
   - _Requirements: 103.1, 103.2, 103.3, 103.4, 103.5, 103.6_
 
-- [~] 15.5 Implement inventory reports
+- [x] 15.5 Implement inventory reports
   - Create `GET /api/v1/inventory/reports/usage` endpoint showing consumption over time
   - Create `GET /api/v1/inventory/reports/value` endpoint calculating total inventory value
   - Group by ingredient category
   - Support date range filtering
   - _Requirements: 101.6, 101.7, 103.7_
 
-- [~] 15.6 Write integration tests for inventory service
+- [x] 15.6 Write integration tests for inventory service
   - Test inventory item creation and updates
   - Test purchase logging and quantity updates
   - Test low stock alert generation
@@ -874,7 +874,7 @@ aibake/
   - Test inventory deduction with transaction rollback on error
   - _Requirements: 101.2, 101.3, 113.2, 102.3, 103.1_
 
-- [~] 15.7 Write property tests for inventory operations
+- [x] 15.7 Write property tests for inventory operations
   - **Property 18: Inventory Transaction Completeness**
   - **Validates: Requirements 101.7**
   - Test that current_quantity = sum(purchases) - sum(deductions)
