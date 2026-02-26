@@ -173,8 +173,11 @@ app.get('/metrics', (_req, res) => {
 });
 
 // ---------------------------------------------------------------------------
-// 9. API routes (will be registered here)
+// 9. API routes
 // ---------------------------------------------------------------------------
+import authRoutes from './routes/auth.routes';
+
+app.use('/api/v1', authRoutes);
 
 // ---------------------------------------------------------------------------
 // 10. Catch-all 404 (must come after all route registrations)
