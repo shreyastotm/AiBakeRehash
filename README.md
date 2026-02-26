@@ -458,6 +458,39 @@ RATE_LIMIT_WINDOW_MS=900000      # Window duration in ms (default: 15 min)
 RATE_LIMIT_MAX_REQUESTS=100      # Max requests per window (default: 100)
 ```
 
+## Middleware Layer
+
+The `middleware/` directory contains the business logic layer for conversions, calculations, and validations. It is a standalone TypeScript package with no runtime dependencies — only dev tooling.
+
+### Modules
+
+| Module | File | Purpose |
+|--------|------|---------|
+| Unit Converter | `src/unitConverter.ts` | Volume/weight/metric conversions using ingredient density |
+| Recipe Scaler | `src/recipeScaler.ts` | Scale recipe quantities by servings or target weight |
+| Nutrition Calculator | `src/nutritionCalculator.ts` | Aggregate ingredient nutrition data weighted by quantity (total, per-100g, per-serving) |
+| Hydration Calculator | `src/hydrationCalculator.ts` | Baker's hydration percentage (liquid-to-flour ratio) for dough recipes |
+| Cost Calculator | `src/costCalculator.ts` | Recipe cost breakdown with overhead, packaging, labor, and per-serving figures |
+| Search Engine | `src/searchEngine.ts` | Fuzzy ingredient search using trigram similarity (in-memory and database-backed modes) |
+
+### Testing
+
+Tests live under `middleware/tests/` and use Vitest with fast-check for property-based testing:
+
+```bash
+cd middleware
+npm install
+npm test            # single run (vitest run)
+npm run test:watch  # watch mode
+```
+
+- Unit tests: `tests/unit/*.test.ts`
+- Property-based tests: `tests/property/*.property.test.ts`
+
+### Dev Dependencies
+
+TypeScript, Vitest, fast-check, ESLint, and Prettier. No production dependencies — the middleware is imported directly by the backend.
+
 ## Next Steps: Backend Implementation
 
 The database layer is complete. You can now begin implementing the backend API server:

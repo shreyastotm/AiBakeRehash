@@ -1,0 +1,21 @@
+{
+  "name": "aibake",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AiBake - Professional baking recipe management platform",
+  "scripts": {
+    "dev:backend": "npm run dev --prefix backend",
+    "dev:middleware": "npm run build --prefix middleware",
+    "build": "npm run build --prefix middleware && npm run build --prefix backend",
+    "test": "npm run test --prefix middleware && npm run test --prefix backend",
+    "test:middleware": "npm run test --prefix middleware",
+    "test:backend": "npm run test --prefix backend",
+    "lint": "npm run lint --prefix middleware && npm run lint --prefix backend",
+    "format": "npm run format --prefix middleware && npm run format --prefix backend",
+    "type-check": "npm run type-check --prefix middleware && npm run type-check --prefix backend",
+    "install:all": "npm install --prefix backend && npm install --prefix middleware"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

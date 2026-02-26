@@ -456,7 +456,7 @@ aibake/
 
 ### 7. Middleware Layer - Unit Conversion and Recipe Scaling
 
-- [ ] 7.1 Implement unit conversion system
+- [x] 7.1 Implement unit conversion system
   - Create `middleware/src/unitConverter.ts` with conversion functions
   - Implement `convertToGrams(ingredientId, quantity, fromUnit)` converting volume to weight using density
   - Implement `convertFromGrams(ingredientId, grams, toUnit)` converting weight to volume
@@ -466,14 +466,14 @@ aibake/
   - Throw `InvalidUnitError` for unsupported units
   - _Requirements: 19.1, 19.2, 19.3, 19.4, 19.5_
 
-- [ ] 7.2 Write property tests for unit conversion
+- [x] 7.2 Write property tests for unit conversion
   - **Property 1: Unit Conversion Round-Trip**
   - **Validates: Requirements 6.5, 19.4**
   - Test that converting volume→weight→volume produces original value within 0.1% tolerance
   - Generate random ingredients with known density, quantities (0.1-10000), and volume units
   - Use fast-check with minimum 100 iterations
 
-- [ ] 7.3 Write unit tests for unit converter
+- [x] 7.3 Write unit tests for unit converter
   - Test all volume-to-weight conversions with known densities
   - Test all weight-to-weight conversions
   - Test missing density error handling
@@ -481,7 +481,7 @@ aibake/
   - Test edge cases (zero quantity, very large quantities)
   - _Requirements: 19.1, 19.2, 19.3_
 
-- [ ] 7.4 Implement recipe scaling system
+- [x] 7.4 Implement recipe scaling system
   - Create `middleware/src/recipeScaler.ts` with scaling functions
   - Implement `scaleRecipe(recipe, targetYieldGrams)` calculating scaling factor and multiplying all ingredient quantities
   - Implement `scaleRecipe(recipe, targetServings)` scaling by servings count
@@ -490,7 +490,7 @@ aibake/
   - Return scaled recipe with warnings array
   - _Requirements: 20.1, 20.2, 20.3, 20.4, 82.4_
 
-- [ ] 7.5 Write property tests for recipe scaling
+- [x] 7.5 Write property tests for recipe scaling
   - **Property 3: Recipe Scaling Proportionality**
   - **Validates: Requirements 20.2, 20.3, 31.4, 82.4**
   - Test that all ingredient quantities scale by same factor, preserving ratios
@@ -498,7 +498,7 @@ aibake/
   - Verify ratio(ingredient_a, ingredient_b) remains constant after scaling
   - Use fast-check with minimum 100 iterations
 
-- [ ] 7.6 Write unit tests for recipe scaler
+- [x] 7.6 Write unit tests for recipe scaler
   - Test scaling up (2x, 3x, 10x)
   - Test scaling down (0.5x, 0.25x, 0.1x)
   - Test scaling factor warnings (>3x, <0.25x)
@@ -508,7 +508,7 @@ aibake/
 
 ### 8. Middleware Layer - Nutrition and Hydration Calculators
 
-- [ ] 8.1 Implement nutrition calculator
+- [x] 8.1 Implement nutrition calculator
   - Create `middleware/src/nutritionCalculator.ts` with calculation functions
   - Implement `calculateNutrition(ingredients)` summing ingredient nutrition weighted by quantity
   - Calculate total nutrition, per-100g nutrition, and per-serving nutrition
@@ -516,7 +516,7 @@ aibake/
   - Return nutrition object with energy_kcal, protein_g, fat_g, carbs_g, fiber_g
   - _Requirements: 13.1, 67.1, 67.2, 67.3, 67.4_
 
-- [ ] 8.2 Write property tests for nutrition calculator
+- [x] 8.2 Write property tests for nutrition calculator
   - **Property 4: Nutrition Calculation Consistency**
   - **Validates: Requirements 13.5, 20.5, 67.5**
   - Test that total nutrition equals sum of individual ingredient contributions weighted by quantity
@@ -524,7 +524,7 @@ aibake/
   - Verify sum(ingredient_nutrition × quantity_factor) = total_nutrition
   - Use fast-check with minimum 100 iterations
 
-- [ ] 8.3 Write unit tests for nutrition calculator
+- [x] 8.3 Write unit tests for nutrition calculator
   - Test with complete nutrition data
   - Test with missing nutrition data for some ingredients
   - Test with zero-quantity ingredients
@@ -532,7 +532,7 @@ aibake/
   - Test per-100g calculation
   - _Requirements: 13.1, 67.1, 67.2, 67.3_
 
-- [ ] 8.4 Implement hydration calculator
+- [x] 8.4 Implement hydration calculator
   - Create `middleware/src/hydrationCalculator.ts` with calculation functions
   - Implement `calculateHydrationPercentage(recipe)` computing (total_liquid / total_flour) × 100
   - Sum all ingredients in 'flour' category for total flour
@@ -540,7 +540,7 @@ aibake/
   - Return null for non-dough recipes (zero flour)
   - _Requirements: 16.5, 48.4_
 
-- [ ] 8.5 Write property tests for hydration calculator
+- [x] 8.5 Write property tests for hydration calculator
   - **Property 9: Hydration Percentage Calculation**
   - **Validates: Requirements 16.5, 48.4**
   - Test that hydration = (liquid_weight / flour_weight) × 100
@@ -548,7 +548,7 @@ aibake/
   - Verify calculation accuracy within 0.01% tolerance
   - Use fast-check with minimum 100 iterations
 
-- [ ] 8.6 Write unit tests for hydration calculator
+- [x] 8.6 Write unit tests for hydration calculator
   - Test with various flour and liquid combinations
   - Test with zero flour (should return null)
   - Test with zero liquid (should return 0%)
@@ -559,7 +559,7 @@ aibake/
 
 ### 9. Middleware Layer - Cost Calculation and Pricing
 
-- [ ] 9.1 Implement cost calculator
+- [x] 9.1 Implement cost calculator
   - Create `middleware/src/costCalculator.ts` with calculation functions
   - Implement `calculateRecipeCost(recipe, overheadCost, packagingCost, laborCost)` summing ingredient costs
   - For each ingredient, get inventory item and calculate cost = quantity × cost_per_unit (with unit conversion)
@@ -568,7 +568,7 @@ aibake/
   - Return cost breakdown with ingredient-level details
   - _Requirements: 104.1, 104.2, 104.3, 104.4, 104.5, 104.6, 104.7, 72.2_
 
-- [ ] 9.2 Write property tests for cost calculator
+- [x] 9.2 Write property tests for cost calculator
   - **Property 22: Recipe Cost Calculation**
   - **Validates: Requirements 104.1, 72.3**
   - Test that total ingredient cost equals sum of (quantity × cost_per_unit) for all ingredients
@@ -576,7 +576,7 @@ aibake/
   - Verify sum(ingredient_cost) = total_ingredient_cost
   - Use fast-check with minimum 100 iterations
 
-- [ ] 9.3 Write unit tests for cost calculator
+- [x] 9.3 Write unit tests for cost calculator
   - Test with all cost components (ingredient, overhead, packaging, labor)
   - Test with missing inventory data (should throw error)
   - Test with zero costs
@@ -584,7 +584,7 @@ aibake/
   - Test cost per serving and cost per 100g calculations
   - _Requirements: 104.1, 104.2, 104.3, 72.2_
 
-- [ ] 9.4 Implement pricing calculator
+- [x] 9.4 Implement pricing calculator
   - Create `middleware/src/pricingCalculator.ts` with pricing functions
   - Implement `calculatePricing(totalCost, targetProfitMarginPercent)` using formula: price = cost / (1 - margin/100)
   - Round to nearest rupee for INR currency
@@ -593,7 +593,7 @@ aibake/
   - Return suggested price, profit amount, target margin, actual margin
   - _Requirements: 105.1, 105.2, 105.3, 105.4_
 
-- [ ] 9.5 Write property tests for pricing calculator
+- [x] 9.5 Write property tests for pricing calculator
   - **Property 25: Pricing Formula Correctness**
   - **Validates: Requirements 105.2**
   - Test that price = cost / (1 - margin/100) and actual_margin = ((price - cost) / price) × 100
@@ -601,7 +601,7 @@ aibake/
   - Verify formula accuracy within 0.01% tolerance
   - Use fast-check with minimum 100 iterations
 
-- [ ] 9.6 Write unit tests for pricing calculator
+- [x] 9.6 Write unit tests for pricing calculator
   - Test with various cost and margin combinations
   - Test with 0% margin (price = cost)
   - Test with 99% margin (very high price)
@@ -612,7 +612,7 @@ aibake/
 
 ### 10. Middleware Layer - Search and Inventory
 
-- [ ] 10.1 Implement fuzzy search engine
+- [x] 10.1 Implement fuzzy search engine
   - Create `middleware/src/searchEngine.ts` with search functions
   - Implement `searchIngredient(query)` using database trigram matching
   - Search both canonical names and aliases
@@ -620,7 +620,7 @@ aibake/
   - Indicate whether match came from canonical name or alias
   - _Requirements: 17.6, 17.7, 48.1_
 
-- [ ] 10.2 Write property tests for fuzzy search
+- [x] 10.2 Write property tests for fuzzy search
   - **Property 6: Fuzzy Ingredient Search Ranking**
   - **Validates: Requirements 4.7, 17.6, 48.1**
   - Test that results are ranked by similarity score in descending order
@@ -628,7 +628,7 @@ aibake/
   - Verify all results have similarity scores
   - Use fast-check with minimum 100 iterations
 
-- [ ] 10.3 Write unit tests for fuzzy search
+- [x] 10.3 Write unit tests for fuzzy search
   - Test exact matches (should rank highest)
   - Test partial matches (should rank by similarity)
   - Test alias matches (should indicate alias source)
@@ -636,7 +636,7 @@ aibake/
   - Test case-insensitive matching
   - _Requirements: 4.7, 17.6, 17.7_
 
-- [ ] 10.4 Implement inventory deduction system
+- [x] 10.4 Implement inventory deduction system
   - Create `middleware/src/inventoryManager.ts` with deduction functions
   - Implement `calculateDeductions(recipe, scalingFactor)` computing quantities to deduct
   - For each ingredient, get inventory item and convert quantity to inventory unit
@@ -647,7 +647,7 @@ aibake/
   - Log inventory transactions with reference to journal entry
   - _Requirements: 103.1, 103.2, 103.3, 103.4, 103.5, 103.6_
 
-- [ ] 10.5 Write property tests for inventory deduction
+- [x] 10.5 Write property tests for inventory deduction
   - **Property 20: Inventory Deduction on Bake Logging**
   - **Validates: Requirements 103.1**
   - Test that logging a bake deducts correct ingredient quantities from inventory
@@ -655,7 +655,7 @@ aibake/
   - Verify new_quantity = old_quantity - deducted_quantity
   - Use fast-check with minimum 100 iterations
 
-- [ ] 10.6 Write unit tests for inventory manager
+- [x] 10.6 Write unit tests for inventory manager
   - Test deduction calculation with unit conversion
   - Test insufficient stock warning generation
   - Test low stock alert triggering
@@ -663,7 +663,7 @@ aibake/
   - Test inventory transaction logging
   - _Requirements: 103.1, 103.2, 103.3, 103.6_
 
-- [ ] 10.7 Checkpoint - Middleware layer complete
+- [x] 10.7 Checkpoint - Middleware layer complete
   - All middleware functions implemented
   - All property-based tests passing (minimum 100 iterations each)
   - All unit tests passing with >90% coverage
