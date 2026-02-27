@@ -1,7 +1,8 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { storeToken, clearToken, TOKEN_KEY } from '../services/api'
 
-interface User {
+export interface User {
   id: string
   email: string
   display_name: string
@@ -10,12 +11,17 @@ interface User {
 interface AuthStore {
   user: User | null
   token: string | null
+  isAuthenticated: boolean
   isLoading: boolean
   error: string | null
-  setUser: (user: User) => void
+  // Actions
+  login: (token: string, user: User) => void
+  logout: () => void
   setToken: (token: string) => void
+  setUser: (user: User) => void
   setLoading: (loading: boolean) => void
   setError: (error: string | null) => void
+  /** @deprecated Use logout() instead */
   clearAuth: () => void
 }
 
@@ -24,19 +30,34 @@ export const useAuthStore = create<AuthStore>()(
     (set) => ({
       user: null,
       token: null,
+      isAuthenticated: false,
       isLoading: false,
       error: null,
-      setUser: (user) => set({ user }),
-      setToken: (token) => {
-        set({ token })
-        // Sync token across tabs
-        localStorage.setItem('auth_token', token)
+
+      login: (token, user) => {
+        storeToken(token)
+        set({ token, user, isAuthenticated: true, error: null })
       },
+
+      logout: () => {
+        clearToken()
+        set({ user: null, token: null, isAuthenticated: false, error: null })
+      },
+
+      setToken: (token) => {
+        storeToken(token)
+        set({ token, isAuthenticated: true })
+      },
+
+      setUser: (user) => set({ user }),
+
       setLoading: (loading) => set({ isLoading: loading }),
+
       setError: (error) => set({ error }),
+
       clearAuth: () => {
-        set({ user: null, token: null, error: null })
-        localStorage.removeItem('auth_token')
+        clearToken()
+        set({ user: null, token: null, isAuthenticated: false, error: null })
       },
     }),
     {
@@ -45,15 +66,27 @@ export const useAuthStore = create<AuthStore>()(
       partialize: (state) => ({
         user: state.user,
         token: state.token,
+        isAuthenticated: state.isAuthenticated,
       }),
-      // Listen for auth changes from other tabs
       onRehydrateStorage: () => (state) => {
         if (state) {
+          // Validate stored token is still present in localStorage
+          const storedToken = localStorage.getItem(TOKEN_KEY)
+          if (!storedToken) {
+            state.token = null
+            state.user = null
+            state.isAuthenticated = false
+          }
+
+          // Listen for auth changes from other tabs
           window.addEventListener('storage', (e) => {
-            if (e.key === 'aibake-auth') {
-              const newState = JSON.parse(e.newValue || '{}')
-              state.user = newState.state?.user || null
-              state.token = newState.state?.token || null
+            if (e.key === TOKEN_KEY) {
+              if (!e.newValue) {
+                // Token was cleared in another tab
+                state.token = null
+                state.user = null
+                state.isAuthenticated = false
+              }
             }
           })
         }

@@ -23,6 +23,7 @@ export const Navigation: React.FC = () => {
     { path: '/inventory', label: 'Inventory' },
     { path: '/costing', label: 'Costing' },
     { path: '/journal', label: 'Journal' },
+    { path: '/settings', label: 'Settings' },
   ]
 
   return (

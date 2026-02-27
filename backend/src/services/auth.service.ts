@@ -130,6 +130,37 @@ export async function getUserProfile(userId: string): Promise<SafeUser> {
   return toSafeUser(result.rows[0]);
 }
 
+// ---------------------------------------------------------------------------
+// Change password
+// ---------------------------------------------------------------------------
+
+export async function changePassword(
+  userId: string,
+  currentPassword: string,
+  newPassword: string,
+): Promise<void> {
+  const result = await db.query<User>(
+    'SELECT * FROM users WHERE id = $1',
+    [userId],
+  );
+
+  if (!result.rowCount || result.rowCount === 0) {
+    throw new NotFoundError('User');
+  }
+
+  const user = result.rows[0];
+  const valid = await verifyPassword(currentPassword, user.password_hash);
+  if (!valid) {
+    throw new UnauthorizedError('Current password is incorrect');
+  }
+
+  const newHash = await hashPassword(newPassword);
+  await db.query(
+    'UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2',
+    [newHash, userId],
+  );
+}
+
 export async function updateUserPreferences(
   userId: string,
   input: UpdateUserPreferencesInput,

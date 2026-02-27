@@ -3,8 +3,10 @@ import { persist } from 'zustand/middleware'
 
 interface UserPreferences {
   unit_system: 'metric' | 'cups' | 'hybrid' | 'bakers_percent'
+  temperature_unit: 'celsius' | 'fahrenheit'
   language: 'en' | 'hi'
   currency: string
+  date_format: string
   theme: 'light' | 'dark' | 'auto'
   notifications_enabled: boolean
   auto_save_enabled: boolean
@@ -19,8 +21,10 @@ interface PreferencesStore {
 
 const defaultPreferences: UserPreferences = {
   unit_system: 'metric',
+  temperature_unit: 'celsius',
   language: 'en',
   currency: 'INR',
+  date_format: 'DD/MM/YYYY',
   theme: 'light',
   notifications_enabled: true,
   auto_save_enabled: true,

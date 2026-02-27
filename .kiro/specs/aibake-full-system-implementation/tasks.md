@@ -1200,7 +1200,7 @@ aibake/
 
 ### 22. Frontend - Authentication and User Management
 
-- [ ] 22.1 Create authentication pages
+- [x] 22.1 Create authentication pages
   - Create Login page with email and password fields
   - Create Registration page with email, password, display name fields
   - Implement form validation with user-friendly error messages
@@ -1208,7 +1208,7 @@ aibake/
   - Redirect to dashboard after successful login
   - _Requirements: 28.1, 28.2, 28.5_
 
-- [ ] 22.2 Implement authentication flow
+- [x] 22.2 Implement authentication flow
   - Store JWT token securely (httpOnly cookie or secure localStorage)
   - Include token in all API requests via interceptor
   - Implement automatic token refresh before expiration
@@ -1216,7 +1216,7 @@ aibake/
   - Clear token and redirect on logout
   - _Requirements: 28.3, 28.4, 28.6_
 
-- [ ] 22.3 Create user settings page
+- [x] 22.3 Create user settings page
   - Create Settings page with tabs for preferences, profile, security
   - Implement unit system preference selector (metric, cups, hybrid, baker's percent)
   - Implement temperature unit selector (Celsius, Fahrenheit)
@@ -1226,7 +1226,7 @@ aibake/
   - Save preferences and apply immediately across app
   - _Requirements: 50.1, 50.2, 50.3, 50.4, 50.5, 50.6_
 
-- [ ] 22.4 Write component tests for authentication
+- [x] 22.4 Write component tests for authentication
   - Test login form validation
   - Test registration form validation
   - Test authentication flow (login, token storage, redirect)

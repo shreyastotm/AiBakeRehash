@@ -5,6 +5,7 @@ import {
   logoutUser,
   getUserProfile,
   updateUserPreferences,
+  changePassword,
 } from '../services/auth.service';
 import { handleTokenRefresh } from '../middleware/auth';
 
@@ -83,8 +84,18 @@ export async function getMe(req: Request, res: Response, next: NextFunction): Pr
 }
 
 // ---------------------------------------------------------------------------
-// PATCH /api/v1/users/me
+// PATCH /api/v1/users/me/password
 // ---------------------------------------------------------------------------
+
+export async function updatePassword(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const { current_password, new_password } = req.body;
+    await changePassword(req.user!.userId, current_password, new_password);
+    res.json({ success: true, data: { message: 'Password changed successfully' } });
+  } catch (err) {
+    next(err);
+  }
+}
 
 export async function updateMe(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {

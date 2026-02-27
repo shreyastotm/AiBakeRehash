@@ -7,6 +7,7 @@ import { Dashboard } from '../pages/Dashboard'
 import { RecipeList } from '../pages/recipe/RecipeList'
 import { RecipeDetail } from '../pages/recipe/RecipeDetail'
 import { RecipeForm } from '../pages/recipe/RecipeForm'
+import { Settings } from '../pages/Settings'
 
 export const routes: RouteObject[] = [
   // Auth routes (no layout)
@@ -22,6 +23,16 @@ export const routes: RouteObject[] = [
   // Protected routes with layout
   {
     path: '/',
+    element: (
+      <ProtectedRoute>
+        <Layout>
+          <Dashboard />
+        </Layout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/dashboard',
     element: (
       <ProtectedRoute>
         <Layout>
@@ -111,6 +122,18 @@ export const routes: RouteObject[] = [
             <h1 className="text-2xl font-bold text-gray-900">Baking Journal</h1>
             <p className="text-gray-600 mt-2">Coming soon...</p>
           </div>
+        </Layout>
+      </ProtectedRoute>
+    ),
+  },
+
+  // Settings
+  {
+    path: '/settings',
+    element: (
+      <ProtectedRoute>
+        <Layout>
+          <Settings />
         </Layout>
       </ProtectedRoute>
     ),
