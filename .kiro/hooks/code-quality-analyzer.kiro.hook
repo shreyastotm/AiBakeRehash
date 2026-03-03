@@ -1,29 +1,19 @@
 {
   "enabled": true,
   "name": "Code Quality Analyzer",
-  "description": "Analyzes modified source code for potential improvements including code smells, design patterns, best practices, readability, maintainability, and performance optimizations",
-  "version": "1",
+  "description": "Analyzes modified source code for AiBake-specific issues: architecture violations, business logic placement, type safety, INR currency handling, and general code quality",
+  "version": "2",
   "when": {
     "type": "fileEdited",
     "patterns": [
-      "*.js",
-      "*.ts",
-      "*.jsx",
-      "*.tsx",
-      "*.py",
-      "*.java",
-      "*.cs",
-      "*.go",
-      "*.rb",
-      "*.php",
-      "*.cpp",
-      "*.c",
-      "*.h",
-      "*.hpp"
+      "backend/src/**/*.ts",
+      "middleware/src/**/*.ts",
+      "frontend/src/**/*.ts",
+      "frontend/src/**/*.tsx"
     ]
   },
   "then": {
     "type": "askAgent",
-    "prompt": "Analyze the modified code in the changed file for potential improvements. Focus on:\n1. Code smells and anti-patterns\n2. Applicable design patterns that could improve the structure\n3. Best practices for the language/framework being used\n4. Readability improvements (naming, structure, comments)\n5. Maintainability concerns (complexity, coupling, cohesion)\n6. Performance optimization opportunities\n\nProvide specific, actionable suggestions while ensuring the existing functionality is maintained. Be concise and prioritize the most impactful improvements."
+    "prompt": "Analyze the modified AiBake source file for code quality issues. Focus on:\n\n1. **Architecture Violations (Critical)**:\n   - Controllers must NOT contain business logic — delegate to services\n   - Middleware modules (unitConverter, recipeScaler, etc.) must NOT make database calls\n   - Frontend must NOT import from middleware/ directly\n   - Services should not contain HTTP-layer concerns (req, res objects)\n\n2. **TypeScript Quality**:\n   - Flag any use of `any` type — suggest specific types or `unknown`\n   - Check all exported functions have explicit return types\n   - Verify Zod schemas are used for runtime validation at API boundaries\n   - Check for missing error handling on async functions\n\n3. **AiBake Domain Patterns**:\n   - INR currency must be formatted via `currency.ts` utility, never ad-hoc\n   - Dates must use `date.ts` utility for display formatting\n   - Cost/price calculations must use the correct formulas (see product.md)\n   - Quantity conversions must go through `unitConverter.ts`, not inline math\n\n4. **Security Patterns**:\n   - Parameterized queries only — no string concatenation in SQL\n   - All DB queries on user data must include `user_id` filter\n   - No hardcoded secrets or credentials\n\n5. **Code Smells**:\n   - N+1 query patterns (DB calls inside loops)\n   - Missing error handling\n   - Missing JSDoc on exported functions\n   - Overly complex functions (>50 lines)\n   - Magic numbers without named constants\n\n6. **Performance**:\n   - Suggest Redis caching for expensive, deterministic calculations\n   - Flag synchronous operations that should be async\n\nProvide specific, actionable suggestions with line references. Prioritize critical architecture violations first."
   }
 }

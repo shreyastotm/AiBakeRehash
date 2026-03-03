@@ -1,0 +1,17 @@
+{
+  "enabled": true,
+  "name": "Performance Budget Checker",
+  "description": "Reviews changes to middleware calculation modules for performance regressions, N+1 query patterns, and caching opportunities. Enforces AiBake performance targets.",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "middleware/src/**/*.ts",
+      "backend/src/services/**/*.ts"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "A middleware or service file was modified. Review for performance implications:\n\n**AiBake Performance Targets (CI enforced):**\n| Operation | Target |\n|-----------|--------|\n| Recipe scaling | <50ms |\n| Nutrition calculation | <100ms |\n| Ingredient search | <200ms |\n| API GET requests | <200ms |\n| API POST requests | <500ms |\n\n1. **N+1 Query Pattern Detection (Critical)**:\n   - Flag any DB calls inside a loop or `.map()` or `.forEach()`\n   - Example of N+1: fetching each ingredient's details inside a loop over recipe ingredients\n   - Solution: batch queries with `WHERE id = ANY($1::uuid[])` or JOIN\n   - This is the most common performance killer in AiBake's data-heavy operations\n\n2. **Middleware Purity Check**:\n   - `middleware/src/` files must NOT make database calls\n   - If a middleware file has DB imports, flag it as an architecture violation\n   - Database data should be fetched in the service layer and passed to middleware\n\n3. **Missing Redis Caching Opportunities**:\n   - Nutrition calculations are expensive and deterministic — suggest caching with TTL 1h\n     * Cache key: `nutrition:{recipe_id}:{version}` \n     * Invalidate on recipe or ingredient update\n   - Ingredient search results are cacheable — suggest TTL 15min\n     * Cache key: `search:ingredient:{query_normalized}`\n   - User preferences are cacheable — suggest TTL 24h\n     * Cache key: `user:prefs:{user_id}`\n\n4. **Algorithm Complexity Analysis**:\n   - Check for O(n²) or worse algorithms in calculation loops\n   - Hydration calculation should iterate ingredients once (O(n))\n   - Nutrition aggregation should iterate ingredients once (O(n))\n   - Scaling should iterate ingredients once (O(n))\n   - Flag any nested loops over ingredient arrays\n\n5. **Synchronous vs Async**:\n   - All DB queries must be async/await — no blocking synchronous calls\n   - CPU-intensive calculations (large ingredient lists) may need to be evaluated for worker threads\n\n6. **Benchmark Reference**:\n   - Benchmark tests live in `middleware/tests/benchmarks/`\n   - If changing a calculation function, run: `cd middleware && npm run test:bench`\n   - If performance degrades beyond target, the CI benchmark test will fail\n\nProvide specific optimization suggestions with before/after code examples where applicable."
+  }
+}

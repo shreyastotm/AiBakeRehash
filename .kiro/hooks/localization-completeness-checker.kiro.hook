@@ -1,0 +1,18 @@
+{
+  "enabled": true,
+  "name": "Localization Completeness Checker",
+  "description": "Ensures Hindi and English translation files stay in sync, and flags hardcoded English strings in React components that should use the t() translation function",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "frontend/src/locales/**/*.json",
+      "frontend/src/components/**/*.tsx",
+      "frontend/src/pages/**/*.tsx"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "A localization-related file was modified. Validate i18n completeness for AiBake's bilingual (English/Hindi) support:\n\n**If a locale JSON file changed (`en.json` or `hi.json`):**\n\n1. **Key Parity (Critical)**:\n   - Every key in `frontend/src/locales/en.json` must exist in `frontend/src/locales/hi.json` and vice versa\n   - Missing keys in either file are bugs — users will see key names instead of translated text\n   - List any keys that exist in one file but not the other\n\n2. **Key Naming Convention**:\n   - Keys must use dot-separated hierarchy: `{page}.{section}.{element}`\n   - Examples: `recipe.list.empty`, `inventory.alerts.lowStock`, `journal.form.bakingLoss`\n   - Segments use snake_case for multi-word parts\n   - Flag any keys that don't follow this convention\n\n3. **Hindi Translation Quality**:\n   - Hindi translations must use Devanagari script (not transliteration)\n   - Example: `\"बेकिंग रेसिपी\"` is correct; `\"Baking Recipe\"` in hi.json is a placeholder, not a translation\n   - Flag any Hindi values that appear to be English text (not Devanagari characters)\n\n4. **INR Formatting in Translations**:\n   - Any price/cost labels should use `₹` symbol placeholder properly\n   - Example in en.json: `\"costLabel\": \"Cost: {{amount}}\"`\n   - The `{{amount}}` variable must be formatted with Indian number format via the `formatINR()` utility\n\n**If a React component file (`.tsx`) changed:**\n\n5. **Hardcoded English Strings**:\n   - Scan JSX for string literals that should be translations\n   - Patterns to flag:\n     * `>Any English text<` between JSX tags\n     * `placeholder=\"English text\"` in form inputs\n     * `title=\"English text\"` in buttons or links\n     * `label=\"English text\"` in form labels\n   - These must use `const { t } = useTranslation()` and `t('translation.key')`\n   - Exceptions: programmer strings (console.log, error codes, data values) are OK\n\n6. **Date Format Consistency**:\n   - Date display must use `DD/MM/YYYY` format (Indian convention)\n   - Flag any `MM/DD/YYYY` patterns or `new Date().toLocaleDateString()` without explicit format\n\n7. **Currency Display**:\n   - Monetary values must use `formatINR()` from `utils/currency.ts`\n   - Flag any raw `₹` concatenation or `.toFixed(2)` without the Indian number format\n   - Correct: `{formatINR(amount)}` | Incorrect: `₹{amount.toFixed(2)}`\n\nList specific line numbers for all findings and provide the corrected code."
+  }
+}

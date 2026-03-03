@@ -7,6 +7,8 @@ interface ScalingControlProps {
   originalServings: number
   originalYieldGrams: number
   onScale: (scalingFactor: number) => void
+  onSaveAsNew?: (scalingFactor: number) => void
+  savingAsNew?: boolean
   loading?: boolean
   className?: string
 }
@@ -20,6 +22,8 @@ export function ScalingControl({
   originalServings,
   originalYieldGrams,
   onScale,
+  onSaveAsNew,
+  savingAsNew = false,
   loading = false,
   className = '',
 }: ScalingControlProps) {
@@ -118,7 +122,7 @@ export function ScalingControl({
       )}
 
       {/* Actions */}
-      <div className="flex gap-2">
+      <div className="flex gap-2 flex-wrap">
         <Button
           variant="primary"
           size="sm"
@@ -128,6 +132,17 @@ export function ScalingControl({
         >
           {t('recipes.applyScaling', 'Apply')}
         </Button>
+        {onSaveAsNew && (
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => onSaveAsNew(factor)}
+            disabled={isUnchanged}
+            loading={savingAsNew}
+          >
+            {t('recipes.saveAsNewRecipe', 'Save as New Recipe')}
+          </Button>
+        )}
         <Button
           variant="ghost"
           size="sm"

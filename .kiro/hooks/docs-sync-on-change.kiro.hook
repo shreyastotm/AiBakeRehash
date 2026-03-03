@@ -1,16 +1,16 @@
 {
   "enabled": true,
   "name": "Documentation Sync",
-  "description": "Automatically updates README.md and docs/ folder when source files change to keep documentation synchronized with code",
-  "version": "1",
+  "description": "Keeps README.md, docs/api/openapi.yaml, and docs/ folder synchronized when source files change to ensure documentation never lags behind the code",
+  "version": "2",
   "when": {
     "type": "fileEdited",
     "patterns": [
-      "*.ts",
-      "*.tsx",
-      "*.js",
-      "*.jsx",
-      "*.sql",
+      "backend/src/controllers/**/*.ts",
+      "backend/src/routes/**/*.ts",
+      "backend/src/services/**/*.ts",
+      "middleware/src/**/*.ts",
+      "database/migrations/**/*.sql",
       "package.json",
       "docker-compose.yml",
       ".env.example"
@@ -18,6 +18,6 @@
   },
   "then": {
     "type": "askAgent",
-    "prompt": "A source file has been modified. Review the changes and update the README.md or relevant documentation in the docs/ folder to reflect any new features, API changes, configuration updates, or architectural modifications. Ensure the documentation remains accurate and helpful."
+    "prompt": "A source file has been modified. Review the changes and update documentation as needed:\n\n1. **If a controller or route file changed:**\n   - Check if `docs/api/openapi.yaml` needs to be updated\n   - Verify the changed endpoint is documented with: request body schema, query params, response schema, error codes, auth requirement\n   - Check if `README.md` API section needs updating\n\n2. **If a middleware/src file changed (calculator, converter, etc.):**\n   - Update any JSDoc if the function signature or behavior changed\n   - Check if the testing-strategy.md property catalogue is still accurate\n\n3. **If a database migration was added:**\n   - Verify `docs/architecture/` schema diagrams need updating\n   - Check that `structure.md` database schema table list is still accurate\n   - Verify `README.md` database section reflects new tables\n\n4. **If docker-compose.yml or .env.example changed:**\n   - Update `README.md` setup instructions\n   - Update `docs/deployment.md` if port or service config changed\n\n5. **If package.json changed (new dependencies):**\n   - Update `README.md` prerequisites section if Node version or major deps changed\n   - Note any new environment variables required\n\nBe specific about which files need updating and what changes are needed. Do not update docs that are already accurate — only flag genuine gaps."
   }
 }

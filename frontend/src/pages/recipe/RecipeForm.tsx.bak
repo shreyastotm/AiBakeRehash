@@ -1,0 +1,322 @@
+﻿import React, { useState, useEffect, useCallback, useRef } from 'react'
+import { useNavigate, useParams, Link } from 'react-router-dom'
+import { useCreateRecipe, useUpdateRecipe, useRecipe } from '../../hooks/useRecipes'
+import { recipeService } from '../../services/recipe.service'
+import type { RecipeCreateRequest, IngredientSearchResult } from '../../services/recipe.service'
+import { Button } from '../../components/common/Button'
+import { Input } from '../../components/common/Input'
+import { Textarea } from '../../components/common/Textarea'
+import { Select } from '../../components/common/Select'
+import { Autocomplete } from '../../components/common/Autocomplete'
+import type { AutocompleteOption } from '../../components/common/Autocomplete'
+import { LoadingSpinner } from '../../components/common/LoadingSpinner'
+import { FormRecoveryBanner } from '../../components/FormRecoveryBanner'
+import { useAutoSave, useRestoreFormData } from '../../hooks/useAutoSave'
+
+// â”€â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+type SectionType = 'pre_prep' | 'prep' | 'bake' | 'rest' | 'notes'
+
+interface FormIngredient {
+  _key: string // local drag-and-drop key
+  ingredient_master_id: string
+  display_name: string
+  quantity_original: number
+  unit_original: string
+}
+
+interface FormStep {
+  _key: string
+  instruction: string
+  duration_seconds: number | ''
+  temperature_celsius: number | ''
+}
+
+interface FormSection {
+  _key: string
+  type: SectionType
+  title: string
+  steps: FormStep[]
+}
+
+interface FormData {
+  title: string
+  description: string
+  servings: number | ''
+  yield_weight_grams: number | ''
+  status: 'draft' | 'active' | 'archived'
+  preferred_unit_system: string
+  ingredients: FormIngredient[]
+  sections: FormSection[]
+}
+
+// â”€â”€â”€ Constants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+const STEPS = ['Details', 'Ingredients', 'Instructions'] as const
+type Step = (typeof STEPS)[number]
+
+const UNIT_OPTIONS = [
+  { value: 'g', label: 'grams (g)' },
+  { value: 'kg', label: 'kilograms (kg)' },
+  { value: 'ml', label: 'millilitres (ml)' },
+  { value: 'l', label: 'litres (l)' },
+  { value: 'cup', label: 'cup' },
+  { value: 'tbsp', label: 'tablespoon (tbsp)' },
+  { value: 'tsp', label: 'teaspoon (tsp)' },
+  { value: 'oz', label: 'ounces (oz)' },
+  { value: 'lb', label: 'pounds (lb)' },
+  { value: 'piece', label: 'piece' },
+  { value: 'pinch', label: 'pinch' },
+]
+
+const SECTION_TYPE_OPTIONS = [
+  { value: 'pre_prep', label: 'Pre-Prep' },
+  { value: 'prep', label: 'Prep' },
+  { value: 'bake', label: 'Bake' },
+  { value: 'rest', label: 'Rest' },
+  { value: 'notes', label: 'Notes' },
+]
+
+const STATUS_OPTIONS = [
+  { value: 'draft', label: 'Draft' },
+  { value: 'active', label: 'Active' },
+  { value: 'archived', label: 'Archived' },
+]
+
+const UNIT_SYSTEM_OPTIONS = [
+  { value: 'metric', label: 'Metric (g, ml)' },
+  { value: 'cups', label: 'Cups & spoons' },
+  { value: 'hybrid', label: 'Hybrid' },
+  { value: 'bakers_percent', label: "Baker's %" },
+]
+
+const DEFAULT_FORM: FormData = {
+  title: '',
+  description: '',
+  servings: '',
+  yield_weight_grams: '',
+  status: 'draft',
+  preferred_unit_system: 'metric',
+  ingredients: [],
+  sections: [],
+}
+
+const uid = () => Math.random().toString(36).slice(2)
+
+// â”€â”€â”€ Step indicator â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+interface StepIndicatorProps {
+  steps: readonly string[]
+  current: number
+  onStepClick: (i: number) => void
+}
+
+const StepIndicator = ({ steps, current, onStepClick }: StepIndicatorProps) => (
+  <nav aria-label="Form steps" className="flex items-center gap-0 mb-8">
+    {steps.map((label, i) => {
+      const done = i < current
+      const active = i === current
+      return (
+        <React.Fragment key={label}>
+          <button
+            type="button"
+            onClick={() => onStepClick(i)}
+            disabled={i > current}
+            aria-current={active ? 'step' : undefined}
+            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500 disabled:cursor-not-allowed ${
+              active
+                ? 'bg-amber-600 text-white'
+                : done
+                ? 'text-amber-700 hover:bg-amber-50'
+                : 'text-gray-400'
+            }`}
+          >
+            <span
+              className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
+                active ? 'bg-white text-amber-600' : done ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-400'
+              }`}
+            >
+              {done ? 'âœ“' : i + 1}
+            </span>
+            {label}
+          </button>
+          {i < steps.length - 1 && (
+            <span className="flex-1 h-px bg-gray-200 mx-1" aria-hidden="true" />
+          )}
+        </React.Fragment>
+      )
+    })}
+  </nav>
+)
+
+// â”€â”€â”€ Auto-save indicator â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+const AutoSaveIndicator = ({ lastSaved }: { lastSaved: Date | null }) => {
+  if (!lastSaved) return null
+  return (
+    <span className="text-xs text-gray-400" aria-live="polite">
+      Saved {lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+    </span>
+  )
+}
+
+// â”€â”€â”€ Ingredient row â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+interface IngredientRowProps {
+  ingredient: FormIngredient
+  index: number
+  isDragging: boolean
+  onDragStart: (i: number) => void
+  onDragOver: (i: number) => void
+  onDrop: () => void
+  onChange: (index: number, field: keyof FormIngredient, value: string | number) => void
+  onRemove: (index: number) => void
+  searchOptions: AutocompleteOption[]
+  searchLoading: boolean
+  onIngredientSearch: (query: string) => void
+  onIngredientSelect: (index: number, value: string, option: AutocompleteOption) => void
+}
+
+const IngredientRow = ({
+  ingredient,
+  index,
+  isDragging,
+  onDragStart,
+  onDragOver,
+  onDrop,
+  onChange,
+  onRemove,
+  searchOptions,
+  searchLoading,
+  onIngredientSearch,
+  onIngredientSelect,
+}: IngredientRowProps) => (
+  <div
+    draggable
+    onDragStart={() => onDragStart(index)}
+    onDragOver={(e) => { e.preventDefault(); onDragOver(index) }}
+    onDrop={onDrop}
+    className={`flex gap-2 items-start p-3 rounded-lg border transition-colors ${
+      isDragging ? 'border-amber-400 bg-amber-50' : 'border-gray-100 bg-gray-50'
+    }`}
+    aria-label={`Ingredient ${index + 1}`}
+  >
+    {/* Drag handle */}
+    <button
+      type="button"
+      aria-label="Drag to reorder"
+      className="mt-3 cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-500 shrink-0"
+    >
+      â ¿
+    </button>
+
+    {/* Ingredient search */}
+    <div className="flex-1 min-w-0">
+      <Autocomplete
+        options={searchOptions}
+        value={ingredient.ingredient_master_id}
+        onInputChange={onIngredientSearch}
+        onChange={(val, opt) => onIngredientSelect(index, val, opt)}
+        placeholder="Search ingredient..."
+        loading={searchLoading}
+        noOptionsText="No ingredients found"
+      />
+    </div>
+
+    {/* Quantity */}
+    <div className="w-24 shrink-0">
+      <Input
+        type="number"
+        value={ingredient.quantity_original}
+        onChange={(e) => onChange(index, 'quantity_original', parseFloat(e.target.value) || 0)}
+        placeholder="Qty"
+        min="0"
+        step="any"
+        aria-label="Quantity"
+      />
+    </div>
+
+    {/* Unit */}
+    <div className="w-32 shrink-0">
+      <Select
+        options={UNIT_OPTIONS}
+        value={ingredient.unit_original}
+        onChange={(val) => onChange(index, 'unit_original', val)}
+        placeholder="Unit"
+      />
+    </div>
+
+    {/* Remove */}
+    <button
+      type="button"
+      onClick={() => onRemove(index)}
+      aria-label={`Remove ingredient ${index + 1}`}
+      className="mt-2 text-gray-300 hover:text-red-500 transition-colors shrink-0"
+    >
+      âœ•
+    </button>
+  </div>
+)
+
+// â”€â”€â”€ Step row â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+interface StepRowProps {
+  step: FormStep
+  stepIndex: number
+  sectionIndex: number
+  onChange: (si: number, ti: number, field: keyof FormStep, value: string | number) => void
+  onRemove: (si: number, ti: number) => void
+}
+
+const StepRow = ({ step, stepIndex, sectionIndex, onChange, onRemove }: StepRowProps) => (
+  <div className="flex gap-2 items-start p-3 rounded-lg border border-gray-100 bg-gray-50">
+    <span className="mt-3 w-6 h-6 rounded-full bg-amber-100 text-amber-700 text-xs font-bold flex items-center justify-center shrink-0">
+      {stepIndex + 1}
+    </span>
+
+    <div className="flex-1 space-y-2">
+      <Textarea
+        value={step.instruction}
+        onChange={(e) => onChange(sectionIndex, stepIndex, 'instruction', e.target.value)}
+        placeholder="Describe this step..."
+        rows={2}
+        aria-label={`Step ${stepIndex + 1} instruction`}
+      />
+      <div className="flex gap-2">
+        <Input
+          type="number"
+          value={step.duration_seconds}
+          onChange={(e) =>
+            onChange(sectionIndex, stepIndex, 'duration_seconds', e.target.value === '' ? '' : parseInt(e.target.value))
+          }
+          placeholder="Duration (sec)"
+          min="0"
+          aria-label="Duration in seconds"
+          className="w-40"
+        />
+        <Input
+          type="number"
+          value={step.temperature_celsius}
+          onChange={(e) =>
+            onChange(sectionIndex, stepIndex, 'temperature_celsius', e.target.value === '' ? '' : parseInt(e.target.value))
+          }
+          placeholder="Temp (Â°C)"
+          min="0"
+          max="500"
+          aria-label="Temperature in Celsius"
+          className="w-36"
+        />
+      </div>
+    </div>
+
+    <button
+      type="button"
+      onClick={() => onRemove(sectionIndex, stepIndex)}
+      aria-label={`Remove step ${stepIndex + 1}`}
+      className="mt-2 text-gray-300 hover:text-red-500 transition-colors shrink-0"
+    >
+      âœ•
+    </button>
+  </div>
+)
+

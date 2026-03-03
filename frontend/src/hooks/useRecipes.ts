@@ -1,10 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { recipeService, Recipe, RecipeCreateRequest } from '../services/recipe.service'
+import { recipeService, RecipeCreateRequest, RecipeListParams } from '../services/recipe.service'
 
-export const useRecipes = (page = 1, limit = 10) => {
+export const useRecipes = (params: RecipeListParams = {}) => {
   return useQuery({
-    queryKey: ['recipes', page, limit],
-    queryFn: () => recipeService.getRecipes(page, limit),
+    queryKey: ['recipes', params],
+    queryFn: () => recipeService.getRecipes(params),
+    placeholderData: (prev) => prev,
   })
 }
 
@@ -12,6 +13,22 @@ export const useRecipe = (id: string) => {
   return useQuery({
     queryKey: ['recipe', id],
     queryFn: () => recipeService.getRecipe(id),
+    enabled: !!id,
+  })
+}
+
+export const useRecipeVersions = (id: string) => {
+  return useQuery({
+    queryKey: ['recipe-versions', id],
+    queryFn: () => recipeService.getRecipeVersions(id),
+    enabled: !!id,
+  })
+}
+
+export const useRecipeNutrition = (id: string) => {
+  return useQuery({
+    queryKey: ['recipe-nutrition', id],
+    queryFn: () => recipeService.getRecipeNutrition(id),
     enabled: !!id,
   })
 }

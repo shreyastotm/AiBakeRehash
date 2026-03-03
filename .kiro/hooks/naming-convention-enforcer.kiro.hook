@@ -1,19 +1,21 @@
 {
   "enabled": true,
   "name": "Naming Convention Enforcer",
-  "description": "Validates file and function naming follows project conventions: kebab-case for files, camelCase for functions, PascalCase for React components and TypeScript interfaces",
-  "version": "1",
+  "description": "Validates that newly created files follow AiBake naming conventions: kebab-case for backend files, PascalCase for React components, snake_case for DB files, and correct suffixes for roles (controller, service, etc.)",
+  "version": "2",
   "when": {
     "type": "fileCreated",
     "patterns": [
-      "**/*.ts",
-      "**/*.tsx",
-      "**/*.js",
-      "**/*.jsx"
+      "backend/src/**/*.ts",
+      "middleware/src/**/*.ts",
+      "frontend/src/**/*.ts",
+      "frontend/src/**/*.tsx",
+      "database/migrations/**/*.sql",
+      "database/rollback/**/*.sql"
     ]
   },
   "then": {
     "type": "askAgent",
-    "prompt": "Validate the newly created file follows AiBake naming conventions:\n\nFile Naming:\n- Source files: kebab-case (e.g., unit-converter.ts, recipe-scaler.ts)\n- React components: PascalCase (e.g., RecipeCard.tsx, IngredientList.tsx)\n- Test files: match source with .test.ts or .spec.ts suffix\n- Database files: snake_case with numeric prefix (e.g., 01_schema_init.sql)\n\nCheck the file content for:\n- Functions: camelCase (e.g., convertToGrams, scaleRecipe)\n- Classes: PascalCase (e.g., RecipeService, AuthController)\n- Interfaces/Types: PascalCase with descriptive names (e.g., RecipeIngredient, UnitConversionRequest)\n- Constants: UPPER_SNAKE_CASE (e.g., MAX_SCALING_FACTOR, DEFAULT_CURRENCY)\n- Database tables: snake_case (e.g., recipe_ingredients, inventory_items)\n- Database columns: snake_case (e.g., quantity_grams, user_id)\n\nFlag any violations and suggest corrections following the project's established patterns."
+    "prompt": "Validate the newly created file follows AiBake naming conventions:\n\n**File Naming by Location:**\n- `backend/src/controllers/` → must end in `.controller.ts` (e.g., `recipe.controller.ts`)\n- `backend/src/services/` → must end in `.service.ts` (e.g., `recipe.service.ts`)\n- `backend/src/middleware/` → must end in `.middleware.ts` (e.g., `auth.middleware.ts`)\n- `backend/src/models/` → must end in `.model.ts` (e.g., `recipe.model.ts`)\n- `backend/src/routes/` → must end in `.routes.ts` (e.g., `recipe.routes.ts`)\n- `middleware/src/` → camelCase functional names (e.g., `unitConverter.ts`, `recipeScaler.ts`)\n- `frontend/src/components/` → PascalCase React components (e.g., `RecipeCard.tsx`)\n- `frontend/src/pages/` → PascalCase page components (e.g., `RecipeList.tsx`)\n- `frontend/src/hooks/` → must start with `use` + camelCase (e.g., `useRecipes.ts`)\n- `frontend/src/store/` → must end in `Store.ts` (e.g., `recipeStore.ts`)\n- `database/migrations/` → `NN_description.sql` with numeric prefix (e.g., `05_add_packaging.sql`)\n- `database/rollback/` → match migration name + `_rollback.sql`\n- Test files → match source filename + `.test.ts` or `.spec.ts`\n\n**Content Naming Conventions:**\n- Functions/methods: camelCase (e.g., `convertToGrams`, `scaleRecipe`)\n- Classes: PascalCase (e.g., `RecipeService`, `AuthController`)\n- Interfaces/Types: PascalCase (e.g., `RecipeIngredient`, `UnitConversionRequest`)\n- Constants: UPPER_SNAKE_CASE (e.g., `MAX_SCALING_FACTOR`, `DEFAULT_CURRENCY = 'INR'`)\n- React components: PascalCase function name matching filename\n- Custom hooks: must start with `use` (e.g., `useRecipes`, `useInventory`)\n- Zustand stores: camelCase (e.g., `useRecipeStore`, exposed as `recipeStore`)\n- Error classes: PascalCase + Error suffix (e.g., `MissingDensityError`)\n\n**Database Naming (check SQL files):**\n- Tables: snake_case, plural (e.g., `recipe_ingredients`, `inventory_items`)\n- Columns: snake_case (e.g., `quantity_grams`, `user_id`)\n- Indexes: `idx_{table}_{column}` (e.g., `idx_recipes_user_id`)\n- Functions: snake_case (e.g., `search_ingredient`, `calculate_hydration`)\n- Triggers: `trg_{table}_{action}` (e.g., `trg_journal_entries_baking_loss`)\n\nFlag any violations and suggest the correct name following AiBake patterns."
   }
 }

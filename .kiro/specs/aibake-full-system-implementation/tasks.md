@@ -1237,7 +1237,7 @@ aibake/
 
 ### 23. Frontend - Recipe Management Interface
 
-- [ ] 23.1 Create recipe list page
+- [x] 23.1 Create recipe list page
   - Create RecipeList page displaying all user recipes in grid/list view
   - Implement search bar with debounced input
   - Implement filters (status, source type, tags)
@@ -1246,7 +1246,7 @@ aibake/
   - Display recipe cards with thumbnail, title, servings, rating
   - _Requirements: 29.1, 29.6, 29.7, 51.1, 51.2, 51.3, 51.4, 51.5_
 
-- [ ] 23.2 Create recipe detail page
+- [x] 23.2 Create recipe detail page
   - Create RecipeDetail page showing full recipe information
   - Display recipe title, description, servings, yield, source
   - Display ingredient list with quantities in user's preferred units
@@ -1256,7 +1256,7 @@ aibake/
   - Show recipe version history
   - _Requirements: 29.2, 30.4, 34.1, 35.1, 35.5_
 
-- [ ] 23.3 Create recipe creation/editing form
+- [-] 23.3 Create recipe creation/editing form
   - Create RecipeForm page with multi-step form (details, ingredients, instructions)
   - Implement recipe details section (title, description, servings, yield)
   - Implement ingredient section with autocomplete search, quantity, unit inputs
@@ -1266,7 +1266,7 @@ aibake/
   - Auto-save form data every 30 seconds
   - _Requirements: 29.3, 29.4, 30.1, 30.2, 30.3, 30.5, 30.6, 94.1_
 
-- [ ] 23.4 Implement recipe scaling interface
+- [x] 23.4 Implement recipe scaling interface
   - Add scaling control to recipe detail page
   - Display original and scaled quantities side-by-side
   - Update all quantities when scaling factor changes
@@ -1274,13 +1274,13 @@ aibake/
   - Allow saving scaled version as new recipe
   - _Requirements: 31.1, 31.2, 31.3, 31.4, 31.5_
 
-- [ ] 23.5 Implement recipe deletion
+- [x] 23.5 Implement recipe deletion
   - Add delete button with confirmation dialog
   - Display warning about cascade deletion (journal entries, versions)
   - Redirect to recipe list after deletion
   - _Requirements: 29.5_
 
-- [ ] 23.6 Write component tests for recipe management
+- [-] 23.6 Write component tests for recipe management
   - Test recipe list rendering and filtering
   - Test recipe detail display
   - Test recipe form validation

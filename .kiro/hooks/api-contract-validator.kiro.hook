@@ -1,0 +1,17 @@
+{
+  "enabled": true,
+  "name": "API Contract Validator",
+  "description": "Validates that changes to backend controllers and routes follow AiBake API design conventions: correct URL patterns, response envelopes, pagination, auth middleware, and OpenAPI sync",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "backend/src/controllers/**/*.ts",
+      "backend/src/routes/**/*.ts"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "A backend controller or route file was modified. Validate it follows AiBake API design conventions:\n\n1. **URL Pattern Compliance**:\n   - All routes must be prefixed with `/api/v1/`\n   - Route patterns: `GET /api/v1/{resource}`, `GET /api/v1/{resource}/:id`, `POST /api/v1/{resource}`, `PATCH /api/v1/{resource}/:id`, `DELETE /api/v1/{resource}/:id`\n   - Sub-resource routes: `GET /api/v1/recipes/:id/journal`, `POST /api/v1/recipes/:id/scale`\n   - Flag any route that doesn't follow this pattern\n\n2. **Authentication Middleware**:\n   - Protected routes must apply `auth.middleware.ts` before the controller\n   - Public routes (login, register, health) are documented exceptions\n   - Check that user-specific data routes are protected\n\n3. **Response Envelope Compliance**:\n   - Single resource: `res.json({ data: result })`\n   - List with pagination: `res.json({ data: results, meta: { page, pageSize, total, totalPages } })`\n   - Error: `res.status(code).json({ error: 'CODE', message: '...', statusCode: code, details: [] })`\n   - No bare `res.json(result)` without wrapping in `{ data: ... }`\n\n4. **Pagination on List Endpoints**:\n   - Any GET endpoint returning an array MUST support `?page=&pageSize=` query params\n   - Default: page=1, pageSize=20, max pageSize=100\n   - Response must include `meta.total` and `meta.totalPages`\n\n5. **User Ownership Validation**:\n   - Controllers accessing user data must pass `user_id` from `req.user.id` to the service\n   - Service must include `user_id` in DB queries\n   - Return 404 (not 403) when a resource belongs to another user\n\n6. **Input Validation**:\n   - Check that `express-validator` is used on POST/PATCH routes\n   - Numeric fields should have `.isFloat({ min: 0 })` or equivalent bounds\n   - UUID params should be validated with `.isUUID()`\n   - Call `validationResult(req)` early in the controller\n\n7. **INR Currency Fields**:\n   - Any response containing monetary data must include `currency: 'INR'`\n   - Suggested prices must be integers (rounded to nearest rupee)\n\n8. **OpenAPI Sync**:\n   - If a new endpoint was added, check if `docs/api/openapi.yaml` has an entry for it\n   - If a request/response schema changed, flag that openapi.yaml needs updating\n\n9. **Integration Test Coverage**:\n   - New endpoints should have a corresponding test in `backend/tests/integration/`\n   - If test file is missing, provide the expected test file path and suggest test cases\n\nList all violations with specific line references and corrected code examples."
+  }
+}

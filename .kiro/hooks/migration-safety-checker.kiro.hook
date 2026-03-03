@@ -1,0 +1,16 @@
+{
+  "enabled": true,
+  "name": "Migration Safety Checker",
+  "description": "Validates newly created SQL migration files for safety: sequential numbering, paired rollback, index coverage for new FKs, and detection of destructive schema changes",
+  "version": "1",
+  "when": {
+    "type": "fileCreated",
+    "patterns": [
+      "database/migrations/**/*.sql"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "A new database migration file was created for AiBake. Validate it for safety and completeness:\n\n1. **Sequential Numbering**:\n   - Check the filename starts with a numeric prefix (e.g., `05_`, `06_`)\n   - Verify this number is the next in sequence after the last migration in `database/migrations/`\n   - If out of sequence, flag it as this will break the migration runner\n\n2. **Paired Rollback Script**:\n   - A corresponding rollback file MUST exist in `database/rollback/`\n   - Expected filename: same base name + `_rollback.sql` (e.g., `05_add_packaging_rollback.sql`)\n   - If missing, remind the developer to create it before committing\n   - The rollback must undo ALL changes in the migration (DROP TABLE, DROP INDEX, etc.)\n\n3. **Transaction Wrapping**:\n   - Migration should be wrapped in `BEGIN; ... COMMIT;` for atomicity\n   - If not wrapped, warn that a partial failure could corrupt the schema\n\n4. **New Foreign Key Columns → Index Required**:\n   - For every new column that is a foreign key (e.g., `user_id`, `recipe_id`, `ingredient_master_id`)\n   - There must be a corresponding `CREATE INDEX idx_{table}_{column}` in the migration\n   - If missing, add the index creation to the migration\n\n5. **Destructive Change Detection**:\n   - `DROP TABLE` → Critical: confirm this is intentional and data has been migrated\n   - `DROP COLUMN` → High: check if this column is referenced in backend services\n   - `ALTER COLUMN` (type change) → High: may cause data truncation\n   - Removing ENUM values → High: PostgreSQL requires careful migration (can't just remove)\n   - If any destructive change found: require a comment in the SQL explaining the rationale\n\n6. **Required Columns Check**:\n   - New tables must include: `id UUID PRIMARY KEY DEFAULT uuid_generate_v4()`, `created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`, `updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`\n   - If missing, flag as a schema convention violation\n\n7. **Currency Column Check**:\n   - Any column storing monetary values must be `NUMERIC(12,2)` (not FLOAT or INTEGER)\n   - Column should have a comment indicating INR\n   - A `currency VARCHAR(3) NOT NULL DEFAULT 'INR'` column is recommended alongside cost columns\n\n8. **Water Activity Constraints**:\n   - If adding water_activity columns, verify `CHECK (value BETWEEN 0.00 AND 1.00)` constraint is present\n\nSummarize findings with specific line numbers and provide corrected SQL snippets for any issues found."
+  }
+}

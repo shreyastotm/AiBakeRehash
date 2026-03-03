@@ -1,18 +1,21 @@
 {
   "enabled": true,
   "name": "Test Coverage Guardian",
-  "description": "Warns when new code is added without corresponding test files, especially for middleware business logic and API endpoints",
-  "version": "1",
+  "description": "Warns when new AiBake source files are added without corresponding test files. Enforces property-based test requirements for all calculator and converter modules.",
+  "version": "2",
   "when": {
     "type": "fileCreated",
     "patterns": [
-      "backend/src/**/*.ts",
+      "backend/src/controllers/**/*.ts",
+      "backend/src/services/**/*.ts",
       "middleware/src/**/*.ts",
-      "frontend/src/**/*.tsx"
+      "frontend/src/components/**/*.tsx",
+      "frontend/src/pages/**/*.tsx",
+      "frontend/src/hooks/**/*.ts"
     ]
   },
   "then": {
     "type": "askAgent",
-    "prompt": "Check if a corresponding test file exists for the newly created file. Analyze:\n1. For middleware files (unitConverter, recipeScaler, etc.): Check for both unit tests and property-based tests\n2. For backend services: Check for unit tests and integration tests\n3. For API controllers: Check for integration tests\n4. For React components: Check for component tests\n5. For utility functions: Check for unit tests\n\nIf tests are missing, provide guidance on:\n- Where to create the test file (tests/unit/, tests/integration/, tests/property/)\n- What test cases should be covered\n- Whether property-based tests are needed (for calculations)\n- Suggest test structure and key scenarios to test\n\nRemind the developer that the project requires comprehensive testing, especially for business logic."
+    "prompt": "A new AiBake source file was created. Verify test coverage requirements are met.\n\n**Coverage Targets:**\n- `middleware/src/`: >90% coverage required — highest priority\n- `backend/src/`: >80% coverage required\n- `frontend/src/`: >80% coverage required\n\n**Test Requirements by File Type:**\n\n1. **Middleware Calculator/Converter files** (`middleware/src/*.ts`):\n   - BOTH unit tests AND property-based tests are REQUIRED\n   - Unit test location: `middleware/tests/unit/{filename}.test.ts`\n   - Property test location: `middleware/tests/property/{filename}.property.test.ts`\n   - Property tests must use `fast-check` with minimum 100 iterations (`numRuns: 100`)\n   - Refer to the 30-property catalogue in `.kiro/steering/testing-strategy.md`\n   - Required properties by module:\n     * `unitConverter`: 5 properties (round-trip, equivalence, linearity, error cases)\n     * `recipeScaler`: 5 properties (proportionality, identity, commutativity, warnings)\n     * `nutritionCalculator`: 4 properties (additivity, per-serving, per-100g, missing data)\n     * `hydrationCalculator`: 3 properties (formula, zero flour, zero liquid)\n     * `costCalculator`: 3 properties (additivity, zero components, missing inventory)\n     * `pricingCalculator`: 4 properties (formula, actual margin, rounding, invalid margin)\n     * `inventoryManager`: 4 properties (deduction, insufficient stock, balance, alerts)\n     * `searchEngine`: 2 properties (ranking order, exact match priority)\n\n2. **Backend Service files** (`backend/src/services/*.ts`):\n   - Unit tests: `backend/tests/unit/{service-name}.test.ts`\n   - Integration tests: `backend/tests/integration/{service-name}.test.ts`\n   - Integration tests test against real DB in a rolled-back transaction\n\n3. **Backend Controller files** (`backend/src/controllers/*.ts`):\n   - Integration tests: `backend/tests/integration/{resource}.api.test.ts`\n   - Every API endpoint in the controller must have at least one integration test\n\n4. **React Component files** (`frontend/src/components/**/*.tsx`):\n   - Component tests: `frontend/tests/unit/{ComponentName}.test.tsx`\n   - Use React Testing Library\n   - Test: renders correctly, user interactions, error/empty states\n\n5. **React Page files** (`frontend/src/pages/**/*.tsx`):\n   - Component tests for critical interactions\n   - Consider if page is part of an E2E test workflow\n\n6. **Custom Hooks** (`frontend/src/hooks/*.ts`):\n   - Unit tests using `renderHook` from React Testing Library\n\nIf test files are missing, provide the exact file path where tests should go and suggest 3-5 specific test cases to write."
   }
 }
