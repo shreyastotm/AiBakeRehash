@@ -107,16 +107,13 @@ export interface RecipeListResponse {
 }
 
 export interface IngredientSearchResult {
-  id: string
-  name: string
+  ingredient_id: string
+  ingredient_name: string
   category: string
-  default_density_g_per_ml?: number
-  nutrition_per_100g?: {
-    energy_kcal: number
-    protein_g: number
-    fat_g: number
-    carbs_g: number
-  }
+  match_type: 'canonical' | 'alias'
+  similarity_score: number
+  density_g_per_ml: number | null
+  matched_alias?: string
 }
 
 export interface RecipeCreateRequest {

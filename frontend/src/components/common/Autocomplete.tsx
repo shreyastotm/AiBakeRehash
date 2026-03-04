@@ -10,6 +10,8 @@ export interface AutocompleteOption {
 interface AutocompleteProps {
   options: AutocompleteOption[]
   value?: string
+  /** The human-readable display label for the current value (used to restore input text without needing options to be loaded) */
+  displayLabel?: string
   onChange?: (value: string, option: AutocompleteOption) => void
   onInputChange?: (inputValue: string) => void
   label?: string
@@ -21,15 +23,26 @@ interface AutocompleteProps {
   id?: string
   className?: string
   noOptionsText?: string
+  /**
+   * When true, the user can type any text and confirm it as a custom value
+   * by pressing Enter or blurring the input (even if it's not in the options list).
+   */
+  allowCustomValue?: boolean
 }
 
 /**
  * Autocomplete with keyboard navigation (arrow keys, enter, escape),
  * loading state, and accessible dropdown.
+ *
+ * Persistence fix: inputValue is driven by the `displayLabel` prop (or a
+ * label looked up from options at selection time). It does NOT re-sync from
+ * `options` on every render — only when the external `value` prop itself
+ * changes — so clearing the search options after a pick doesn't wipe the text.
  */
 export const Autocomplete: React.FC<AutocompleteProps> = ({
   options,
   value,
+  displayLabel,
   onChange,
   onInputChange,
   label,
@@ -41,6 +54,7 @@ export const Autocomplete: React.FC<AutocompleteProps> = ({
   id,
   className = '',
   noOptionsText = 'No options found',
+  allowCustomValue = false,
 }) => {
   const generatedId = useId()
   const inputId = id ?? generatedId
@@ -56,13 +70,34 @@ export const Autocomplete: React.FC<AutocompleteProps> = ({
   const listRef = useRef<HTMLUListElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
 
-  // Sync display value when external value changes
+  // Track the last external `value` we synced so we only re-sync when it
+  // actually changes (not when `options` changes after a pick).
+  const lastSyncedValue = useRef<string | undefined>(undefined)
+
+  // Sync display text only when the external `value` prop changes.
+  // Priority: displayLabel prop > match in current options > empty.
   useEffect(() => {
-    if (value !== undefined) {
-      const matched = options.find(o => o.value === value)
-      setInputValue(matched ? matched.label : '')
+    if (value === lastSyncedValue.current) return
+    lastSyncedValue.current = value
+
+    if (value === undefined || value === '') {
+      setInputValue('')
+      return
     }
-  }, [value, options])
+
+    // Use the explicitly provided display label first
+    if (displayLabel) {
+      setInputValue(displayLabel)
+      return
+    }
+
+    // Fall back to finding a label in the current options list
+    const matched = options.find(o => o.value === value)
+    if (matched) {
+      setInputValue(matched.label)
+    }
+    // If neither is available, leave inputValue as-is (preserves typed text)
+  }, [value]) // intentionally exclude `options` and `displayLabel` from deps
 
   // Close on outside click
   useEffect(() => {
@@ -94,10 +129,27 @@ export const Autocomplete: React.FC<AutocompleteProps> = ({
 
   const handleSelect = useCallback((option: AutocompleteOption) => {
     setInputValue(option.label)
+    lastSyncedValue.current = option.value // prevent next value-sync from overwriting
     setOpen(false)
     setActiveIndex(-1)
     onChange?.(option.value, option)
   }, [onChange])
+
+  /** Commit a custom (free-text) value when allowCustomValue is enabled */
+  const commitCustomValue = useCallback(() => {
+    if (!allowCustomValue) return
+    const trimmed = inputValue.trim()
+    if (!trimmed) return
+    // Don't re-fire if the user just picked from the list (value already matches)
+    const alreadySelected = options.find(o => o.label === trimmed)
+    if (alreadySelected) {
+      handleSelect(alreadySelected)
+      return
+    }
+    const customOption: AutocompleteOption = { value: trimmed, label: trimmed }
+    lastSyncedValue.current = trimmed
+    onChange?.(trimmed, customOption)
+  }, [allowCustomValue, inputValue, options, handleSelect, onChange])
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (!open && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
@@ -118,6 +170,9 @@ export const Autocomplete: React.FC<AutocompleteProps> = ({
         e.preventDefault()
         if (activeIndex >= 0 && options[activeIndex]) {
           handleSelect(options[activeIndex])
+        } else if (allowCustomValue) {
+          commitCustomValue()
+          setOpen(false)
         }
         break
       case 'Escape':
@@ -128,8 +183,16 @@ export const Autocomplete: React.FC<AutocompleteProps> = ({
       case 'Tab':
         setOpen(false)
         setActiveIndex(-1)
+        if (allowCustomValue) commitCustomValue()
         break
     }
+  }
+
+  const handleBlur = () => {
+    // Small delay so mousedown on an option fires first
+    setTimeout(() => {
+      if (allowCustomValue) commitCustomValue()
+    }, 150)
   }
 
   const borderClass = error ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-amber-500'
@@ -159,6 +222,7 @@ export const Autocomplete: React.FC<AutocompleteProps> = ({
           value={inputValue}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
+          onBlur={handleBlur}
           onFocus={() => { if (options.length > 0) setOpen(true) }}
           placeholder={placeholder}
           disabled={disabled}
@@ -190,11 +254,16 @@ export const Autocomplete: React.FC<AutocompleteProps> = ({
                 Loading...
               </li>
             ) : options.length === 0 ? (
-              <li className="px-3 py-2.5 text-sm text-gray-500">{noOptionsText}</li>
+              <li className="px-3 py-2.5 text-sm text-gray-500">
+                {allowCustomValue && inputValue.trim()
+                  ? <span>Press <kbd className="px-1 py-0.5 text-xs bg-gray-100 rounded border">Enter</kbd> to add &ldquo;{inputValue.trim()}&rdquo;</span>
+                  : noOptionsText
+                }
+              </li>
             ) : (
               options.map((option, index) => (
                 <li
-                  key={option.value}
+                  key={`${option.value}-${index}`}
                   id={`${listboxId}-option-${index}`}
                   role="option"
                   aria-selected={option.value === value}
@@ -203,13 +272,12 @@ export const Autocomplete: React.FC<AutocompleteProps> = ({
                     handleSelect(option)
                   }}
                   onMouseEnter={() => setActiveIndex(index)}
-                  className={`px-3 py-2.5 text-sm cursor-pointer min-h-[44px] flex flex-col justify-center ${
-                    index === activeIndex
+                  className={`px-3 py-2.5 text-sm cursor-pointer min-h-[44px] flex flex-col justify-center ${index === activeIndex
                       ? 'bg-amber-50 text-amber-700'
                       : option.value === value
-                      ? 'bg-amber-50 text-amber-700 font-medium'
-                      : 'text-gray-900 hover:bg-gray-50'
-                  }`}
+                        ? 'bg-amber-50 text-amber-700 font-medium'
+                        : 'text-gray-900 hover:bg-gray-50'
+                    }`}
                 >
                   <span>{option.label}</span>
                   {option.sublabel && (

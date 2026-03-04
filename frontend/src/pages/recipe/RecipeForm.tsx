@@ -220,11 +220,13 @@ const IngredientRow = ({
             <Autocomplete
                 options={searchOptions}
                 value={ingredient.ingredient_master_id}
+                displayLabel={ingredient.display_name}
                 onInputChange={onIngredientSearch}
                 onChange={(val, opt) => onIngredientSelect(index, val, opt)}
                 placeholder="Search ingredient..."
                 loading={searchLoading}
                 noOptionsText="No ingredients found"
+                allowCustomValue
             />
         </div>
 
@@ -473,12 +475,15 @@ export const RecipeForm = () => {
     )
 
     const handleIngredientSelect = useCallback(
-        (index: number, _value: string, option: AutocompleteOption) => {
+        (index: number, value: string, option: AutocompleteOption) => {
             setForm((prev) => {
                 const updated = [...prev.ingredients]
+                // When allowCustomValue fires, value === option.label (the typed text)
+                // For list selections, value is the UUID ingredient_master_id
+                const isCustom = value === option.label
                 updated[index] = {
                     ...updated[index],
-                    ingredient_master_id: option.value,
+                    ingredient_master_id: isCustom ? '' : value,
                     display_name: option.label,
                 }
                 return { ...prev, ingredients: updated }
@@ -500,9 +505,9 @@ export const RecipeForm = () => {
                 const results: IngredientSearchResult[] = await recipeService.searchIngredients(query)
                 setIngredientOptions(
                     results.map((r) => ({
-                        value: r.id,
-                        label: r.name,
-                        description: r.category,
+                        value: r.ingredient_id,
+                        label: r.ingredient_name,
+                        sublabel: r.category,
                     }))
                 )
             } catch {

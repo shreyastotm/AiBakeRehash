@@ -10,16 +10,19 @@ services:
       POSTGRES_USER: aibake_user
       POSTGRES_PASSWORD: aibake_password
       POSTGRES_DB: aibake_db
+      POSTGRES_HOST_AUTH_METHOD: trust
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./database/migrations:/docker-entrypoint-initdb.d:ro
+      - ./database/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U aibake_user -d aibake_db"]
+      test: [ "CMD-SHELL", "pg_isready -U aibake_user -d aibake_db" ]
       interval: 10s
       timeout: 5s
       retries: 5
+    command: postgres -c hba_file=/etc/postgresql/pg_hba.conf -c password_encryption=md5
 
   # Redis Cache
   redis:
@@ -32,7 +35,7 @@ services:
       - redis_data:/data
     command: redis-server --appendonly yes
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 10s
       timeout: 5s
       retries: 5
