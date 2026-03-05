@@ -45,6 +45,10 @@ function NutritionRow({ label, per100g, perServing, unit, bold }: NutritionRowPr
 export function NutritionDisplay({ nutrition, className = '' }: NutritionDisplayProps) {
   const { t } = useLocalization()
 
+  if (!nutrition || !nutrition.per_100g || !nutrition.per_serving) {
+    return null;
+  }
+
   return (
     <div className={`bg-white rounded-lg border border-gray-200 overflow-hidden ${className}`}>
       <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">

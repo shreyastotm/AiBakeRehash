@@ -8,6 +8,9 @@ import { RecipeList } from '../pages/recipe/RecipeList'
 import { RecipeDetail } from '../pages/recipe/RecipeDetail'
 import { RecipeForm } from '../pages/recipe/RecipeForm'
 import { Settings } from '../pages/Settings'
+import { JournalList } from '../pages/journal/JournalList'
+import { JournalEntryNew } from '../pages/journal/JournalEntryNew'
+import { JournalDetail } from '../pages/journal/JournalDetail'
 
 export const routes: RouteObject[] = [
   // Auth routes (no layout)
@@ -112,16 +115,33 @@ export const routes: RouteObject[] = [
     ),
   },
 
-  // Journal routes (placeholder for future implementation)
+  // Journal routes
   {
-    path: '/journal',
+    path: '/recipes/:id/journal',
     element: (
       <ProtectedRoute>
         <Layout>
-          <div className="text-center py-12">
-            <h1 className="text-2xl font-bold text-gray-900">Baking Journal</h1>
-            <p className="text-gray-600 mt-2">Coming soon...</p>
-          </div>
+          <JournalList />
+        </Layout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/recipes/:recipeId/journal/new',
+    element: (
+      <ProtectedRoute>
+        <Layout>
+          <JournalEntryNew />
+        </Layout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/recipes/:recipeId/journal/:entryId',
+    element: (
+      <ProtectedRoute>
+        <Layout>
+          <JournalDetail />
         </Layout>
       </ProtectedRoute>
     ),

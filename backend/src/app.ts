@@ -38,7 +38,9 @@ app.use(
 // ---------------------------------------------------------------------------
 // 3. CORS with whitelist
 // ---------------------------------------------------------------------------
-const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:5173')
+const allowedOrigins = (
+  process.env.CORS_ORIGIN || 'http://localhost:5173,http://localhost:5174,http://localhost:5175'
+)
   .split(',')
   .map((o) => o.trim())
   .filter(Boolean);
@@ -129,7 +131,9 @@ app.get('/health', async (_req, res) => {
   const allHealthy = dbHealth.healthy && redisHealth.healthy && storageHealth.healthy;
   const status = allHealthy ? 'ok' : 'degraded';
 
-  res.status(allHealthy ? 200 : 503).json({
+  // Only return 503 if the database is unhealthy.
+  // Redis and storage degradation are tolerable for basic app functionality.
+  res.status(dbHealth.healthy ? 200 : 503).json({
     status,
     timestamp: new Date().toISOString(),
     services: {

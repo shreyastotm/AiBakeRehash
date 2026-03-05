@@ -68,6 +68,19 @@ export async function getById(req: Request, res: Response, next: NextFunction): 
 }
 
 // ---------------------------------------------------------------------------
+// GET /api/v1/recipes/:id/nutrition
+// ---------------------------------------------------------------------------
+
+export async function getNutrition(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const nutrition = await recipeService.getRecipeNutrition(paramStr(req.params.id), req.user!.userId);
+    res.json({ success: true, data: nutrition });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// ---------------------------------------------------------------------------
 // POST /api/v1/recipes
 // ---------------------------------------------------------------------------
 

@@ -339,7 +339,7 @@ function handleQuery(text: string, params?: unknown[]): { rows: unknown[]; rowCo
   }
 
   // --- Snapshots ---
-  if (text.includes('FROM recipe_version_snapshots WHERE version_id')) {
+  if (text.includes('FROM recipe_version_snapshots WHERE recipe_version_id')) {
     const versionId = params?.[0] as string;
     const found = mockSnapshots.filter((s) => s.version_id === versionId);
     return { rows: found, rowCount: found.length };

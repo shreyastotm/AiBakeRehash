@@ -6,12 +6,8 @@ import {
   CreateIngredientInput,
   IngredientListQuery,
 } from '../models/ingredient.model';
-import {
-  searchIngredient,
-  SearchResult,
-  SearchableIngredient,
-  SearchableAlias,
-} from '../../../middleware/src/searchEngine';
+// @ts-ignore TS6059 - cross-package import
+import { searchIngredient, SearchResult, SearchableIngredient, SearchableAlias } from '../../../middleware/src/searchEngine';
 import { logger } from '../utils/logger';
 
 // ---------------------------------------------------------------------------

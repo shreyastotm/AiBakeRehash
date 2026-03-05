@@ -74,10 +74,12 @@ const compareVersionsValidation = [
 router.get('/recipes/search', requireAuth, recipeController.search);
 
 router.get('/recipes', requireAuth, recipeController.list);
+router.get('/recipes/:id/nutrition', requireAuth, validate(idParamValidation), recipeController.getNutrition);
 router.get('/recipes/:id', requireAuth, validate(idParamValidation), recipeController.getById);
 router.post('/recipes', requireAuth, validate(createRecipeValidation), recipeController.create);
 router.patch('/recipes/:id', requireAuth, validate(updateRecipeValidation), recipeController.update);
 router.delete('/recipes/:id', requireAuth, validate(idParamValidation), recipeController.remove);
+
 
 // Scaling
 router.post('/recipes/:id/scale', requireAuth, validate(scaleValidation), recipeController.scale);

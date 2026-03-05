@@ -28,8 +28,8 @@ export const IngredientList: React.FC<IngredientListProps> = ({
   const sorted = [...ingredients].sort((a, b) => a.position - b.position)
   const isScaled = Math.abs(scalingFactor - 1) > 0.001
 
-  const fmt = (qty: number): string =>
-    formatNumber(parseFloat(qty.toFixed(2)))
+  const fmt = (qty: number | string): string =>
+    formatNumber(parseFloat(Number(qty).toFixed(2)))
 
   return (
     <div className={`space-y-2 ${className}`}>

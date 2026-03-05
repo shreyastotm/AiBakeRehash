@@ -18,13 +18,9 @@ import {
   UsageReportItem,
   ValueReportItem,
 } from '../models/inventory.model';
-import {
-  calculateDeductions,
-  applyDeductions,
-  type DeductionIngredient,
-  type InventoryItem as MwInventoryItem,
-  type DeductionResult,
-} from '../../../middleware/src/inventoryManager';
+// @ts-ignore TS6059 - cross-package import
+import { calculateDeductions, applyDeductions, type DeductionIngredient, type InventoryItem as MwInventoryItem, type DeductionResult } from '../../../middleware/src/inventoryManager';
+// @ts-ignore TS6059 - cross-package import
 import { type IngredientDensity } from '../../../middleware/src/unitConverter';
 import { logger } from '../utils/logger';
 

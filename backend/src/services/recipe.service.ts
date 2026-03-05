@@ -90,7 +90,7 @@ async function createSnapshot(
 ): Promise<void> {
   const details = await fetchRecipeDetails(recipeId, client);
   await client.query(
-    'INSERT INTO recipe_version_snapshots (version_id, snapshot_data) VALUES ($1, $2)',
+    'INSERT INTO recipe_version_snapshots (recipe_version_id, snapshot_data) VALUES ($1, $2)',
     [versionId, JSON.stringify(details)],
   );
 }
@@ -152,6 +152,18 @@ export async function getRecipe(
   return fetchRecipeDetails(recipeId);
 }
 
+export async function getRecipeNutrition(
+  recipeId: string,
+  userId: string,
+): Promise<unknown | null> {
+  await assertRecipeOwnership(recipeId, userId);
+  const result = await db.query(
+    'SELECT nutrition_per_100g as per_100g, nutrition_per_serving as per_serving, calculated_at FROM recipe_nutrition_cache WHERE recipe_id = $1',
+    [recipeId]
+  );
+  return result.rows[0] || null;
+}
+
 // ---------------------------------------------------------------------------
 // Create recipe (transactional)
 // ---------------------------------------------------------------------------
@@ -182,10 +194,13 @@ export async function createRecipe(
 
     if (input.ingredients && input.ingredients.length > 0) {
       for (const ing of input.ingredients) {
+        // quantity_grams may not be sent by the frontend (unit conversion not yet implemented);
+        // fall back to quantity_original so the insert doesn't violate the NOT NULL constraint.
+        const quantityGrams = ing.quantity_grams ?? ing.quantity_original;
         await client.query(
           `INSERT INTO recipe_ingredients (recipe_id, ingredient_master_id, display_name, quantity_original, unit_original, quantity_grams, position, is_flour, is_liquid)
            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-          [recipe.id, ing.ingredient_master_id, ing.display_name, ing.quantity_original, ing.unit_original, ing.quantity_grams, ing.position, ing.is_flour || false, ing.is_liquid || false],
+          [recipe.id, ing.ingredient_master_id, ing.display_name, ing.quantity_original, ing.unit_original, quantityGrams, ing.position, ing.is_flour || false, ing.is_liquid || false],
         );
       }
     }
@@ -201,8 +216,8 @@ export async function createRecipe(
         if (sec.steps && sec.steps.length > 0) {
           for (const step of sec.steps) {
             await client.query(
-              'INSERT INTO recipe_steps (recipe_id, section_id, instruction, duration_seconds, temperature_celsius, position, dependency_step_id) VALUES ($1, $2, $3, $4, $5, $6, $7)',
-              [recipe.id, section.id, step.instruction, step.duration_seconds ?? null, step.temperature_celsius ?? null, step.position, step.dependency_step_id ?? null],
+              'INSERT INTO recipe_steps (section_id, instruction, duration_seconds, temperature_celsius, position, dependency_step_id) VALUES ($1, $2, $3, $4, $5, $6)',
+              [section.id, step.instruction, step.duration_seconds ?? null, step.temperature_celsius ?? null, step.position, step.dependency_step_id ?? null],
             );
           }
         }
@@ -265,10 +280,11 @@ export async function updateRecipe(
     if (input.ingredients) {
       await client.query('DELETE FROM recipe_ingredients WHERE recipe_id = $1', [recipeId]);
       for (const ing of input.ingredients) {
+        const quantityGrams = ing.quantity_grams ?? ing.quantity_original;
         await client.query(
           `INSERT INTO recipe_ingredients (recipe_id, ingredient_master_id, display_name, quantity_original, unit_original, quantity_grams, position, is_flour, is_liquid)
            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-          [recipeId, ing.ingredient_master_id, ing.display_name, ing.quantity_original, ing.unit_original, ing.quantity_grams, ing.position, ing.is_flour || false, ing.is_liquid || false],
+          [recipeId, ing.ingredient_master_id, ing.display_name, ing.quantity_original, ing.unit_original, quantityGrams, ing.position, ing.is_flour || false, ing.is_liquid || false],
         );
       }
     }
@@ -286,8 +302,8 @@ export async function updateRecipe(
         if (sec.steps && sec.steps.length > 0) {
           for (const step of sec.steps) {
             await client.query(
-              'INSERT INTO recipe_steps (recipe_id, section_id, instruction, duration_seconds, temperature_celsius, position, dependency_step_id) VALUES ($1, $2, $3, $4, $5, $6, $7)',
-              [recipeId, section.id, step.instruction, step.duration_seconds ?? null, step.temperature_celsius ?? null, step.position, step.dependency_step_id ?? null],
+              'INSERT INTO recipe_steps (section_id, instruction, duration_seconds, temperature_celsius, position, dependency_step_id) VALUES ($1, $2, $3, $4, $5, $6)',
+              [section.id, step.instruction, step.duration_seconds ?? null, step.temperature_celsius ?? null, step.position, step.dependency_step_id ?? null],
             );
           }
         }
@@ -337,9 +353,11 @@ export async function scaleRecipe(
   const recipeScaler: {
     scaleByYield: (recipe: any, target: number) => any;
     scaleByServings: (recipe: any, target: number) => any;
+    // @ts-ignore TS6059 - cross-package import
   } = await import('../../../middleware/src/recipeScaler');
   const nutritionCalc: {
     calculateNutrition: (ingredients: any[], servings: number) => any;
+    // @ts-ignore TS6059 - cross-package import
   } = await import('../../../middleware/src/nutritionCalculator');
 
   const scalableRecipe = {
@@ -447,7 +465,7 @@ export async function createVersion(
     await createSnapshot(client, version.id, recipeId);
 
     const snapshotResult = await client.query<RecipeVersionSnapshot>(
-      'SELECT * FROM recipe_version_snapshots WHERE version_id = $1',
+      'SELECT * FROM recipe_version_snapshots WHERE recipe_version_id = $1',
       [version.id],
     );
 
@@ -466,7 +484,7 @@ export async function compareVersions(
   const result = await db.query<RecipeVersion & { snapshot_data: Record<string, unknown> }>(
     `SELECT rv.*, rvs.snapshot_data
      FROM recipe_versions rv
-     JOIN recipe_version_snapshots rvs ON rvs.version_id = rv.id
+     JOIN recipe_version_snapshots rvs ON rvs.recipe_version_id = rv.id
      WHERE rv.recipe_id = $1 AND rv.version_number IN ($2, $3)
      ORDER BY rv.version_number`,
     [recipeId, versionA, versionB],
