@@ -1,5 +1,4 @@
 import api from './api';
-import { TranscriptionStatus } from './api'; // Wait, let me just inline the types if they are only used here.
 
 export type TranscriptionStatus = 'pending' | 'processing' | 'completed' | 'failed';
 
@@ -19,6 +18,7 @@ export interface JournalEntry {
     storage_days_achieved: number | null;
     images: string[];
     recipe_version_id: string | null;
+    recipe_title?: string;
     created_at: string;
     updated_at: string;
 }
@@ -64,18 +64,26 @@ export interface UpdateJournalEntryInput {
 export const journalService = {
     getJournalEntries: async (recipeId: string): Promise<JournalEntryWithAudio[]> => {
         const response = await api.get(`/recipes/${recipeId}/journal`);
-        const payload = response.data?.data ?? response.data;
+        const payload = response.data.hasOwnProperty('data') ? response.data.data : response.data;
         return Array.isArray(payload) ? payload : [];
     },
 
+    getAllJournalEntries: async (): Promise<JournalEntryWithAudio[]> => {
+        const response = await api.get('/journal');
+        const payload = response.data.hasOwnProperty('data') ? response.data.data : response.data;
+        return Array.isArray(payload) ? payload : [];
+    },
+
+
+
     createJournalEntry: async (recipeId: string, data: CreateJournalEntryInput): Promise<JournalEntryWithAudio> => {
         const response = await api.post(`/recipes/${recipeId}/journal`, data);
-        return response.data?.data ?? response.data;
+        return response.data.hasOwnProperty('data') ? response.data.data : response.data;
     },
 
     updateJournalEntry: async (journalId: string, data: UpdateJournalEntryInput): Promise<JournalEntryWithAudio> => {
         const response = await api.patch(`/journal/${journalId}`, data);
-        return response.data?.data ?? response.data;
+        return response.data.hasOwnProperty('data') ? response.data.data : response.data;
     },
 
     deleteJournalEntry: async (journalId: string): Promise<void> => {
@@ -90,7 +98,7 @@ export const journalService = {
                 'Content-Type': 'multipart/form-data',
             },
         });
-        return response.data?.data ?? response.data;
+        return response.data.hasOwnProperty('data') ? response.data.data : response.data;
     },
 
     uploadAudio: async (
@@ -113,6 +121,11 @@ export const journalService = {
                 'Content-Type': 'multipart/form-data',
             },
         });
-        return response.data?.data ?? response.data;
+        return response.data.hasOwnProperty('data') ? response.data.data : response.data;
+    },
+
+    estimateWaterActivity: async (recipeId: string): Promise<{ estimated_aw: number; explanation: string }> => {
+        const response = await api.get(`/recipes/${recipeId}/journal/estimate-aw`);
+        return response.data.hasOwnProperty('data') ? response.data.data : response.data;
     },
 };

@@ -89,4 +89,7 @@ router.get('/recipes/:id/versions', requireAuth, validate(idParamValidation), re
 router.post('/recipes/:id/versions', requireAuth, validate(idParamValidation), recipeController.createVersion);
 router.get('/recipes/:id/versions/compare', requireAuth, validate(compareVersionsValidation), recipeController.compareVersions);
 
+// AI Estimation (Journal related but scoped to recipe details)
+router.get('/recipes/:id/journal/estimate-aw', requireAuth, validate(idParamValidation), recipeController.estimateWaterActivity);
+
 export default router;

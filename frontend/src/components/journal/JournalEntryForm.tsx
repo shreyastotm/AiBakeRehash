@@ -1,16 +1,18 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { useRecipe } from '../../hooks/useRecipes';
 import {
     useCreateJournalEntry,
+    useUpdateJournalEntry,
     useUploadJournalImages,
-    useUploadJournalAudio
+    useUploadJournalAudio,
+    useEstimateWaterActivity
 } from '../../hooks/useJournalEntries';
 import { Button } from '../common/Button';
 import { Input } from '../common/Input';
 import { ImageUpload } from './ImageUpload';
 import { AudioRecorder } from './AudioRecorder';
 import { useNavigate } from 'react-router-dom';
+import { JournalEntry } from '../../services/journal.service';
 
 interface JournalFormValues {
     bake_date: string;
@@ -26,33 +28,48 @@ interface JournalFormValues {
 
 interface JournalEntryFormProps {
     recipeId: string;
+    initialData?: JournalEntry;
 }
 
-export const JournalEntryForm: React.FC<JournalEntryFormProps> = ({ recipeId }) => {
+export const JournalEntryForm: React.FC<JournalEntryFormProps> = ({ recipeId, initialData }) => {
     const navigate = useNavigate();
-    const { data: recipe } = useRecipe(recipeId);
-    // recipe data is currently just used for routing verification or header, maybe remove if not used here
-    console.log(recipe?.title);
     const createMutation = useCreateJournalEntry();
+    const updateMutation = useUpdateJournalEntry();
+    const estimateAwMutation = useEstimateWaterActivity();
     const uploadImagesMutation = useUploadJournalImages();
     const uploadAudioMutation = useUploadJournalAudio();
 
     const [images, setImages] = useState<File[]>([]);
     const [audioFile, setAudioFile] = useState<{ file: File, duration: number } | null>(null);
 
-    const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<JournalFormValues>({
+    const isEdit = !!initialData;
+
+    const { register, handleSubmit, setValue, formState: { errors, isSubmitting } } = useForm<JournalFormValues>({
         defaultValues: {
-            bake_date: new Date().toISOString().split('T')[0],
-            notes: '',
-            private_notes: '',
-            rating: '',
-            outcome_weight_grams: '',
-            pre_bake_weight_grams: '',
-            measured_water_activity: '',
-            storage_days_achieved: '',
+            bake_date: initialData?.bake_date ? new Date(initialData.bake_date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+            notes: initialData?.notes ?? '',
+            private_notes: initialData?.private_notes ?? '',
+            rating: initialData?.rating ?? '',
+            outcome_weight_grams: initialData?.outcome_weight_grams ?? '',
+            pre_bake_weight_grams: initialData?.pre_bake_weight_grams ?? '',
+            measured_water_activity: initialData?.measured_water_activity ?? '',
+            storage_days_achieved: initialData?.storage_days_achieved ?? '',
             deduct_inventory: false,
         }
     });
+
+    const [awExplanation, setAwExplanation] = useState<string | null>(null);
+
+    const handleEstimateAw = async () => {
+        try {
+            const result = await estimateAwMutation.mutateAsync(recipeId);
+            setValue('measured_water_activity', result.estimated_aw);
+            setAwExplanation(result.explanation);
+        } catch (error) {
+            console.error('Failed to estimate water activity:', error);
+            alert('AI estimation failed. Please enter the value manually.');
+        }
+    };
 
     const onSubmit = async (data: JournalFormValues) => {
         try {
@@ -68,23 +85,30 @@ export const JournalEntryForm: React.FC<JournalEntryFormProps> = ({ recipeId }) 
                 deduct_inventory: data.deduct_inventory
             };
 
-            const entry = await createMutation.mutateAsync({ recipeId, data: payload });
+            let entryId = initialData?.id;
 
-            if (images.length > 0) {
-                await uploadImagesMutation.mutateAsync({ journalId: entry.id, files: images });
+            if (isEdit && entryId) {
+                await updateMutation.mutateAsync({ journalId: entryId, data: payload });
+            } else {
+                const newEntry = await createMutation.mutateAsync({ recipeId, data: payload });
+                entryId = newEntry.id;
             }
 
-            if (audioFile) {
+            if (images.length > 0 && entryId) {
+                await uploadImagesMutation.mutateAsync({ journalId: entryId, files: images });
+            }
+
+            if (audioFile && entryId) {
                 await uploadAudioMutation.mutateAsync({
-                    journalId: entry.id,
+                    journalId: entryId,
                     file: audioFile.file,
                     durationSeconds: audioFile.duration
                 });
             }
 
-            navigate(`/recipes/${recipeId}/journal/${entry.id}`);
+            navigate(`/recipes/${recipeId}/journal/${entryId}`);
         } catch (error) {
-            console.error('Failed to create journal entry:', error);
+            console.error('Failed to save journal entry:', error);
             alert('An error occurred while saving the journal entry.');
         }
     };
@@ -130,14 +154,34 @@ export const JournalEntryForm: React.FC<JournalEntryFormProps> = ({ recipeId }) 
                         {...register('outcome_weight_grams', { min: 0 })}
                         error={errors.outcome_weight_grams?.message}
                     />
-                    <Input
-                        label="Water Activity (Aw)"
-                        type="number"
-                        step="0.01"
-                        min="0" max="1"
-                        {...register('measured_water_activity', { min: 0, max: 1 })}
-                        error={errors.measured_water_activity?.message}
-                    />
+                    <div className="space-y-1">
+                        <div className="flex justify-between items-end gap-2">
+                            <Input
+                                label="Water Activity (Aw)"
+                                type="number"
+                                step="0.01"
+                                min="0" max="1"
+                                {...register('measured_water_activity', { min: 0, max: 1 })}
+                                error={errors.measured_water_activity?.message}
+                                className="flex-1"
+                            />
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={handleEstimateAw}
+                                disabled={estimateAwMutation.isPending}
+                                className="mb-[2px] text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+                            >
+                                {estimateAwMutation.isPending ? '...' : '✨ Auto-Estimate'}
+                            </Button>
+                        </div>
+                        {awExplanation && (
+                            <p className="text-xs text-amber-700 bg-amber-50 p-2 rounded-md border border-amber-100 italic">
+                                {awExplanation}
+                            </p>
+                        )}
+                    </div>
                 </div>
             </section>
 

@@ -173,4 +173,21 @@ describe('RecipeDetail', () => {
     expect(screen.getByRole('button', { name: /edit/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /delete/i })).toBeInTheDocument()
   })
+
+  it('renders Log Bake button and navigates to new journal entry page', async () => {
+    const user = userEvent.setup()
+    mockUseRecipe.mockReturnValue({ data: makeRecipe(), isLoading: false, error: null })
+    // Mock useJournalEntries as well since it's used in BakeHistory
+    vi.mock('../../../hooks/useJournalEntries', () => ({
+      useJournalEntries: () => ({ data: [], isLoading: false }),
+    }))
+
+    renderRecipeDetail()
+
+    const logBakeBtn = screen.getByRole('button', { name: /log bake/i })
+    expect(logBakeBtn).toBeInTheDocument()
+
+    await user.click(logBakeBtn)
+    expect(mockNavigate).toHaveBeenCalledWith('/recipes/recipe-1/journal/new')
+  })
 })

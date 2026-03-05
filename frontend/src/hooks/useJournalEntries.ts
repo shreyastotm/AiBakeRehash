@@ -1,13 +1,23 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { journalService, CreateJournalEntryInput, UpdateJournalEntryInput, JournalEntryWithAudio } from '../services/journal.service';
+import { journalService, CreateJournalEntryInput, UpdateJournalEntryInput } from '../services/journal.service';
 
-export const useJournalEntries = (recipeId: string) => {
+export const useJournalEntries = (recipeId: string, options: { enabled?: boolean } = {}) => {
     return useQuery({
         queryKey: ['journal-entries', recipeId],
         queryFn: () => journalService.getJournalEntries(recipeId),
-        enabled: !!recipeId,
+        enabled: (options.enabled !== undefined ? options.enabled : true) && !!recipeId,
     });
 };
+
+export const useAllJournalEntries = (options: { enabled?: boolean } = {}) => {
+    return useQuery({
+        queryKey: ['journal-entries', 'all'],
+        queryFn: () => journalService.getAllJournalEntries(),
+        enabled: options.enabled !== undefined ? options.enabled : true,
+    });
+};
+
+
 
 export const useCreateJournalEntry = () => {
     const queryClient = useQueryClient();
@@ -79,5 +89,11 @@ export const useUploadJournalAudio = () => {
             // Easiest is to invalidate all journal entries to guarantee freshness.
             queryClient.invalidateQueries({ queryKey: ['journal-entries'] });
         },
+    });
+};
+
+export const useEstimateWaterActivity = () => {
+    return useMutation({
+        mutationFn: (recipeId: string) => journalService.estimateWaterActivity(recipeId),
     });
 };

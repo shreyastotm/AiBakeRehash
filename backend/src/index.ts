@@ -23,6 +23,7 @@ async function start() {
 
     app.listen(PORT, () => {
       logger.info(`AiBake API server running on port ${PORT}`);
+      // Forced reload marker
     });
   } catch (err) {
     logger.fatal({ err }, 'Failed to start server');

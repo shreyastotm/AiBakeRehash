@@ -11,6 +11,7 @@ import { Settings } from '../pages/Settings'
 import { JournalList } from '../pages/journal/JournalList'
 import { JournalEntryNew } from '../pages/journal/JournalEntryNew'
 import { JournalDetail } from '../pages/journal/JournalDetail'
+import { JournalEntryEdit } from '../pages/journal/JournalEntryEdit'
 
 export const routes: RouteObject[] = [
   // Auth routes (no layout)
@@ -117,7 +118,7 @@ export const routes: RouteObject[] = [
 
   // Journal routes
   {
-    path: '/recipes/:id/journal',
+    path: '/journal',
     element: (
       <ProtectedRoute>
         <Layout>
@@ -126,6 +127,17 @@ export const routes: RouteObject[] = [
       </ProtectedRoute>
     ),
   },
+  {
+    path: '/recipes/:recipeId/journal',
+    element: (
+      <ProtectedRoute>
+        <Layout>
+          <JournalList />
+        </Layout>
+      </ProtectedRoute>
+    ),
+  },
+
   {
     path: '/recipes/:recipeId/journal/new',
     element: (
@@ -142,6 +154,16 @@ export const routes: RouteObject[] = [
       <ProtectedRoute>
         <Layout>
           <JournalDetail />
+        </Layout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/recipes/:recipeId/journal/:entryId/edit',
+    element: (
+      <ProtectedRoute>
+        <Layout>
+          <JournalEntryEdit />
         </Layout>
       </ProtectedRoute>
     ),

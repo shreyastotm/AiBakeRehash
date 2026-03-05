@@ -177,7 +177,7 @@ app.get('/metrics', (_req, res) => {
 });
 
 // ---------------------------------------------------------------------------
-// 9. API routes
+// 9. API routes (RELOAD)
 // ---------------------------------------------------------------------------
 import authRoutes from './routes/auth.routes';
 import recipeRoutes from './routes/recipe.routes';
@@ -204,15 +204,16 @@ try {
   // OpenAPI spec not found — Swagger UI will be unavailable
 }
 
-app.use('/api/v1', authRoutes);
 app.use('/api/v1', recipeRoutes);
-app.use('/api/v1', ingredientRoutes);
 app.use('/api/v1', journalRoutes);
+app.use('/api/v1', authRoutes);
+app.use('/api/v1', ingredientRoutes);
 app.use('/api/v1', inventoryRoutes);
 app.use('/api/v1', costingRoutes);
 app.use('/api/v1', supplierRoutes);
 app.use('/api/v1', socialRoutes);
 app.use('/api/v1', importExportRoutes);
+
 
 // Swagger UI documentation
 if (swaggerDocument) {

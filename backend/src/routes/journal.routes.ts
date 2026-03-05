@@ -4,6 +4,7 @@ import multer from 'multer';
 import { validate } from '../middleware/validate';
 import { requireAuth } from '../middleware/auth';
 import * as journalController from '../controllers/journal.controller';
+import * as recipeController from '../controllers/recipe.controller';
 
 const router = Router();
 
@@ -61,6 +62,13 @@ const updateJournalValidation = [
 // Routes
 // ---------------------------------------------------------------------------
 
+// Global journal entries
+router.get(
+  '/journal',
+  requireAuth,
+  journalController.listAll,
+);
+
 // Journal entries scoped to recipe
 router.get(
   '/recipes/:id/journal',
@@ -74,6 +82,13 @@ router.post(
   requireAuth,
   validate(createJournalValidation),
   journalController.create,
+);
+
+router.post(
+  '/recipes/:id/nutrition/calculate',
+  requireAuth,
+  validate(recipeIdValidation),
+  recipeController.calculateNutrition,
 );
 
 // Journal entries by journal ID

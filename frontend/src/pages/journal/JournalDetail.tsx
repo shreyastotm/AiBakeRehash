@@ -88,7 +88,7 @@ export const JournalDetail = () => {
                                 </div>
                                 <div>
                                     <div className="text-xs text-gray-500 mb-1">Baking Loss</div>
-                                    <div className="font-semibold text-amber-600">{entry.baking_loss_percentage ? `${entry.baking_loss_percentage.toFixed(1)}%` : '-'}</div>
+                                    <div className="font-semibold text-amber-600">{entry.baking_loss_percentage != null ? `${Number(entry.baking_loss_percentage).toFixed(1)}%` : '-'}</div>
                                 </div>
                                 <div>
                                     <div className="text-xs text-gray-500 mb-1">Water Activity</div>

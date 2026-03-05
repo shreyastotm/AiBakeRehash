@@ -5,14 +5,10 @@ import {
   ForbiddenError,
   ValidationError,
 } from '../middleware/errorHandler';
-import {
-  JournalEntry,
-  JournalEntryWithAudio,
-  AudioNote,
-  CreateJournalEntryInput,
-  UpdateJournalEntryInput,
-} from '../models/journal.model';
+import { JournalEntry, JournalEntryWithAudio, AudioNote, CreateJournalEntryInput, UpdateJournalEntryInput } from '../models/journal.model';
 import { logger } from '../utils/logger';
+import { AIService } from './ai.service';
+import { getRecipe } from './recipe.service';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -142,6 +138,44 @@ export async function listJournalEntries(
   return entries;
 }
 
+export async function getWaterActivityEstimate(recipeId: string, userId: string): Promise<{
+  estimated_aw: number;
+  explanation: string;
+}> {
+  const recipe = await getRecipe(recipeId, userId);
+  return AIService.estimateWaterActivity(recipe);
+}
+
+// ---------------------------------------------------------------------------
+// List all journal entries for a user
+// ---------------------------------------------------------------------------
+
+export async function listAllJournalEntries(
+  userId: string,
+): Promise<Array<JournalEntryWithAudio & { recipe_title: string }>> {
+  const result = await db.query<JournalEntry & { recipe_title: string }>(
+    `SELECT j.*, r.title as recipe_title
+     FROM recipe_journal_entries j
+     JOIN recipes r ON j.recipe_id = r.id
+     WHERE r.user_id = $1
+     ORDER BY j.bake_date DESC, j.created_at DESC`,
+    [userId],
+  );
+
+  const entries: Array<JournalEntryWithAudio & { recipe_title: string }> = [];
+  for (const entry of result.rows) {
+    const audioResult = await db.query<AudioNote>(
+      'SELECT * FROM recipe_audio_notes WHERE journal_entry_id = $1 ORDER BY created_at',
+      [entry.id],
+    );
+    entries.push({ ...entry, audio_notes: audioResult.rows });
+  }
+
+  return entries;
+}
+
+
+
 // ---------------------------------------------------------------------------
 // Create journal entry
 // ---------------------------------------------------------------------------
@@ -152,67 +186,78 @@ export async function createJournalEntry(
   input: CreateJournalEntryInput,
 ): Promise<JournalEntryWithAudio> {
   return db.withTransaction(async (client) => {
-    await assertRecipeOwnership(recipeId, userId, client);
+    try {
+      await assertRecipeOwnership(recipeId, userId, client);
 
-    // Validate rating
-    if (input.rating !== undefined && input.rating !== null) {
-      if (input.rating < 1 || input.rating > 5) {
-        throw new ValidationError('Rating must be between 1 and 5');
+      // Validate rating
+      if (input.rating !== undefined && input.rating !== null) {
+        if (input.rating < 1 || input.rating > 5) {
+          throw new ValidationError('Rating must be between 1 and 5');
+        }
       }
-    }
 
-    // Validate water activity
-    if (input.measured_water_activity !== undefined && input.measured_water_activity !== null) {
-      if (input.measured_water_activity < 0 || input.measured_water_activity > 1) {
-        throw new ValidationError('Water activity must be between 0.00 and 1.00');
+      // Validate water activity
+      if (input.measured_water_activity !== undefined && input.measured_water_activity !== null) {
+        if (input.measured_water_activity < 0 || input.measured_water_activity > 1) {
+          throw new ValidationError('Water activity must be between 0.00 and 1.00');
+        }
       }
+
+      // Calculate baking loss if both weights provided
+      let bakingLossGrams: number | null = null;
+      let bakingLossPercentage: number | null = null;
+
+      if (
+        input.pre_bake_weight_grams != null &&
+        input.pre_bake_weight_grams > 0 &&
+        input.outcome_weight_grams != null &&
+        input.outcome_weight_grams > 0
+      ) {
+        const loss = calculateBakingLoss(input.pre_bake_weight_grams, input.outcome_weight_grams);
+        bakingLossGrams = loss.baking_loss_grams;
+        bakingLossPercentage = loss.baking_loss_percentage;
+      }
+
+      // Get current recipe version
+      const recipeVersionId = await getCurrentRecipeVersionId(recipeId, client);
+
+      const result = await client.query(
+        `INSERT INTO recipe_journal_entries
+          (recipe_id, user_id, bake_date, notes, private_notes, rating,
+           outcome_weight_grams, pre_bake_weight_grams, baking_loss_grams,
+           baking_loss_percentage, measured_water_activity, storage_days_achieved,
+           images, version_id)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+         RETURNING *`,
+        [
+          recipeId,
+          userId,
+          input.bake_date,
+          input.notes || null,
+          input.private_notes || null,
+          ((input as any).rating === '' || input.rating === undefined || input.rating === null) ? null : Number(input.rating),
+          ((input as any).outcome_weight_grams === '' || input.outcome_weight_grams === undefined || input.outcome_weight_grams === null) ? null : Number(input.outcome_weight_grams),
+          ((input as any).pre_bake_weight_grams === '' || input.pre_bake_weight_grams === undefined || input.pre_bake_weight_grams === null) ? null : Number(input.pre_bake_weight_grams),
+          bakingLossGrams,
+          bakingLossPercentage,
+          ((input as any).measured_water_activity === '' || input.measured_water_activity === undefined || input.measured_water_activity === null) ? null : Number(input.measured_water_activity),
+          ((input as any).storage_days_achieved === '' || input.storage_days_achieved === undefined || input.storage_days_achieved === null) ? null : Number(input.storage_days_achieved),
+          JSON.stringify([]),
+          recipeVersionId,
+        ],
+      );
+
+      const row = result.rows[0];
+      // Map version_id -> recipe_version_id for model consistency
+      return {
+        ...row,
+        recipe_version_id: row.version_id,
+        audio_notes: []
+      } as JournalEntryWithAudio;
+    } catch (err) {
+      logger.error({ err, recipeId, userId }, 'Failed to create journal entry');
+      throw err;
     }
-
-    // Calculate baking loss if both weights provided
-    let bakingLossGrams: number | null = null;
-    let bakingLossPercentage: number | null = null;
-
-    if (
-      input.pre_bake_weight_grams != null &&
-      input.pre_bake_weight_grams > 0 &&
-      input.outcome_weight_grams != null &&
-      input.outcome_weight_grams > 0
-    ) {
-      const loss = calculateBakingLoss(input.pre_bake_weight_grams, input.outcome_weight_grams);
-      bakingLossGrams = loss.baking_loss_grams;
-      bakingLossPercentage = loss.baking_loss_percentage;
-    }
-
-    // Get current recipe version
-    const recipeVersionId = await getCurrentRecipeVersionId(recipeId, client);
-
-    const result = await client.query<JournalEntry>(
-      `INSERT INTO recipe_journal_entries
-        (recipe_id, user_id, bake_date, notes, private_notes, rating,
-         outcome_weight_grams, pre_bake_weight_grams, baking_loss_grams,
-         baking_loss_percentage, measured_water_activity, storage_days_achieved,
-         images, recipe_version_id)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
-       RETURNING *`,
-      [
-        recipeId,
-        userId,
-        input.bake_date,
-        input.notes || null,
-        input.private_notes || null,
-        input.rating || null,
-        input.outcome_weight_grams || null,
-        input.pre_bake_weight_grams || null,
-        bakingLossGrams,
-        bakingLossPercentage,
-        input.measured_water_activity || null,
-        input.storage_days_achieved || null,
-        JSON.stringify([]),
-        recipeVersionId,
-      ],
-    );
-
-    return { ...result.rows[0], audio_notes: [] };
   });
 }
 

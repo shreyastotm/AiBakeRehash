@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { useRecipe, useDeleteRecipe, useRecipeVersions, useRecipeNutrition, useScaleRecipe } from '../../hooks/useRecipes'
+import { useRecipe, useDeleteRecipe, useRecipeVersions, useRecipeNutrition, useScaleRecipe, useCalculateNutrition } from '../../hooks/useRecipes'
+import { useJournalEntries } from '../../hooks/useJournalEntries'
 import { LoadingSpinner } from '../../components/common/LoadingSpinner'
 import { Button } from '../../components/common/Button'
 import { Badge } from '../../components/common/Badge'
@@ -114,6 +115,62 @@ const BakingInfo = ({ waterActivity, minSafeWaterActivity, shelfLifeDays, hydrat
   )
 }
 
+// ─── Bake history section ─────────────────────────────────────────────────────
+
+interface BakeHistoryProps {
+  recipeId: string
+  formatDate: (d: string, fmt: string) => string
+}
+
+const BakeHistory = ({ recipeId, formatDate }: BakeHistoryProps) => {
+  const { data: bakes, isLoading } = useJournalEntries(recipeId)
+
+  if (isLoading) return <div className="py-4 text-center text-gray-400">Loading bakes...</div>
+  if (!bakes || bakes.length === 0) return null
+
+  return (
+    <section aria-labelledby="bakes-heading" className="bg-white rounded-xl border border-gray-100 p-5">
+      <div className="flex items-center justify-between mb-4">
+        <h2 id="bakes-heading" className="text-base font-semibold text-gray-900">
+          Bake History
+        </h2>
+        <Link
+          to={`/recipes/${recipeId}/journal`}
+          className="text-sm text-amber-600 hover:text-amber-700 font-medium"
+        >
+          View All →
+        </Link>
+      </div>
+      <div className="space-y-3">
+        {bakes.slice(0, 5).map((bake) => (
+          <Link
+            key={bake.id}
+            to={`/recipes/${recipeId}/journal/${bake.id}`}
+            className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 border border-transparent hover:border-gray-100 transition-all group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded bg-amber-50 flex items-center justify-center text-amber-600 font-bold text-xs uppercase text-center leading-tight">
+                {formatDate(bake.bake_date, 'MMM')}
+                <br />
+                {formatDate(bake.bake_date, 'd')}
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-900 group-hover:text-amber-700 transition-colors">
+                  {bake.rating ? `★ ${bake.rating}/5` : 'No rating'}
+                </p>
+                <p className="text-xs text-gray-500 line-clamp-1">
+                  {bake.notes || 'No notes recorded'}
+                </p>
+              </div>
+            </div>
+            <span className="text-gray-300 group-hover:text-amber-400 transition-colors">→</span>
+          </Link>
+        ))}
+      </div>
+    </section>
+  )
+}
+
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export const RecipeDetail = () => {
@@ -124,6 +181,7 @@ export const RecipeDetail = () => {
   const { data: recipe, isLoading, error } = useRecipe(id ?? '')
   const { data: versions } = useRecipeVersions(id ?? '')
   const { data: nutrition } = useRecipeNutrition(id ?? '')
+  const calculateNutrition = useCalculateNutrition()
   const deleteRecipe = useDeleteRecipe()
   const scaleRecipe = useScaleRecipe()
 
@@ -132,6 +190,16 @@ export const RecipeDetail = () => {
   const [scalingFactor, setScalingFactor] = useState(1)
   const [showScaling, setShowScaling] = useState(false)
   const [showVersions, setShowVersions] = useState(false)
+
+  const handleCalculateNutrition = async () => {
+    if (!id) return
+    try {
+      await calculateNutrition.mutateAsync(id)
+    } catch (err) {
+      console.error('Failed to calculate nutrition:', err)
+      alert('AI nutrition calculation failed. Please ensure ingredients are correctly labelled.')
+    }
+  }
 
   // ── Loading / error states ──────────────────────────────────────────────────
 
@@ -240,6 +308,13 @@ export const RecipeDetail = () => {
 
         <div className="flex gap-2 shrink-0">
           <Button
+            variant="primary"
+            size="sm"
+            onClick={() => navigate(`/recipes/${id}/journal/new`)}
+          >
+            ➕ Log Bake
+          </Button>
+          <Button
             variant="ghost"
             size="sm"
             onClick={() => setShowScaling((v) => !v)}
@@ -329,12 +404,29 @@ export const RecipeDetail = () => {
       )}
 
       {/* ── Nutrition ── */}
-      {nutrition && (
+      {nutrition ? (
         <section aria-labelledby="nutrition-heading">
           <h2 id="nutrition-heading" className="sr-only">
             {t('recipes.nutritionFacts', 'Nutrition Facts')}
           </h2>
           <NutritionDisplay nutrition={nutrition} />
+        </section>
+      ) : (
+        <section aria-labelledby="nutrition-heading" className="bg-white rounded-xl border border-gray-100 p-5 text-center">
+          <h2 id="nutrition-heading" className="text-base font-semibold text-gray-900 mb-2">
+            Nutritional Information
+          </h2>
+          <p className="text-sm text-gray-500 mb-4">
+            AI can estimate the nutritional facts for your recipe based on its ingredients.
+          </p>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleCalculateNutrition}
+            loading={calculateNutrition.isPending}
+          >
+            ✨ Calculate with AI
+          </Button>
         </section>
       )}
 
@@ -345,6 +437,9 @@ export const RecipeDetail = () => {
         shelfLifeDays={recipe.estimated_shelf_life_days}
         hydrationPercentage={recipe.total_hydration_percentage}
       />
+
+      {/* ── Bake history ── */}
+      <BakeHistory recipeId={id ?? ''} formatDate={formatDate} />
 
       {/* ── Version history ── */}
       {versions && versions.length > 0 && (

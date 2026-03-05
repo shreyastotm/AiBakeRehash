@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import * as recipeService from '../services/recipe.service';
+import * as journalService from '../services/journal.service';
 import { RecipeListQuery, RecipeSearchQuery } from '../models/recipe.model';
 
 /** Extract a single string param (Express v5 params can be string | string[]) */
@@ -74,6 +75,15 @@ export async function getById(req: Request, res: Response, next: NextFunction): 
 export async function getNutrition(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const nutrition = await recipeService.getRecipeNutrition(paramStr(req.params.id), req.user!.userId);
+    res.json({ success: true, data: nutrition });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function calculateNutrition(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const nutrition = await recipeService.calculateRecipeNutrition(paramStr(req.params.id), req.user!.userId);
     res.json({ success: true, data: nutrition });
   } catch (err) {
     next(err);
@@ -178,6 +188,22 @@ export async function compareVersions(req: Request, res: Response, next: NextFun
       req.user!.userId,
       versionA,
       versionB,
+    );
+    res.json({ success: true, data: result });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// AI Estimation
+// ---------------------------------------------------------------------------
+
+export async function estimateWaterActivity(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const result = await journalService.getWaterActivityEstimate(
+      paramStr(req.params.id),
+      req.user!.userId,
     );
     res.json({ success: true, data: result });
   } catch (err) {

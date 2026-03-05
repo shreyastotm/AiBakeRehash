@@ -24,6 +24,20 @@ export async function list(req: Request, res: Response, next: NextFunction): Pro
 }
 
 // ---------------------------------------------------------------------------
+// GET /api/v1/journal
+// ---------------------------------------------------------------------------
+
+export async function listAll(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const entries = await journalService.listAllJournalEntries(req.user!.userId);
+    res.json({ success: true, data: entries });
+  } catch (err) {
+    next(err);
+  }
+}
+
+
+// ---------------------------------------------------------------------------
 // POST /api/v1/recipes/:id/journal
 // ---------------------------------------------------------------------------
 
@@ -125,7 +139,17 @@ export async function uploadImages(req: Request, res: Response, next: NextFuncti
 // POST /api/v1/journal/:id/audio
 // ---------------------------------------------------------------------------
 
-const ALLOWED_AUDIO_TYPES = ['audio/mpeg', 'audio/wav', 'audio/x-wav', 'audio/mp4', 'audio/x-m4a', 'audio/m4a'];
+const ALLOWED_AUDIO_TYPES = [
+  'audio/mpeg',
+  'audio/wav',
+  'audio/x-wav',
+  'audio/mp4',
+  'audio/x-m4a',
+  'audio/m4a',
+  'audio/webm',
+  'video/webm',
+  'audio/ogg'
+];
 const MAX_AUDIO_SIZE = 50 * 1024 * 1024; // 50MB
 
 export async function uploadAudio(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -166,6 +190,22 @@ export async function uploadAudio(req: Request, res: Response, next: NextFunctio
     );
 
     res.status(201).json({ success: true, data: audioNote });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// GET /api/v1/recipes/:id/journal/estimate-aw
+// ---------------------------------------------------------------------------
+
+export async function estimateWaterActivity(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const estimate = await journalService.getWaterActivityEstimate(
+      paramStr(req.params.id),
+      req.user!.userId,
+    );
+    res.json({ success: true, data: estimate });
   } catch (err) {
     next(err);
   }

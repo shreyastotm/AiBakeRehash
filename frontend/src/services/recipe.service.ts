@@ -151,9 +151,10 @@ export const recipeService = {
     )
     const response = await api.get('/recipes', { params: cleanParams })
     // Normalise response shape — backend may return { data: { recipes, total, ... } } or flat
-    const payload = response.data?.data ?? response.data
+    const payload = response.data?.data ?? response.data;
+    const recipes = payload?.recipes ?? payload?.data ?? [];
     return {
-      recipes: payload?.recipes ?? payload?.data ?? [],
+      recipes: Array.isArray(recipes) ? recipes : [],
       total: payload?.total ?? 0,
       page: payload?.page ?? params.page ?? 1,
       limit: payload?.limit ?? params.limit ?? 12,
@@ -163,22 +164,31 @@ export const recipeService = {
 
   getRecipe: async (id: string): Promise<RecipeWithDetails> => {
     const response = await api.get(`/recipes/${id}`)
-    return response.data?.data ?? response.data
+    return response.data.hasOwnProperty('data') ? response.data.data : response.data
   },
 
   getRecipeVersions: async (id: string): Promise<RecipeVersion[]> => {
     const response = await api.get(`/recipes/${id}/versions`)
-    const payload = response.data?.data ?? response.data
+    const payload = response.data.hasOwnProperty('data') ? response.data.data : response.data
     return Array.isArray(payload) ? payload : []
   },
 
   getRecipeNutrition: async (id: string): Promise<RecipeNutritionCache | null> => {
     try {
       const response = await api.get(`/recipes/${id}/nutrition`)
-      return response.data?.data ?? response.data ?? null
+      // Use hasOwnProperty to distinguish between "data is null" and "data field missing"
+      if (response.data && typeof response.data === 'object' && 'data' in response.data) {
+        return response.data.data;
+      }
+      return response.data ?? null;
     } catch {
       return null
     }
+  },
+
+  calculateRecipeNutrition: async (id: string): Promise<RecipeNutritionCache> => {
+    const response = await api.post(`/recipes/${id}/nutrition/calculate`)
+    return response.data.hasOwnProperty('data') ? response.data.data : response.data
   },
 
   createRecipe: async (data: RecipeCreateRequest): Promise<Recipe> => {

@@ -33,6 +33,17 @@ export const useRecipeNutrition = (id: string) => {
   })
 }
 
+export const useCalculateNutrition = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (id: string) => recipeService.calculateRecipeNutrition(id),
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: ['recipe-nutrition', id] })
+    },
+  })
+}
+
 export const useCreateRecipe = () => {
   const queryClient = useQueryClient()
 

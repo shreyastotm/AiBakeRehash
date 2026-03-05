@@ -19,6 +19,7 @@ import {
   RecipeSearchQuery,
 } from '../models/recipe.model';
 import { logger } from '../utils/logger';
+import { AIService } from './ai.service';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -162,6 +163,88 @@ export async function getRecipeNutrition(
     [recipeId]
   );
   return result.rows[0] || null;
+}
+
+export async function calculateRecipeNutrition(
+  recipeId: string,
+  userId: string,
+): Promise<unknown> {
+  const recipe = await fetchRecipeDetails(recipeId); // Avoid getRecipe which calls ownership again inside this file logic
+
+  if (recipe.user_id !== userId) {
+    throw new ForbiddenError('You do not own this recipe');
+  }
+
+  const nutritionCalc: {
+    calculateNutrition: (ingredients: any[], servings: number) => any;
+    // @ts-ignore TS6059 - cross-package import
+  } = await import('../../../middleware/src/nutritionCalculator');
+
+  // Fetch ingredient master data
+  const ingredientIds = recipe.ingredients.map((i) => i.ingredient_master_id);
+  const nutritionIngredients: any[] = [];
+
+  if (ingredientIds.length > 0) {
+    const placeholders = ingredientIds.map((_, i) => `$${i + 1}`).join(',');
+    const nutritionResult = await db.query(
+      `SELECT id, nutrition_per_100g FROM ingredient_master WHERE id IN (${placeholders})`,
+      ingredientIds,
+    );
+
+    const nutritionMap = new Map<string, unknown>();
+    for (const row of nutritionResult.rows) {
+      nutritionMap.set(row.id, row.nutrition_per_100g);
+    }
+
+    for (const ing of recipe.ingredients) {
+      let nutritionData = nutritionMap.get(ing.ingredient_master_id);
+
+      if (!nutritionData) {
+        try {
+          const estimate = await AIService.estimateNutrition(ing.display_name);
+          nutritionData = {
+            energy_kcal: estimate.calories,
+            fat_g: estimate.fats_grams,
+            carbs_g: estimate.carbs_grams,
+            protein_g: estimate.proteins_grams,
+          };
+        } catch (err) {
+          logger.warn({ ing: ing.display_name }, 'AI nutrition estimation failed');
+        }
+      }
+
+      nutritionIngredients.push({
+        id: ing.id,
+        display_name: ing.display_name,
+        quantity_grams: ing.quantity_grams,
+        nutrition_per_100g: nutritionData || null,
+      });
+    }
+  }
+
+  const nutrition = nutritionCalc.calculateNutrition(
+    nutritionIngredients,
+    recipe.servings,
+  );
+
+  const result = {
+    ...nutrition,
+    servings: recipe.servings,
+    calculated_at: new Date().toISOString(),
+  };
+
+  // Cache it
+  await db.query(
+    `INSERT INTO recipe_nutrition_cache (recipe_id, nutrition_per_100g, nutrition_per_serving, calculated_at)
+     VALUES ($1, $2, $3, NOW())
+     ON CONFLICT (recipe_id) DO UPDATE SET
+       nutrition_per_100g = EXCLUDED.nutrition_per_100g,
+       nutrition_per_serving = EXCLUDED.nutrition_per_serving,
+       calculated_at = NOW()`,
+    [recipeId, JSON.stringify(result.per_100g), JSON.stringify(result.per_serving)],
+  );
+
+  return result;
 }
 
 // ---------------------------------------------------------------------------
@@ -400,17 +483,33 @@ export async function scaleRecipe(
         nutritionMap.set(row.id, row.nutrition_per_100g);
       }
 
-      const nutritionIngredients = scaledResult.recipe.ingredients.map((ing: any) => {
-        const origIng = recipe.ingredients.find((i) => i.id === ing.id);
-        return {
-          id: ing.id,
-          display_name: ing.display_name,
-          quantity_grams: ing.quantity_grams,
-          nutrition_per_100g: origIng
-            ? nutritionMap.get(origIng.ingredient_master_id) || null
-            : null,
-        };
-      });
+      const nutritionIngredients = await Promise.all(
+        scaledResult.recipe.ingredients.map(async (ing: any) => {
+          const origIng = recipe.ingredients.find((i) => i.id === ing.id);
+          let nutritionData = origIng ? nutritionMap.get(origIng.ingredient_master_id) : null;
+
+          if (!nutritionData) {
+            try {
+              const estimate = await AIService.estimateNutrition(ing.display_name);
+              nutritionData = {
+                energy_kcal: estimate.calories,
+                fat_g: estimate.fats_grams,
+                carbs_g: estimate.carbs_grams,
+                protein_g: estimate.proteins_grams,
+              };
+            } catch (err) {
+              logger.warn({ dr: ing.display_name }, 'AI nutrition estimation failed');
+            }
+          }
+
+          return {
+            id: ing.id,
+            display_name: ing.display_name,
+            quantity_grams: ing.quantity_grams,
+            nutrition_per_100g: nutritionData || null,
+          };
+        }),
+      );
 
       const nutrition = nutritionCalc.calculateNutrition(
         nutritionIngredients as any,

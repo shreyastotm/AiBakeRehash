@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { useJournalEntries } from '../../hooks/useJournalEntries';
+import { useJournalEntries, useAllJournalEntries } from '../../hooks/useJournalEntries';
 import { useRecipe } from '../../hooks/useRecipes';
 import { Button } from '../../components/common/Button';
 import { EmptyState } from '../../components/common/EmptyState';
@@ -8,11 +8,19 @@ import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { format } from 'date-fns';
 
 export const JournalList = () => {
-    const { id } = useParams<{ id: string }>();
+    const { recipeId } = useParams<{ recipeId: string }>();
+    const isGlobal = !recipeId;
     const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
 
-    const { data: recipe, isLoading: isLoadingRecipe } = useRecipe(id!);
-    const { data: entries, isLoading: isLoadingEntries, error } = useJournalEntries(id!);
+    const { data: recipe, isLoading: isLoadingRecipe } = useRecipe(recipeId || '');
+
+    const allEntriesQuery = useAllJournalEntries({ enabled: isGlobal });
+    const recipeEntriesQuery = useJournalEntries(recipeId || '', { enabled: !isGlobal });
+
+    const entries = isGlobal ? allEntriesQuery.data : recipeEntriesQuery.data;
+    const isLoadingEntries = isGlobal ? allEntriesQuery.isLoading : recipeEntriesQuery.isLoading;
+    const error = isGlobal ? allEntriesQuery.error : recipeEntriesQuery.error;
+
 
     const sortedEntries = React.useMemo(() => {
         if (!entries) return [];
@@ -25,7 +33,7 @@ export const JournalList = () => {
 
     const toggleSort = () => setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc');
 
-    if (isLoadingRecipe || isLoadingEntries) {
+    if ((!isGlobal && isLoadingRecipe) || isLoadingEntries) {
         return (
             <div className="flex justify-center items-center min-h-[50vh]">
                 <LoadingSpinner size="lg" />
@@ -33,11 +41,11 @@ export const JournalList = () => {
         );
     }
 
-    if (error || !recipe) {
+    if (error || (!isGlobal && !recipe)) {
         return (
             <div className="container mx-auto px-4 py-6 max-w-4xl">
                 <div className="p-4 bg-red-50 text-red-600 rounded-lg">
-                    Failed to load journal entries. Please try again.
+                    {error instanceof Error ? error.message : 'Failed to load journal entries. Please try again.'}
                 </div>
             </div>
         );
@@ -48,15 +56,25 @@ export const JournalList = () => {
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                 <div>
-                    <Link to={`/recipes/${id}`} className="text-sm text-gray-500 hover:text-gray-900 mb-2 inline-block">
-                        ← Back to Recipe
-                    </Link>
+                    {!isGlobal && (
+                        <Link to={`/recipes/${recipeId}`} className="text-sm text-gray-500 hover:text-gray-900 mb-2 inline-block">
+                            ← Back to Recipe
+                        </Link>
+                    )}
+                    {isGlobal && (
+                        <Link to="/dashboard" className="text-sm text-gray-500 hover:text-gray-900 mb-2 inline-block">
+                            ← Back to Dashboard
+                        </Link>
+                    )}
                     <h1 className="text-2xl font-bold text-gray-900">Baking Journal</h1>
-                    <p className="text-gray-600 font-medium">For: {recipe.title}</p>
+                    {!isGlobal && recipe && <p className="text-gray-600 font-medium">For: {recipe.title}</p>}
+                    {isGlobal && <p className="text-gray-600 font-medium">History of all your bakes</p>}
                 </div>
-                <Link to={`/recipes/${id}/journal/new`}>
-                    <Button>+ New Entry</Button>
-                </Link>
+                {!isGlobal && (
+                    <Link to={`/recipes/${recipeId}/journal/new`}>
+                        <Button>+ New Entry</Button>
+                    </Link>
+                )}
             </div>
 
             <div className="flex justify-end mb-4">
@@ -72,11 +90,11 @@ export const JournalList = () => {
                 <EmptyState
                     icon={<span className="text-4xl">📝</span>}
                     title="No journal entries yet"
-                    description="Log your first bake to start tracking progress, notes, and photos."
+                    description={isGlobal ? "You haven't logged any bakes yet. Go to a recipe to start your journal." : "Log your first bake to start tracking progress, notes, and photos."}
                     action={{
-                        label: 'Add Journal Entry',
+                        label: isGlobal ? 'View Recipes' : 'Add Journal Entry',
                         onClick: () => {
-                            window.location.href = `/recipes/${id}/journal/new`;
+                            window.location.href = isGlobal ? '/recipes' : `/recipes/${recipeId}/journal/new`;
                         }
                     }}
                 />
@@ -85,7 +103,7 @@ export const JournalList = () => {
                     {sortedEntries.map((entry) => (
                         <Link
                             key={entry.id}
-                            to={`/journal/${entry.id}`}
+                            to={`/recipes/${entry.recipe_id}/journal/${entry.id}`}
                             className="block bg-white border border-gray-200 rounded-xl p-5 hover:border-amber-500 hover:shadow-sm transition-all"
                         >
                             <div className="flex justify-between items-start mb-2">
@@ -99,11 +117,18 @@ export const JournalList = () => {
                                 )}
                             </div>
 
+                            {entry.recipe_title && (
+                                <p className="text-sm font-semibold text-primary mb-1">
+                                    {entry.recipe_title}
+                                </p>
+                            )}
+
                             {entry.notes && (
                                 <p className="text-gray-600 mb-4 line-clamp-2">
                                     {entry.notes}
                                 </p>
                             )}
+
 
                             <div className="flex flex-wrap gap-4 text-sm text-gray-500">
                                 {entry.pre_bake_weight_grams && (
@@ -112,8 +137,8 @@ export const JournalList = () => {
                                 {entry.outcome_weight_grams && (
                                     <div>Outcome: <span className="font-medium text-gray-900">{entry.outcome_weight_grams}g</span></div>
                                 )}
-                                {entry.baking_loss_percentage && (
-                                    <div>Loss: <span className="font-medium text-amber-600">{entry.baking_loss_percentage.toFixed(1)}%</span></div>
+                                {entry.baking_loss_percentage != null && (
+                                    <div>Loss: <span className="font-medium text-amber-600">{Number(entry.baking_loss_percentage).toFixed(1)}%</span></div>
                                 )}
                             </div>
 
