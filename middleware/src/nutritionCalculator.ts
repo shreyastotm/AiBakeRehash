@@ -18,6 +18,8 @@ export interface NutritionPer100g {
   protein_g: number;
   fat_g: number;
   carbs_g: number;
+  sugar_g?: number;
+  added_sugar_g?: number;
   fiber_g?: number;
 }
 
@@ -37,6 +39,8 @@ export interface NutritionTotals {
   protein_g: number;
   fat_g: number;
   carbs_g: number;
+  sugar_g: number;
+  added_sugar_g: number;
   fiber_g: number;
 }
 
@@ -77,7 +81,7 @@ export class InvalidServingsError extends Error {
 // ---------------------------------------------------------------------------
 
 function emptyTotals(): NutritionTotals {
-  return { energy_kcal: 0, protein_g: 0, fat_g: 0, carbs_g: 0, fiber_g: 0 };
+  return { energy_kcal: 0, protein_g: 0, fat_g: 0, carbs_g: 0, sugar_g: 0, added_sugar_g: 0, fiber_g: 0 };
 }
 
 function scaleTotals(totals: NutritionTotals, factor: number): NutritionTotals {
@@ -86,6 +90,8 @@ function scaleTotals(totals: NutritionTotals, factor: number): NutritionTotals {
     protein_g: totals.protein_g * factor,
     fat_g: totals.fat_g * factor,
     carbs_g: totals.carbs_g * factor,
+    sugar_g: totals.sugar_g * factor,
+    added_sugar_g: totals.added_sugar_g * factor,
     fiber_g: totals.fiber_g * factor,
   };
 }
@@ -116,6 +122,7 @@ function scaleTotals(totals: NutritionTotals, factor: number): NutritionTotals {
 export function calculateNutrition(
   ingredients: NutritionIngredient[],
   servings: number,
+  yieldWeightGrams?: number | null,
 ): NutritionResult {
   if (!ingredients || ingredients.length === 0) {
     throw new NoIngredientsError();
@@ -136,21 +143,27 @@ export function calculateNutrition(
       continue;
     }
 
-    const weightFactor = ing.quantity_grams / 100;
+    const qty = Number(ing.quantity_grams) || 0;
+    const weightFactor = qty / 100;
 
     total.energy_kcal += nutr.energy_kcal * weightFactor;
     total.protein_g += nutr.protein_g * weightFactor;
     total.fat_g += nutr.fat_g * weightFactor;
     total.carbs_g += nutr.carbs_g * weightFactor;
+    total.sugar_g += (nutr.sugar_g ?? 0) * weightFactor;
+    total.added_sugar_g += (nutr.added_sugar_g ?? 0) * weightFactor;
     total.fiber_g += (nutr.fiber_g ?? 0) * weightFactor;
 
-    totalWeightGrams += ing.quantity_grams;
+    totalWeightGrams += qty;
   }
+
+  // Determine reference weight for per-100g math (use baked yield if provided)
+  const referenceWeight = (yieldWeightGrams && yieldWeightGrams > 0) ? yieldWeightGrams : totalWeightGrams;
 
   // Per-100g: normalise to 100g of total weight (only ingredients with data)
   const per100g =
-    totalWeightGrams > 0
-      ? scaleTotals(total, 100 / totalWeightGrams)
+    referenceWeight > 0
+      ? scaleTotals(total, 100 / referenceWeight)
       : emptyTotals();
 
   // Per-serving

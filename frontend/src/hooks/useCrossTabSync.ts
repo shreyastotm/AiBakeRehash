@@ -9,10 +9,12 @@ import { usePreferencesStore } from '../store/preferencesStore'
  * Listens for storage events and updates local state accordingly
  */
 export const useCrossTabSync = () => {
-  const authStore = useAuthStore()
-  const recipeStore = useRecipeStore()
-  const inventoryStore = useInventoryStore()
-  const preferencesStore = usePreferencesStore()
+  const setUser = useAuthStore(s => s.setUser)
+  const setToken = useAuthStore(s => s.setToken)
+  const setRecipes = useRecipeStore(s => s.setRecipes)
+  const setSelectedRecipe = useRecipeStore(s => s.setSelectedRecipe)
+  const setItems = useInventoryStore(s => s.setItems)
+  const setPreferences = usePreferencesStore(s => s.setPreferences)
 
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
@@ -24,10 +26,10 @@ export const useCrossTabSync = () => {
           const newState = JSON.parse(e.newValue)
           if (newState.state) {
             if (newState.state.user) {
-              authStore.setUser(newState.state.user)
+              setUser(newState.state.user)
             }
             if (newState.state.token) {
-              authStore.setToken(newState.state.token)
+              setToken(newState.state.token)
             }
           }
         } catch (error) {
@@ -41,10 +43,10 @@ export const useCrossTabSync = () => {
           const newState = JSON.parse(e.newValue)
           if (newState.state) {
             if (newState.state.recipes) {
-              recipeStore.setRecipes(newState.state.recipes)
+              setRecipes(newState.state.recipes)
             }
             if (newState.state.selectedRecipe) {
-              recipeStore.setSelectedRecipe(newState.state.selectedRecipe)
+              setSelectedRecipe(newState.state.selectedRecipe)
             }
           }
         } catch (error) {
@@ -57,7 +59,7 @@ export const useCrossTabSync = () => {
         try {
           const newState = JSON.parse(e.newValue)
           if (newState.state && newState.state.items) {
-            inventoryStore.setItems(newState.state.items)
+            setItems(newState.state.items)
           }
         } catch (error) {
           console.error('Failed to sync inventory state:', error)
@@ -69,7 +71,7 @@ export const useCrossTabSync = () => {
         try {
           const newState = JSON.parse(e.newValue)
           if (newState.state && newState.state.preferences) {
-            preferencesStore.setPreferences(newState.state.preferences)
+            setPreferences(newState.state.preferences)
           }
         } catch (error) {
           console.error('Failed to sync preferences state:', error)
@@ -79,9 +81,6 @@ export const useCrossTabSync = () => {
 
     // Listen for storage changes from other tabs
     window.addEventListener('storage', handleStorageChange)
-
-    return () => {
-      window.removeEventListener('storage', handleStorageChange)
-    }
-  }, [authStore, recipeStore, inventoryStore, preferencesStore])
+    return () => window.removeEventListener('storage', handleStorageChange)
+  }, [setUser, setToken, setRecipes, setSelectedRecipe, setItems, setPreferences])
 }

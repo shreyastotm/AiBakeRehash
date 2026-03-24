@@ -12,7 +12,8 @@ interface Recipe {
   _pendingChanges?: Partial<Recipe>
 }
 
-interface RecipeStore {
+export interface RecipeStore {
+
   recipes: Recipe[]
   selectedRecipe: Recipe | null
   isLoading: boolean
@@ -62,21 +63,21 @@ export const useRecipeStore = create<RecipeStore>()(
           recipes: state.recipes.map((r) =>
             r.id === id
               ? {
-                  ...r,
-                  ...updates,
-                  _optimistic: true,
-                  _pendingChanges: updates,
-                }
+                ...r,
+                ...updates,
+                _optimistic: true,
+                _pendingChanges: updates,
+              }
               : r
           ),
           selectedRecipe:
             state.selectedRecipe?.id === id
               ? {
-                  ...state.selectedRecipe,
-                  ...updates,
-                  _optimistic: true,
-                  _pendingChanges: updates,
-                }
+                ...state.selectedRecipe,
+                ...updates,
+                _optimistic: true,
+                _pendingChanges: updates,
+              }
               : state.selectedRecipe,
         })),
       commitOptimisticUpdate: (id) =>
@@ -84,19 +85,19 @@ export const useRecipeStore = create<RecipeStore>()(
           recipes: state.recipes.map((r) =>
             r.id === id
               ? {
-                  ...r,
-                  _optimistic: false,
-                  _pendingChanges: undefined,
-                }
+                ...r,
+                _optimistic: false,
+                _pendingChanges: undefined,
+              }
               : r
           ),
           selectedRecipe:
             state.selectedRecipe?.id === id
               ? {
-                  ...state.selectedRecipe,
-                  _optimistic: false,
-                  _pendingChanges: undefined,
-                }
+                ...state.selectedRecipe,
+                _optimistic: false,
+                _pendingChanges: undefined,
+              }
               : state.selectedRecipe,
         })),
       rollbackOptimisticUpdate: (id) => {
@@ -108,10 +109,10 @@ export const useRecipeStore = create<RecipeStore>()(
             recipes: s.recipes.map((r) =>
               r.id === id
                 ? {
-                    ...r,
-                    _optimistic: false,
-                    _pendingChanges: undefined,
-                  }
+                  ...r,
+                  _optimistic: false,
+                  _pendingChanges: undefined,
+                }
                 : r
             ),
           }))

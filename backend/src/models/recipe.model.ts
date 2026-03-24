@@ -28,6 +28,8 @@ export interface Recipe {
   min_safe_water_activity: number | null;
   estimated_shelf_life_days: number | null;
   total_hydration_percentage: number | null;
+  estimated_aw_explanation: string | null;
+  tags: string[];
   created_at: Date;
   updated_at: Date;
 }
@@ -43,6 +45,9 @@ export interface RecipeIngredient {
   position: number;
   is_flour: boolean;
   is_liquid: boolean;
+  inventory_item_id: string | null;
+  brand_name?: string | null;
+  moisture_content?: number | null;
 }
 
 export interface RecipeSection {
@@ -79,6 +84,25 @@ export interface RecipeVersionSnapshot {
 }
 
 
+export interface LabelIngredient {
+  display_name: string;
+  quantity_grams: number;
+}
+
+export interface LabelData {
+  recipe_id: string;
+  title: string;
+  ingredients_sorted: LabelIngredient[];
+  allergens: string[];
+  yield_weight_grams: number;
+  servings: number;
+  nutrition: any | null;
+  business_brand_name?: string | null;
+  business_manufacturer_name?: string | null;
+  business_manufacturer_address?: string | null;
+  business_fssai_license?: string | null;
+}
+
 // ---------------------------------------------------------------------------
 // Full recipe with related data
 // ---------------------------------------------------------------------------
@@ -101,6 +125,7 @@ export interface CreateRecipeIngredientInput {
   position: number;
   is_flour?: boolean;
   is_liquid?: boolean;
+  inventory_item_id?: string | null;
 }
 
 export interface CreateRecipeStepInput {
@@ -124,10 +149,12 @@ export interface CreateRecipeInput {
   source_type?: RecipeSourceType;
   source_url?: string | null;
   original_author?: string | null;
+  original_author_url?: string | null;
   servings: number;
   yield_weight_grams: number;
   preferred_unit_system?: string;
   status?: RecipeStatus;
+  tags?: string[];
   ingredients?: CreateRecipeIngredientInput[];
   sections?: CreateRecipeSectionInput[];
 }
@@ -136,10 +163,14 @@ export interface UpdateRecipeInput {
   title?: string;
   description?: string | null;
   source_type?: RecipeSourceType;
+  source_url?: string | null;
+  original_author?: string | null;
+  original_author_url?: string | null;
   servings?: number;
   yield_weight_grams?: number;
   preferred_unit_system?: string;
   status?: RecipeStatus;
+  tags?: string[];
   ingredients?: CreateRecipeIngredientInput[];
   sections?: CreateRecipeSectionInput[];
   change_summary?: string;
@@ -154,6 +185,7 @@ export interface RecipeListQuery {
   limit?: number;
   status?: RecipeStatus;
   source_type?: RecipeSourceType;
+  tags?: string[];
   sort_by?: 'created_at' | 'updated_at' | 'title';
   sort_order?: 'asc' | 'desc';
 }

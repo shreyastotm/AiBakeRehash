@@ -1,5 +1,13 @@
 import api from './api'
 
+export interface UserTag {
+  id: string
+  user_id: string
+  label: string
+  color: string
+}
+
+
 export interface Recipe {
   id: string
   title: string
@@ -16,6 +24,7 @@ export interface Recipe {
   min_safe_water_activity?: number | null
   estimated_shelf_life_days?: number | null
   total_hydration_percentage?: number | null
+  estimated_aw_explanation?: string | null
   thumbnail_url?: string
   tags?: string[]
   rating?: number
@@ -34,6 +43,7 @@ export interface RecipeIngredient {
   position: number
   is_flour?: boolean
   is_liquid?: boolean
+  inventory_item_id?: string | null
 }
 
 export interface RecipeStep {
@@ -94,6 +104,7 @@ export interface RecipeListParams {
   source_type?: 'manual' | 'image' | 'whatsapp' | 'url' | ''
   sort_by?: 'created_at' | 'updated_at' | 'title' | 'rating'
   sort_order?: 'asc' | 'desc'
+  tags?: string[]
   page?: number
   limit?: number
 }
@@ -114,6 +125,7 @@ export interface IngredientSearchResult {
   similarity_score: number
   density_g_per_ml: number | null
   matched_alias?: string
+  ai_estimated: boolean
 }
 
 export interface RecipeCreateRequest {
@@ -123,13 +135,19 @@ export interface RecipeCreateRequest {
   yield_weight_grams: number
   status?: 'draft' | 'active' | 'archived'
   source_type?: 'manual' | 'image' | 'whatsapp' | 'url'
+  source_url?: string
+  original_author?: string
+  original_author_url?: string
   preferred_unit_system?: string
+  tags?: string[]
   ingredients?: Array<{
-    ingredient_master_id: string
+    ingredient_master_id?: string
     display_name: string
     quantity_original: number
     unit_original: string
+    quantity_grams: number
     position: number
+    inventory_item_id?: string | null
   }>
   sections?: Array<{
     type: 'pre_prep' | 'prep' | 'bake' | 'rest' | 'notes'
@@ -196,6 +214,25 @@ export const recipeService = {
     return response.data?.data ?? response.data
   },
 
+  importFromText: async (text: string): Promise<RecipeCreateRequest> => {
+    const response = await api.post(`/recipes/import/text`, { text })
+    return response.data?.data ?? response.data
+  },
+
+  importFromUrl: async (url: string): Promise<RecipeCreateRequest> => {
+    const response = await api.post(`/recipes/import/url`, { url })
+    return response.data?.data ?? response.data
+  },
+
+  importFromFile: async (file: File): Promise<RecipeCreateRequest> => {
+    const formData = new FormData()
+    formData.append('file', file)
+    const response = await api.post(`/recipes/import/file`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+    return response.data?.data ?? response.data
+  },
+
   updateRecipe: async (id: string, data: Partial<RecipeCreateRequest>): Promise<Recipe> => {
     const response = await api.patch(`/recipes/${id}`, data)
     return response.data?.data ?? response.data
@@ -236,4 +273,35 @@ export const recipeService = {
     const response = await api.put(`/recipes/${id}/sections`, { sections })
     return response.data?.data ?? response.data
   },
+  getLabelData: async (id: string): Promise<any> => {
+    const response = await api.get(`/recipes/${id}/label`)
+    return response.data?.data ?? response.data
+  },
+
+  getUserTags: async (): Promise<string[]> => {
+    const response = await api.get('/recipes/tags')
+    return response.data?.data ?? response.data
+  },
 }
+
+export const userTagService = {
+  getTags: async (): Promise<UserTag[]> => {
+    const response = await api.get('/user-tags')
+    return response.data?.data ?? response.data
+  },
+
+  createTag: async (data: { label: string; color?: string }): Promise<UserTag> => {
+    const response = await api.post('/user-tags', data)
+    return response.data?.data ?? response.data
+  },
+
+  updateTag: async (id: string, data: { label?: string; color?: string }): Promise<UserTag> => {
+    const response = await api.patch(`/user-tags/${id}`, data)
+    return response.data?.data ?? response.data
+  },
+
+  deleteTag: async (id: string): Promise<void> => {
+    await api.delete(`/user-tags/${id}`)
+  }
+}
+

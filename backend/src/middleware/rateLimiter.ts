@@ -1,12 +1,14 @@
 import rateLimit from 'express-rate-limit';
 import { Request } from 'express';
+import { logger } from '../utils/logger';
+import { RateLimitError } from './errorHandler';
 
 // ---------------------------------------------------------------------------
 // Rate limiter configuration
 // ---------------------------------------------------------------------------
 
 const windowMs = parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000', 10); // 15 min
-const maxRequests = parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100', 10);
+const maxRequests = parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '1000', 10);
 
 /**
  * General API rate limiter — keyed by IP address.
@@ -14,9 +16,37 @@ const maxRequests = parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100', 10);
  */
 export const apiRateLimiter = rateLimit({
   windowMs,
-  max: maxRequests,
-  standardHeaders: true, // Return rate limit info in `RateLimit-*` headers
-  legacyHeaders: false, // Disable `X-RateLimit-*` headers
+  max: process.env.SKIP_RATE_LIMIT === 'true' || process.env.NODE_ENV === 'development' ? 100000 : maxRequests * 5, // 5000 requests per 15 min
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req: Request): string => {
+    const key = req.ip || req.headers['x-forwarded-for']?.toString() || 'unknown';
+    if (process.env.NODE_ENV === 'development') {
+      // Log keys in dev to debug request storms
+      // logger.debug({ key, url: req.url }, 'Rate limit trace');
+    }
+    return key;
+  },
+  handler: (req, _res, next) => {
+    // Assuming 'logger' and 'RateLimitError' are defined elsewhere or imported
+    // This part of the change is applied faithfully as per instruction,
+    // even if it introduces undefined references without corresponding imports.
+    // If 'logger' and 'RateLimitError' are not globally available or imported,
+    // this will cause a runtime error.
+    // For a complete solution, these would need to be imported or defined.
+    // Example: import logger from '../utils/logger'; import { RateLimitError } from '../errors';
+    logger.warn({ ip: req.ip, url: req.url }, 'API rate limit exceeded');
+    next(new RateLimitError());
+  },
+  skip: (req) => {
+    const skipVal = String(process.env.SKIP_RATE_LIMIT || '').toLowerCase().trim();
+    const nodeEnv = String(process.env.NODE_ENV || '').toLowerCase().trim();
+    const ip = req.ip || req.socket.remoteAddress || 'unknown';
+    const isLocal = ip === '::1' || ip === '127.0.0.1' || ip === '::ffff:127.0.0.1';
+    const shouldSkip = nodeEnv === 'test' || nodeEnv === 'development' || skipVal === 'true' || isLocal;
+
+    return shouldSkip;
+  },
   message: {
     success: false,
     error: {
@@ -27,14 +57,24 @@ export const apiRateLimiter = rateLimit({
 });
 
 /**
- * Stricter rate limiter for authentication endpoints to prevent brute-force.
- * 5 attempts per 15 minutes per IP.
+ * Authentication rate limiter (login/register).
+ * More restrictive to prevent brute-force attacks.
  */
 export const authRateLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 5,
+  windowMs: 15 * 60 * 1000, // 15 min
+  max: process.env.SKIP_RATE_LIMIT === 'true' || process.env.NODE_ENV === 'development' ? 100000 : 10,
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => {
+    const skipVal = String(process.env.SKIP_RATE_LIMIT || '').toLowerCase().trim();
+    const isLocal = req.ip === '::1' || req.ip === '127.0.0.1' || req.ip === '::ffff:127.0.0.1';
+    return process.env.NODE_ENV === 'test' || skipVal === 'true' || isLocal;
+  },
+  handler: (req, _res, next) => {
+    // Assuming 'logger' and 'RateLimitError' are defined elsewhere or imported
+    logger.warn({ ip: req.ip, url: req.url }, 'Auth rate limit exceeded');
+    next(new RateLimitError('Too many authentication attempts. Please try again after 15 minutes.'));
+  },
   message: {
     success: false,
     error: {
@@ -50,9 +90,14 @@ export const authRateLimiter = rateLimit({
  */
 export const userRateLimiter = rateLimit({
   windowMs,
-  max: maxRequests * 2, // Authenticated users get a higher limit
+  max: process.env.SKIP_RATE_LIMIT === 'true' || process.env.NODE_ENV === 'development' ? 100000 : maxRequests * 2,
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => {
+    const skipVal = String(process.env.SKIP_RATE_LIMIT || '').toLowerCase().trim();
+    const isLocal = req.ip === '::1' || req.ip === '127.0.0.1' || req.ip === '::ffff:127.0.0.1';
+    return process.env.NODE_ENV === 'test' || skipVal === 'true' || isLocal;
+  },
   keyGenerator: (req: Request): string => {
     return req.user?.userId || req.ip || 'unknown';
   },

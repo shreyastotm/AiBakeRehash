@@ -20,6 +20,9 @@ export interface InventoryItem {
   min_stock_level: number | null;
   reorder_quantity: number | null;
   notes: string | null;
+  brand_name: string | null;
+  moisture_content: number | null;
+  nutrition_overrides: Record<string, number> | null;
   created_at: Date;
   updated_at: Date;
 }
@@ -74,6 +77,9 @@ export interface CreateInventoryItemInput {
   min_stock_level?: number | null;
   reorder_quantity?: number | null;
   notes?: string | null;
+  brand_name?: string | null;
+  moisture_content?: number | null;
+  nutrition_overrides?: Record<string, number> | null;
 }
 
 export interface UpdateInventoryItemInput {
@@ -87,6 +93,9 @@ export interface UpdateInventoryItemInput {
   min_stock_level?: number | null;
   reorder_quantity?: number | null;
   notes?: string | null;
+  brand_name?: string | null;
+  moisture_content?: number | null;
+  nutrition_overrides?: Record<string, number> | null;
 }
 
 export interface CreatePurchaseInput {

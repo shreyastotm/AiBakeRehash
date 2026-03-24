@@ -7,6 +7,8 @@ import { Card } from '../components/common/Card'
 import { usePreferencesStore } from '../store/preferencesStore'
 import { useAuthStore } from '../store/authStore'
 import api from '../services/api'
+import { TagManagement } from '../components/settings/TagManagement'
+import { IngredientManagement } from '../components/settings/IngredientManagement'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -17,6 +19,13 @@ interface UserProfile {
   unit_preferences: Record<string, string>
   default_currency: string
   language: string
+  business_brand_name?: string
+  business_manufacturer_name?: string
+  business_manufacturer_address?: string
+  business_fssai_license?: string
+  business_contact_number?: string
+  business_email_id?: string
+  default_recipe_creation_mode?: 'manual' | 'smart'
 }
 
 interface UpdateProfilePayload {
@@ -27,6 +36,13 @@ interface UpdateProfilePayload {
   language?: string
   temperature_unit?: string
   date_format?: string
+  business_brand_name?: string
+  business_manufacturer_name?: string
+  business_manufacturer_address?: string
+  business_fssai_license?: string
+  business_contact_number?: string
+  business_email_id?: string
+  default_recipe_creation_mode?: 'manual' | 'smart'
 }
 
 interface ChangePasswordPayload {
@@ -65,9 +81,14 @@ const DATE_FORMAT_OPTIONS = [
   { value: 'YYYY-MM-DD', label: 'YYYY-MM-DD (2024-12-31)' },
 ]
 
+const CREATION_MODE_OPTIONS = [
+  { value: 'manual', label: 'Manual Input (Default)' },
+  { value: 'smart', label: 'Smart Import Modal' },
+]
+
 // ─── Tab type ─────────────────────────────────────────────────────────────────
 
-type Tab = 'preferences' | 'profile' | 'security'
+type Tab = 'preferences' | 'profile' | 'security' | 'tags' | 'ingredients'
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
@@ -78,20 +99,18 @@ export const Settings = () => {
     <div className="max-w-2xl mx-auto">
       <h1 className="text-2xl font-bold text-gray-900 mb-6">Settings</h1>
 
-      {/* Tab bar */}
       <div className="flex border-b border-gray-200 mb-6" role="tablist" aria-label="Settings sections">
-        {(['preferences', 'profile', 'security'] as Tab[]).map((tab) => (
+        {(['preferences', 'profile', 'tags', 'ingredients', 'security'] as Tab[]).map((tab) => (
           <button
             key={tab}
             role="tab"
             aria-selected={activeTab === tab}
             aria-controls={`panel-${tab}`}
             onClick={() => setActiveTab(tab)}
-            className={`px-5 py-3 text-sm font-medium capitalize border-b-2 transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-inset ${
-              activeTab === tab
-                ? 'border-amber-600 text-amber-700'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
+            className={`px-5 py-3 text-sm font-medium capitalize border-b-2 transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-inset ${activeTab === tab
+              ? 'border-amber-600 text-amber-700'
+              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
           >
             {tab}
           </button>
@@ -108,6 +127,12 @@ export const Settings = () => {
       <div id="panel-security" role="tabpanel" aria-labelledby="tab-security" hidden={activeTab !== 'security'}>
         {activeTab === 'security' && <SecurityTab />}
       </div>
+      <div id="panel-tags" role="tabpanel" aria-labelledby="tab-tags" hidden={activeTab !== 'tags'}>
+        {activeTab === 'tags' && <TagManagement />}
+      </div>
+      <div id="panel-ingredients" role="tabpanel" aria-labelledby="tab-ingredients" hidden={activeTab !== 'ingredients'}>
+        {activeTab === 'ingredients' && <IngredientManagement />}
+      </div>
     </div>
   )
 }
@@ -116,6 +141,7 @@ export const Settings = () => {
 
 const PreferencesTab = () => {
   const { preferences, setPreferences } = usePreferencesStore()
+  const { user } = useAuthStore()
 
   // Local state mirrors store; we apply immediately on change
   const [unitSystem, setUnitSystem] = useState(preferences.unit_system ?? 'metric')
@@ -123,6 +149,10 @@ const PreferencesTab = () => {
   const [currency, setCurrency] = useState(preferences.currency ?? 'INR')
   const [language, setLanguage] = useState(preferences.language ?? 'en')
   const [dateFormat, setDateFormat] = useState(preferences.date_format ?? 'DD/MM/YYYY')
+
+  const [creationMode, setCreationMode] = useState<string>(
+    user?.default_recipe_creation_mode ?? 'manual'
+  )
 
   const [successMsg, setSuccessMsg] = useState('')
   const [errorMsg, setErrorMsg] = useState('')
@@ -154,6 +184,7 @@ const PreferencesTab = () => {
       unit_preferences: { unit_system: unitSystem, temperature_unit: temperatureUnit, date_format: dateFormat },
       default_currency: currency,
       language,
+      default_recipe_creation_mode: creationMode as 'manual' | 'smart'
     })
   }
 
@@ -198,6 +229,16 @@ const PreferencesTab = () => {
           value={dateFormat}
           onChange={(v) => { setDateFormat(v); setPreferences({ date_format: v }) }}
         />
+
+        <div className="pt-4 border-t border-gray-100">
+          <Select
+            label="Default Recipe Creation"
+            options={CREATION_MODE_OPTIONS}
+            value={creationMode}
+            onChange={(v) => setCreationMode(v)}
+            hint="Controls what happens when you click 'New Recipe'"
+          />
+        </div>
       </div>
 
       {successMsg && (
@@ -234,7 +275,16 @@ const ProfileTab = () => {
 
   const [displayName, setDisplayName] = useState(profile?.display_name ?? '')
   const [email, setEmail] = useState(profile?.email ?? '')
-  const [errors, setErrors] = useState<{ display_name?: string; email?: string }>({})
+
+  // Business fields
+  const [brandName, setBrandName] = useState(profile?.business_brand_name ?? '')
+  const [manufacturerName, setManufacturerName] = useState(profile?.business_manufacturer_name ?? '')
+  const [manufacturerAddress, setManufacturerAddress] = useState(profile?.business_manufacturer_address ?? '')
+  const [fssaiLicense, setFssaiLicense] = useState(profile?.business_fssai_license ?? '')
+  const [contactNumber, setContactNumber] = useState(profile?.business_contact_number ?? '')
+  const [businessEmail, setBusinessEmail] = useState(profile?.business_email_id ?? '')
+
+  const [errors, setErrors] = useState<{ display_name?: string; email?: string; fssai_license?: string }>({})
   const [successMsg, setSuccessMsg] = useState('')
   const [errorMsg, setErrorMsg] = useState('')
 
@@ -259,13 +309,27 @@ const ProfileTab = () => {
     if (!displayName.trim()) next.display_name = 'Display name is required'
     if (!email.trim()) next.email = 'Email is required'
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) next.email = 'Enter a valid email address'
+
+    if (fssaiLicense.trim() && !/^\d{14}$/.test(fssaiLicense.trim())) {
+      next.fssai_license = 'FSSAI License must be exactly 14 digits'
+    }
+
     setErrors(next)
     return Object.keys(next).length === 0
   }
 
   const handleSave = () => {
     if (!validate()) return
-    mutation.mutate({ display_name: displayName, email })
+    mutation.mutate({
+      display_name: displayName,
+      email,
+      business_brand_name: brandName,
+      business_manufacturer_name: manufacturerName,
+      business_manufacturer_address: manufacturerAddress,
+      business_fssai_license: fssaiLicense,
+      business_contact_number: contactNumber,
+      business_email_id: businessEmail
+    })
   }
 
   return (
@@ -290,6 +354,54 @@ const ProfileTab = () => {
           error={errors.email}
           placeholder="you@example.com"
           autoComplete="email"
+        />
+      </div>
+
+      <h3 className="text-md font-semibold text-gray-900 mt-8 mb-4">Business & Labeling</h3>
+      <div className="space-y-4">
+        <Input
+          label="Brand Name"
+          value={brandName}
+          onChange={(e) => setBrandName(e.target.value)}
+          placeholder="e.g. Acme Bakery"
+          hint="Brand name to appear on FSSAI labels"
+        />
+        <Input
+          label="Manufacturer Name"
+          value={manufacturerName}
+          onChange={(e) => setManufacturerName(e.target.value)}
+          placeholder="e.g. Acme Foods Pvt Ltd"
+          hint="Legal manufacturer entity name"
+        />
+        <Input
+          label="Manufacturer Address"
+          value={manufacturerAddress}
+          onChange={(e) => setManufacturerAddress(e.target.value)}
+          placeholder="Full postal address"
+          hint="Appears on FSSAI label"
+        />
+        <Input
+          label="FSSAI License Number"
+          value={fssaiLicense}
+          onChange={(e) => setFssaiLicense(e.target.value)}
+          placeholder="14-digit FSSAI No."
+          hint="E.g. 10012011000000"
+          error={errors.fssai_license}
+        />
+        <Input
+          label="Business Contact No."
+          value={contactNumber}
+          onChange={(e) => setContactNumber(e.target.value)}
+          placeholder="+91..."
+          hint="Will appear on the FSSAI label"
+        />
+        <Input
+          label="Business Email"
+          type="email"
+          value={businessEmail}
+          onChange={(e) => setBusinessEmail(e.target.value)}
+          placeholder="support@example.com"
+          hint="Will appear on the FSSAI label"
         />
       </div>
 

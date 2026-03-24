@@ -11,7 +11,11 @@ import { requestIdMiddleware } from './middleware/requestId';
 import { apiRateLimiter } from './middleware/rateLimiter';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 
+console.log(`[Backend] Starting. SKIP_RATE_LIMIT="${process.env.SKIP_RATE_LIMIT}", NODE_ENV="${process.env.NODE_ENV}"`);
 const app = express();
+
+// Trust proxy for rate limiting behind local parsers/proxies
+app.set('trust proxy', 1);
 
 // ---------------------------------------------------------------------------
 // 1. Request ID — must be first so all downstream logs carry it
@@ -68,6 +72,12 @@ app.use(
 // ---------------------------------------------------------------------------
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
+
+// ---------------------------------------------------------------------------
+// 4a. Static files (uploads)
+// ---------------------------------------------------------------------------
+const uploadDir = process.env.UPLOAD_DIR || './uploads';
+app.use('/uploads', express.static(path.resolve(uploadDir)));
 
 // ---------------------------------------------------------------------------
 // 5. Metrics collection (before rate limiter so we capture everything)
@@ -188,6 +198,7 @@ import costingRoutes from './routes/costing.routes';
 import supplierRoutes from './routes/supplier.routes';
 import socialRoutes from './routes/social.routes';
 import importExportRoutes from './routes/importExport.routes';
+import userTagRoutes from './routes/user-tag.routes';
 
 // Swagger UI setup
 import swaggerUi from 'swagger-ui-express';
@@ -213,6 +224,7 @@ app.use('/api/v1', costingRoutes);
 app.use('/api/v1', supplierRoutes);
 app.use('/api/v1', socialRoutes);
 app.use('/api/v1', importExportRoutes);
+app.use('/api/v1/user-tags', userTagRoutes);
 
 
 // Swagger UI documentation

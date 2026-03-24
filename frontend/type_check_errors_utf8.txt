@@ -1,0 +1,36 @@
+﻿
+> aibake-frontend@1.0.0 type-check
+> tsc --noEmit
+
+src/components/common/FormField.tsx(3,1): error TS6133: 'ErrorMessage' is declared but its value is never read.
+src/components/ErrorBoundary.tsx(32,35): error TS6133: 'error' is declared but its value is never read.
+src/components/ErrorBoundary.tsx(47,9): error TS2580: Cannot find name 'process'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node`.
+src/components/ErrorBoundary.tsx(66,29): error TS2580: Cannot find name 'process'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node`.
+src/components/examples/FormWithErrorHandling.example.tsx(18,49): error TS2307: Cannot find module '@/hooks/useAutoSave' or its corresponding type declarations.
+src/components/examples/FormWithErrorHandling.example.tsx(19,33): error TS2307: Cannot find module '@/hooks/useErrorHandler' or its corresponding type declarations.
+src/components/examples/FormWithErrorHandling.example.tsx(20,30): error TS2307: Cannot find module '@/components/common/ErrorMessage' or its corresponding type declarations.
+src/components/examples/FormWithErrorHandling.example.tsx(21,36): error TS2307: Cannot find module '@/components/FormRecoveryBanner' or its corresponding type declarations.
+src/components/examples/FormWithErrorHandling.example.tsx(22,24): error TS2307: Cannot find module '@/components/common/Button' or its corresponding type declarations.
+src/components/examples/FormWithErrorHandling.example.tsx(23,23): error TS2307: Cannot find module '@/components/common/Input' or its corresponding type declarations.
+src/components/examples/FormWithErrorHandling.example.tsx(78,15): error TS7006: Parameter 'err' implicitly has an 'any' type.
+src/components/examples/FormWithErrorHandling.example.tsx(181,24): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/components/examples/FormWithErrorHandling.example.tsx(212,26): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/components/examples/FormWithErrorHandling.example.tsx(230,26): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/components/recipe/NutritionDisplay.tsx(1,1): error TS6133: 'React' is declared but its value is never read.
+src/components/recipe/RecipeCard.tsx(1,1): error TS6133: 'React' is declared but its value is never read.
+src/components/recipe/ScalingControl.tsx(1,8): error TS6133: 'React' is declared but its value is never read.
+src/hooks/__tests__/useErrorHandler.test.ts(2,27): error TS6133: 'waitFor' is declared but its value is never read.
+src/pages/recipe/RecipeDetail.tsx(4,10): error TS6133: 'recipeService' is declared but its value is never read.
+src/pages/recipe/RecipeList.tsx(2,16): error TS6133: 'useNavigate' is declared but its value is never read.
+src/pages/recipe/RecipeList.tsx(9,1): error TS6133: 'Card' is declared but its value is never read.
+src/pages/recipe/RecipeList.tsx(10,1): error TS6133: 'Badge' is declared but its value is never read.
+src/services/example.service.ts(6,68): error TS2307: Cannot find module '@/hooks/useApi' or its corresponding type declarations.
+src/services/example.service.ts(66,17): error TS7006: Parameter 'newRecipe' implicitly has an 'any' type.
+src/services/example.service.ts(83,24): error TS7006: Parameter 'updatedData' implicitly has an 'any' type.
+src/services/example.service.ts(103,17): error TS6133: 'error' is declared but its value is never read.
+src/services/example.service.ts(103,17): error TS7006: Parameter 'error' implicitly has an 'any' type.
+src/services/example.service.ts(103,24): error TS6133: 'variables' is declared but its value is never read.
+src/services/example.service.ts(103,24): error TS7006: Parameter 'variables' implicitly has an 'any' type.
+src/services/example.service.ts(103,35): error TS7006: Parameter 'context' implicitly has an 'any' type.
+src/services/example.service.ts(109,19): error TS7006: Parameter 'updatedRecipe' implicitly has an 'any' type.
+src/services/example.service.ts(142,19): error TS7006: Parameter 'scaledRecipe' implicitly has an 'any' type.

@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { ErrorBoundary } from '../ErrorBoundary'
 
 // Mock console methods
-const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => { })
 
 // Component that throws an error
 const ThrowError = () => {
@@ -76,8 +76,7 @@ describe('ErrorBoundary', () => {
   })
 
   it('shows error details in development mode', () => {
-    const originalEnv = process.env.NODE_ENV
-    process.env.NODE_ENV = 'development'
+    vi.stubEnv('NODE_ENV', 'development')
 
     render(
       <ErrorBoundary>
@@ -87,8 +86,9 @@ describe('ErrorBoundary', () => {
 
     expect(screen.getByText(/Test error message/)).toBeInTheDocument()
 
-    process.env.NODE_ENV = originalEnv
+    vi.unstubAllEnvs()
   })
+
 
   it('tracks error count and shows warning after multiple errors', () => {
     const { rerender } = render(

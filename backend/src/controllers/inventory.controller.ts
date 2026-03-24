@@ -29,6 +29,20 @@ export async function list(req: Request, res: Response, next: NextFunction): Pro
 }
 
 // ---------------------------------------------------------------------------
+// GET /api/v1/inventory/by-ingredient/:ingredientId
+// ---------------------------------------------------------------------------
+
+export async function listByIngredient(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const ingredientId = paramStr(req.params.ingredientId);
+    const items = await inventoryService.listInventoryByIngredient(req.user!.userId, ingredientId);
+    res.json({ success: true, data: items });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// ---------------------------------------------------------------------------
 // GET /api/v1/inventory/:id
 // ---------------------------------------------------------------------------
 

@@ -93,7 +93,12 @@ export const useUploadJournalAudio = () => {
 };
 
 export const useEstimateWaterActivity = () => {
+    const queryClient = useQueryClient();
     return useMutation({
         mutationFn: (recipeId: string) => journalService.estimateWaterActivity(recipeId),
+        onSuccess: (_, recipeId) => {
+            queryClient.invalidateQueries({ queryKey: ['recipe', recipeId] });
+            queryClient.invalidateQueries({ queryKey: ['recipes'] });
+        },
     });
 };

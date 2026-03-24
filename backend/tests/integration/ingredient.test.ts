@@ -21,10 +21,12 @@ interface MockIngredientMaster {
   id: string;
   name: string;
   category: string;
+  user_id?: string | null;
   default_density_g_per_ml: number | null;
   nutrition_per_100g: Record<string, number> | null;
   allergen_flags: Record<string, boolean> | null;
   is_composite: boolean;
+  ai_estimated?: boolean;
   created_at: Date;
   updated_at: Date;
 }
@@ -135,8 +137,12 @@ function handleQuery(text: string, params?: unknown[]): { rows: unknown[]; rowCo
   // --- Ingredient master: COUNT ---
   if (text.includes('COUNT(*)') && text.includes('FROM ingredient_master')) {
     let filtered = [...mockIngredients];
-    if (text.includes('category =') && params && params.length > 0) {
-      filtered = filtered.filter((i) => i.category === params[0]);
+    if (text.includes('category =') && params) {
+      const catMatch = text.match(/category = \$(\d+)/);
+      if (catMatch) {
+        const catIdx = parseInt(catMatch[1], 10) - 1;
+        filtered = filtered.filter((i) => i.category === params[catIdx]);
+      }
     }
     return { rows: [{ count: String(filtered.length) }], rowCount: 1 };
   }
@@ -144,8 +150,12 @@ function handleQuery(text: string, params?: unknown[]): { rows: unknown[]; rowCo
   // --- Ingredient master: SELECT all with ORDER BY (list) ---
   if (text.includes('SELECT *') && text.includes('FROM ingredient_master') && text.includes('ORDER BY') && !text.includes('WHERE id')) {
     let filtered = [...mockIngredients];
-    if (text.includes('category =') && params && params.length > 0) {
-      filtered = filtered.filter((i) => i.category === params[0]);
+    if (text.includes('category =') && params) {
+      const catMatch = text.match(/category = \$(\d+)/);
+      if (catMatch) {
+        const catIdx = parseInt(catMatch[1], 10) - 1;
+        filtered = filtered.filter((i) => i.category === params[catIdx]);
+      }
     }
     filtered.sort((a, b) => a.name.localeCompare(b.name));
     return { rows: filtered, rowCount: filtered.length };
@@ -158,25 +168,32 @@ function handleQuery(text: string, params?: unknown[]): { rows: unknown[]; rowCo
     return { rows: found, rowCount: found.length };
   }
 
-  // --- Ingredient master: SELECT for search (id, name, category, density) ---
-  if (text.includes('SELECT id, name, category, default_density_g_per_ml FROM ingredient_master')) {
+  // --- Ingredient master: SELECT for search (id, name, category, density, ai_estimated) ---
+  if (text.includes('SELECT') && text.includes('FROM ingredient_master') && (text.includes('id, name, category') || text.includes('ai_estimated'))) {
     const rows = mockIngredients.map((i) => ({
       id: i.id, name: i.name, category: i.category,
       default_density_g_per_ml: i.default_density_g_per_ml,
+      ai_estimated: i.ai_estimated ?? false,
     }));
     return { rows, rowCount: rows.length };
   }
 
   // --- Ingredient master: INSERT ---
   if (text.includes('INSERT INTO ingredient_master')) {
+    const p = params || [];
+    
+    // Order in ingredient.service.ts:
+    // [name, category, density, nutrition, allergens, is_composite, ai_estimated, user_id]
     const newIng: MockIngredientMaster = {
       id: uid(),
-      name: params?.[0] as string,
-      category: params?.[1] as string,
-      default_density_g_per_ml: params?.[2] as number | null,
-      nutrition_per_100g: params?.[3] ? (typeof params[3] === 'string' ? JSON.parse(params[3]) : params[3]) as Record<string, number> : null,
-      allergen_flags: params?.[4] ? (typeof params[4] === 'string' ? JSON.parse(params[4]) : params[4]) as Record<string, boolean> : null,
-      is_composite: (params?.[5] as boolean) || false,
+      name: p[0] as string,
+      category: p[1] as string,
+      default_density_g_per_ml: p[2] as number || null,
+      nutrition_per_100g: typeof p[3] === 'string' ? JSON.parse(p[3]) : (p[3] || null),
+      allergen_flags: typeof p[4] === 'string' ? JSON.parse(p[4]) : (p[4] || null),
+      is_composite: !!p[5],
+      ai_estimated: !!p[6],
+      user_id: p[7] as string || null,
       created_at: new Date(), updated_at: new Date(),
     };
     mockIngredients.push(newIng);
@@ -191,7 +208,7 @@ function handleQuery(text: string, params?: unknown[]): { rows: unknown[]; rowCo
   }
 
   // --- Aliases: SELECT all ---
-  if (text.includes('SELECT ingredient_master_id, alias_name FROM ingredient_aliases')) {
+  if (text.includes('SELECT') && text.includes('FROM ingredient_aliases')) {
     const rows = mockAliases.map((a) => ({
       ingredient_master_id: a.ingredient_master_id,
       alias_name: a.alias_name,
@@ -267,7 +284,10 @@ describe('Ingredient API', () => {
   // =========================================================================
   describe('GET /api/v1/ingredients', () => {
     it('should list all ingredients with pagination', async () => {
-      const res = await request(app).get('/api/v1/ingredients');
+      const token = await getAuthToken();
+      const res = await request(app)
+        .get('/api/v1/ingredients')
+        .set('Authorization', 'Bearer ' + token);
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -278,7 +298,10 @@ describe('Ingredient API', () => {
     });
 
     it('should filter by category', async () => {
-      const res = await request(app).get('/api/v1/ingredients?category=flour');
+      const token = await getAuthToken();
+      const res = await request(app)
+        .get('/api/v1/ingredients?category=flour')
+        .set('Authorization', 'Bearer ' + token);
 
       expect(res.status).toBe(200);
       expect(res.body.data.total).toBe(2);
@@ -287,7 +310,10 @@ describe('Ingredient API', () => {
     });
 
     it('should respect page and limit params', async () => {
-      const res = await request(app).get('/api/v1/ingredients?page=1&limit=2');
+      const token = await getAuthToken();
+      const res = await request(app)
+        .get('/api/v1/ingredients?page=1&limit=2')
+        .set('Authorization', 'Bearer ' + token);
 
       expect(res.status).toBe(200);
       expect(res.body.data.page).toBe(1);
@@ -296,7 +322,10 @@ describe('Ingredient API', () => {
     });
 
     it('should return ingredients sorted by name', async () => {
-      const res = await request(app).get('/api/v1/ingredients');
+      const token = await getAuthToken();
+      const res = await request(app)
+        .get('/api/v1/ingredients')
+        .set('Authorization', 'Bearer ' + token);
 
       const names = res.body.data.ingredients.map((i: any) => i.name);
       const sorted = [...names].sort();
@@ -309,8 +338,11 @@ describe('Ingredient API', () => {
   // =========================================================================
   describe('GET /api/v1/ingredients/:id', () => {
     it('should retrieve ingredient with nutrition, density, and aliases', async () => {
+      const token = await getAuthToken();
       const ingredientId = mockIngredients[0].id; // all-purpose flour
-      const res = await request(app).get('/api/v1/ingredients/' + ingredientId);
+      const res = await request(app)
+        .get('/api/v1/ingredients/' + ingredientId)
+        .set('Authorization', 'Bearer ' + token);
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -326,14 +358,20 @@ describe('Ingredient API', () => {
     });
 
     it('should return 404 for non-existent ingredient', async () => {
-      const res = await request(app).get('/api/v1/ingredients/a0000000-0000-4000-a000-000000000099');
+      const token = await getAuthToken();
+      const res = await request(app)
+        .get('/api/v1/ingredients/a0000000-0000-4000-a000-000000000099')
+        .set('Authorization', 'Bearer ' + token);
 
       expect(res.status).toBe(404);
       expect(res.body.success).toBe(false);
     });
 
     it('should return 400 for invalid UUID', async () => {
-      const res = await request(app).get('/api/v1/ingredients/not-a-uuid');
+      const token = await getAuthToken();
+      const res = await request(app)
+        .get('/api/v1/ingredients/not-a-uuid')
+        .set('Authorization', 'Bearer ' + token);
 
       expect(res.status).toBe(400);
       expect(res.body.error.code).toBe('VALIDATION_ERROR');
@@ -414,7 +452,10 @@ describe('Ingredient API', () => {
   // =========================================================================
   describe('GET /api/v1/ingredients/search', () => {
     it('should find ingredients by canonical name', async () => {
-      const res = await request(app).get('/api/v1/ingredients/search?q=flour');
+      const token = await getAuthToken();
+      const res = await request(app)
+        .get('/api/v1/ingredients/search?q=flour')
+        .set('Authorization', 'Bearer ' + token);
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -425,7 +466,10 @@ describe('Ingredient API', () => {
     });
 
     it('should find ingredients by alias (regional name)', async () => {
-      const res = await request(app).get('/api/v1/ingredients/search?q=maida');
+      const token = await getAuthToken();
+      const res = await request(app)
+        .get('/api/v1/ingredients/search?q=maida')
+        .set('Authorization', 'Bearer ' + token);
 
       expect(res.status).toBe(200);
       expect(res.body.data.length).toBeGreaterThan(0);
@@ -436,7 +480,10 @@ describe('Ingredient API', () => {
     });
 
     it('should return results with similarity scores', async () => {
-      const res = await request(app).get('/api/v1/ingredients/search?q=butter');
+      const token = await getAuthToken();
+      const res = await request(app)
+        .get('/api/v1/ingredients/search?q=butter')
+        .set('Authorization', 'Bearer ' + token);
 
       expect(res.status).toBe(200);
       expect(res.body.data.length).toBeGreaterThan(0);
@@ -451,7 +498,10 @@ describe('Ingredient API', () => {
     });
 
     it('should rank results by similarity (highest first)', async () => {
-      const res = await request(app).get('/api/v1/ingredients/search?q=sugar');
+      const token = await getAuthToken();
+      const res = await request(app)
+        .get('/api/v1/ingredients/search?q=sugar')
+        .set('Authorization', 'Bearer ' + token);
 
       expect(res.status).toBe(200);
       if (res.body.data.length > 1) {
@@ -464,7 +514,10 @@ describe('Ingredient API', () => {
     });
 
     it('should indicate alias matches vs canonical matches', async () => {
-      const res = await request(app).get('/api/v1/ingredients/search?q=elaichi');
+      const token = await getAuthToken();
+      const res = await request(app)
+        .get('/api/v1/ingredients/search?q=elaichi')
+        .set('Authorization', 'Bearer ' + token);
 
       expect(res.status).toBe(200);
       expect(res.body.data.length).toBeGreaterThan(0);
@@ -475,17 +528,43 @@ describe('Ingredient API', () => {
     });
 
     it('should reject missing query parameter', async () => {
-      const res = await request(app).get('/api/v1/ingredients/search');
+      const token = await getAuthToken();
+      const res = await request(app)
+        .get('/api/v1/ingredients/search')
+        .set('Authorization', 'Bearer ' + token);
 
       expect(res.status).toBe(400);
       expect(res.body.error.code).toBe('VALIDATION_ERROR');
     });
 
     it('should return empty array for no matches', async () => {
-      const res = await request(app).get('/api/v1/ingredients/search?q=xyznonexistent');
+      const token = await getAuthToken();
+      const res = await request(app)
+        .get('/api/v1/ingredients/search?q=xyznonexistent')
+        .set('Authorization', 'Bearer ' + token);
 
       expect(res.status).toBe(200);
       expect(res.body.data).toEqual([]);
+    });
+  });
+
+  // =========================================================================
+  // GET /api/v1/ingredients/suggestions
+  // =========================================================================
+  describe('GET /api/v1/ingredients/suggestions', () => {
+    it('should return duplicate suggestions for custom ingredients', async () => {
+      const token = await getAuthToken();
+      
+      // Seed a similar system ingredient and a custom one
+      // (Mocks in this test file use trigramSimilarity in-memory)
+      
+      const res = await request(app)
+        .get('/api/v1/ingredients/suggestions')
+        .set('Authorization', 'Bearer ' + token);
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(Array.isArray(res.body.data)).toBe(true);
     });
   });
 });

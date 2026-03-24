@@ -255,6 +255,7 @@ BEGIN
     'protein_g', ROUND(SUM((im.nutrition_per_100g->>'protein_g')::numeric * cic.percentage / 100), 2),
     'fat_g', ROUND(SUM((im.nutrition_per_100g->>'fat_g')::numeric * cic.percentage / 100), 2),
     'carbs_g', ROUND(SUM((im.nutrition_per_100g->>'carbs_g')::numeric * cic.percentage / 100), 2),
+    'sugar_g', ROUND(SUM((im.nutrition_per_100g->>'sugar_g')::numeric * cic.percentage / 100), 2),
     'fiber_g', ROUND(SUM((im.nutrition_per_100g->>'fiber_g')::numeric * cic.percentage / 100), 2)
   )
   INTO total_nutrition

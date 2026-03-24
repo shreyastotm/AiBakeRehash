@@ -140,10 +140,11 @@ export async function listJournalEntries(
 
 export async function getWaterActivityEstimate(recipeId: string, userId: string): Promise<{
   estimated_aw: number;
+  estimated_shelf_life_days: number;
   explanation: string;
 }> {
   const recipe = await getRecipe(recipeId, userId);
-  return AIService.estimateWaterActivity(recipe);
+  return AIService.estimateBakingProperties(recipe);
 }
 
 // ---------------------------------------------------------------------------
@@ -383,15 +384,15 @@ export async function addAudioNote(
   durationSeconds: number | null,
   recordedAtStage: string | null,
 ): Promise<AudioNote> {
-  await assertJournalOwnership(journalId, userId);
+  const entry = await assertJournalOwnership(journalId, userId);
 
   const result = await db.query<AudioNote>(
     `INSERT INTO recipe_audio_notes
-      (journal_entry_id, audio_url, duration_seconds, transcription_text,
+      (journal_entry_id, recipe_id, audio_url, duration_seconds, transcription_text,
        transcription_status, recorded_at_stage)
-     VALUES ($1, $2, $3, NULL, 'pending', $4)
+     VALUES ($1, $2, $3, $4, NULL, 'pending', $5)
      RETURNING *`,
-    [journalId, audioUrl, durationSeconds, recordedAtStage],
+    [journalId, entry.recipe_id, audioUrl, durationSeconds, recordedAtStage],
   );
 
   return result.rows[0];

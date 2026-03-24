@@ -16,8 +16,15 @@ export function useAutoSave<T extends Record<string, any>>(
   options: UseAutoSaveOptions
 ) {
   const { key, interval = 30000, enabled = true } = options
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const lastSavedRef = useRef<string>('')
+
+  // Set initial lastSavedRef on mount
+  useEffect(() => {
+    try {
+      lastSavedRef.current = localStorage.getItem(key) || ''
+    } catch { }
+  }, [key])
 
   // Save data to localStorage
   const saveData = useCallback(() => {
@@ -91,25 +98,31 @@ export function useRestoreFormData<T extends Record<string, any>>(
   timestamp: string | null
   clearRestored: () => void
 } {
-  const [data, setData] = React.useState<T>(defaultValue)
-  const [hasRestoredData, setHasRestoredData] = React.useState(false)
-  const [timestamp, setTimestamp] = React.useState<string | null>(null)
-
-  React.useEffect(() => {
+  const [data, setData] = React.useState<T>(() => {
     try {
       const saved = localStorage.getItem(key)
-      const savedTimestamp = localStorage.getItem(`${key}__timestamp`)
-
-      if (saved) {
-        const parsed = JSON.parse(saved)
-        setData(parsed)
-        setHasRestoredData(true)
-        setTimestamp(savedTimestamp)
-      }
+      if (saved) return JSON.parse(saved)
     } catch (error) {
       console.error(`Failed to restore form data for key "${key}":`, error)
     }
-  }, [key])
+    return defaultValue
+  })
+
+  const [hasRestoredData, setHasRestoredData] = React.useState(() => {
+    try {
+      return !!localStorage.getItem(key)
+    } catch {
+      return false
+    }
+  })
+
+  const [timestamp, setTimestamp] = React.useState<string | null>(() => {
+    try {
+      return localStorage.getItem(`${key}__timestamp`)
+    } catch {
+      return null
+    }
+  })
 
   const clearRestored = useCallback(() => {
     try {
@@ -123,5 +136,10 @@ export function useRestoreFormData<T extends Record<string, any>>(
     }
   }, [key, defaultValue])
 
-  return { data, hasRestoredData, timestamp, clearRestored }
+  return React.useMemo(() => ({
+    data,
+    hasRestoredData,
+    timestamp,
+    clearRestored
+  }), [data, hasRestoredData, timestamp, clearRestored])
 }

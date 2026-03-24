@@ -19,14 +19,20 @@ export interface NutritionPer100g {
     protein_g: number
     fat_g: number
     carbs_g: number
+    sugars_g?: number
+    added_sugars_g?: number
     fiber_g?: number
 }
+
 
 export interface AllergenFlags {
     gluten?: boolean
     dairy?: boolean
     nuts?: boolean
     eggs?: boolean
+    soy?: boolean
+    is_vegan?: boolean
+    is_vegetarian?: boolean
 }
 
 export interface IngredientAlias {
@@ -44,6 +50,8 @@ export interface IngredientMaster {
     nutrition_per_100g: NutritionPer100g | null
     allergen_flags: AllergenFlags | null
     is_composite: boolean
+    ai_estimated: boolean
+    user_id: string | null
     aliases?: IngredientAlias[]
     created_at: string
     updated_at: string
@@ -55,6 +63,8 @@ export interface IngredientSearchResult {
     category: IngredientCategory
     default_density_g_per_ml: number | null
     allergen_flags: AllergenFlags | null
+    ai_estimated: boolean
+    user_id: string | null
 }
 
 export interface IngredientSubstitution {
@@ -74,6 +84,7 @@ export interface CreateIngredientInput {
     default_density_g_per_ml?: number | null
     nutrition_per_100g?: NutritionPer100g | null
     allergen_flags?: AllergenFlags | null
+    ai_estimated?: boolean
 }
 
 export interface IngredientListParams {
@@ -141,4 +152,26 @@ export const ingredientService = {
         const response = await api.post('/ingredients', data)
         return response.data?.data ?? response.data
     },
+
+    async merge(payload: { source_id: string; target_id: string }): Promise<void> {
+        await api.post('/ingredients/merge', payload)
+    },
+
+    async getSuggestions(): Promise<DuplicateSuggestion[]> {
+        const response = await api.get('/ingredients/suggestions')
+        return response.data.data
+    },
+    
+    async ignoreSuggestion(payload: { source_id: string; target_id: string }): Promise<void> {
+        await api.post('/ingredients/suggestions/ignore', payload)
+    }
+}
+
+export interface DuplicateSuggestion {
+    custom_id: string;
+    custom_name: string;
+    target_id: string;
+    target_name: string;
+    similarity: number;
+    match_type: 'system' | 'custom';
 }

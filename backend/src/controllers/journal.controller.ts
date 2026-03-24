@@ -1,10 +1,19 @@
 import { Request, Response, NextFunction } from 'express';
+import fs from 'fs';
+import path from 'path';
 import * as journalService from '../services/journal.service';
 import { ValidationError } from '../middleware/errorHandler';
 
 /** Extract a single string param (Express v5 params can be string | string[]) */
 function paramStr(val: string | string[]): string {
   return Array.isArray(val) ? val[0] : val;
+}
+
+/** Ensure directory exists */
+function ensureDir(dirPath: string): void {
+  if (!fs.existsSync(dirPath)) {
+    fs.mkdirSync(dirPath, { recursive: true });
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -116,11 +125,18 @@ export async function uploadImages(req: Request, res: Response, next: NextFuncti
       }
     }
 
-    // In production, upload to cloud storage. For now, generate URLs from filenames.
+    const uploadBase = process.env.UPLOAD_DIR || './uploads';
+    const journalDir = path.join(uploadBase, 'journal');
+    ensureDir(journalDir);
+
     const imageUrls = files.map((file) => {
       const timestamp = Date.now();
       const safeName = file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
-      return `/uploads/journal/${timestamp}-${safeName}`;
+      const filename = `${timestamp}-${safeName}`;
+      const filePath = path.join(journalDir, filename);
+
+      fs.writeFileSync(filePath, file.buffer);
+      return `/uploads/journal/${filename}`;
     });
 
     const entry = await journalService.addImages(
@@ -171,10 +187,17 @@ export async function uploadAudio(req: Request, res: Response, next: NextFunctio
       );
     }
 
-    // Generate URL (in production, upload to cloud storage)
+    const uploadBase = process.env.UPLOAD_DIR || './uploads';
+    const audioDir = path.join(uploadBase, 'audio');
+    ensureDir(audioDir);
+
     const timestamp = Date.now();
     const safeName = file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
-    const audioUrl = `/uploads/audio/${timestamp}-${safeName}`;
+    const filename = `${timestamp}-${safeName}`;
+    const filePath = path.join(audioDir, filename);
+
+    fs.writeFileSync(filePath, file.buffer);
+    const audioUrl = `/uploads/audio/${filename}`;
 
     const durationSeconds = req.body.duration_seconds
       ? parseFloat(req.body.duration_seconds)

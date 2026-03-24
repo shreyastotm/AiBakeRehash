@@ -1,10 +1,11 @@
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useJournalEntries, useDeleteJournalEntry } from '../../hooks/useJournalEntries';
 import { Button } from '../../components/common/Button';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { EmptyState } from '../../components/common/EmptyState';
 import { format } from 'date-fns';
+import { MEDIA_BASE_URL } from '../../services/api';
 
 export const JournalDetail = () => {
     const { recipeId, entryId } = useParams<{ recipeId: string; entryId: string }>();
@@ -121,7 +122,7 @@ export const JournalDetail = () => {
                                 <div className="space-y-3">
                                     {entry.audio_notes.map((audio) => (
                                         <div key={audio.id} className="border border-gray-200 rounded-lg p-4 bg-gray-50 flex flex-col gap-2">
-                                            <audio controls src={audio.audio_url} className="w-full" />
+                                            <audio controls src={audio.audio_url.startsWith('http') ? audio.audio_url : `${MEDIA_BASE_URL}${audio.audio_url}`} className="w-full" />
                                             {audio.transcription_text ? (
                                                 <p className="text-sm text-gray-700 italic border-l-2 border-amber-400 pl-3">
                                                     "{audio.transcription_text}"
@@ -142,8 +143,8 @@ export const JournalDetail = () => {
                             {entry.images && entry.images.length > 0 ? (
                                 <div className="grid grid-cols-2 gap-2">
                                     {entry.images.map((img, i) => (
-                                        <a href={img} target="_blank" rel="noreferrer" key={i} className="aspect-square bg-gray-100 rounded-lg overflow-hidden border border-gray-200 hover:border-amber-400 transition-colors">
-                                            <img src={img} alt={`Journal entry snapshot ${i}`} className="w-full h-full object-cover" />
+                                        <a href={img.startsWith('http') ? img : `${MEDIA_BASE_URL}${img}`} target="_blank" rel="noreferrer" key={i} className="aspect-square bg-gray-100 rounded-lg overflow-hidden border border-gray-200 hover:border-amber-400 transition-colors">
+                                            <img src={img.startsWith('http') ? img : `${MEDIA_BASE_URL}${img}`} alt={`Journal entry snapshot ${i}`} className="w-full h-full object-cover" />
                                         </a>
                                     ))}
                                 </div>

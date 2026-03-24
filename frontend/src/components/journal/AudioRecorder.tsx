@@ -14,7 +14,6 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
     const [recordingTime, setRecordingTime] = useState(0);
     const [isPlaying, setIsPlaying] = useState(false);
     const [audioUrl, setAudioUrl] = useState<string | null>(null);
-    const [audioFile, setAudioFile] = useState<File | null>(null);
 
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
     const audioChunksRef = useRef<Blob[]>([]);
@@ -49,7 +48,6 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
                 setAudioUrl(url);
 
                 const file = new File([audioBlob], `recording-${Date.now()}.webm`, { type: 'audio/webm' });
-                setAudioFile(file);
 
                 // Let parent know
                 onRecordingComplete(file, recordingTime);
@@ -89,7 +87,6 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({
             URL.revokeObjectURL(audioUrl);
         }
         setAudioUrl(null);
-        setAudioFile(null);
         setRecordingTime(0);
     };
 

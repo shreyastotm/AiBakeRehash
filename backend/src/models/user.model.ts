@@ -10,6 +10,13 @@ export interface User {
   unit_preferences: Record<string, string>; // e.g. { "sugar": "cups" }
   default_currency: string;
   language: string;
+  business_brand_name?: string | null;
+  business_manufacturer_name?: string | null;
+  business_manufacturer_address?: string | null;
+  business_fssai_license?: string | null;
+  business_contact_number?: string | null;
+  business_email_id?: string | null;
+  default_recipe_creation_mode?: 'manual' | 'smart' | null;
   created_at: Date;
   updated_at: Date;
 }
@@ -28,6 +35,13 @@ export interface UpdateUserPreferencesInput {
   unit_preferences?: Record<string, string>;
   default_currency?: string;
   language?: string;
+  business_brand_name?: string;
+  business_manufacturer_name?: string;
+  business_manufacturer_address?: string;
+  business_fssai_license?: string;
+  business_contact_number?: string;
+  business_email_id?: string;
+  default_recipe_creation_mode?: 'manual' | 'smart';
 }
 
 export interface LoginInput {

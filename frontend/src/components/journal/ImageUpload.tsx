@@ -1,5 +1,5 @@
 import React, { useCallback, useState, useRef } from 'react';
-import { UploadCloud, X, Image as ImageIcon } from 'lucide-react';
+import { UploadCloud, X } from 'lucide-react';
 
 export interface ImageUploadProps {
     images: string[]; // Existing image URLs

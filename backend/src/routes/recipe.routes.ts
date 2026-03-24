@@ -3,8 +3,10 @@ import { body, param, query } from 'express-validator';
 import { validate } from '../middleware/validate';
 import { requireAuth } from '../middleware/auth';
 import * as recipeController from '../controllers/recipe.controller';
+import multer from 'multer';
 
 const router = Router();
+const upload = multer({ storage: multer.memoryStorage() });
 
 // ---------------------------------------------------------------------------
 // Validation chains
@@ -25,6 +27,10 @@ const createRecipeValidation = [
     .optional()
     .isIn(['draft', 'active', 'archived'])
     .withMessage('Invalid status'),
+  body('tags').optional().isArray(),
+  body('tags.*').isString().trim(),
+  body('original_author').optional({ nullable: true }).isString(),
+  body('original_author_url').optional({ nullable: true }).isURL(),
   body('ingredients').optional().isArray(),
   body('ingredients.*.ingredient_master_id').optional().isUUID(),
   body('ingredients.*.display_name').optional().notEmpty(),
@@ -46,6 +52,10 @@ const updateRecipeValidation = [
   body('status')
     .optional()
     .isIn(['draft', 'active', 'archived']),
+  body('tags').optional().isArray(),
+  body('tags.*').isString().trim(),
+  body('original_author').optional({ nullable: true }).isString(),
+  body('original_author_url').optional({ nullable: true }).isURL(),
   body('ingredients').optional().isArray(),
   body('sections').optional().isArray(),
 ];
@@ -58,6 +68,14 @@ const scaleValidation = [
 
 const idParamValidation = [
   param('id').isUUID().withMessage('Invalid recipe ID'),
+];
+
+const importTextValidation = [
+  body('text').isString().notEmpty().withMessage('Raw text is required'),
+];
+
+const importUrlValidation = [
+  body('url').isURL({ require_protocol: true }).withMessage('Valid URL is required'),
 ];
 
 const compareVersionsValidation = [
@@ -73,8 +91,12 @@ const compareVersionsValidation = [
 // Search must come before :id to avoid matching "search" as a UUID
 router.get('/recipes/search', requireAuth, recipeController.search);
 
+// Tags must come before :id
+router.get('/recipes/tags', requireAuth, recipeController.getTags);
+
 router.get('/recipes', requireAuth, recipeController.list);
 router.get('/recipes/:id/nutrition', requireAuth, validate(idParamValidation), recipeController.getNutrition);
+router.post('/recipes/:id/nutrition/calculate', requireAuth, validate(idParamValidation), recipeController.calculateNutrition);
 router.get('/recipes/:id', requireAuth, validate(idParamValidation), recipeController.getById);
 router.post('/recipes', requireAuth, validate(createRecipeValidation), recipeController.create);
 router.patch('/recipes/:id', requireAuth, validate(updateRecipeValidation), recipeController.update);
@@ -90,6 +112,16 @@ router.post('/recipes/:id/versions', requireAuth, validate(idParamValidation), r
 router.get('/recipes/:id/versions/compare', requireAuth, validate(compareVersionsValidation), recipeController.compareVersions);
 
 // AI Estimation (Journal related but scoped to recipe details)
+router.get('/recipes/:id/ai/estimate-properties', requireAuth, validate(idParamValidation), recipeController.estimateWaterActivity);
+// Keep alias for compatibility
 router.get('/recipes/:id/journal/estimate-aw', requireAuth, validate(idParamValidation), recipeController.estimateWaterActivity);
+
+// FSSAI Label
+router.get('/recipes/:id/label', requireAuth, validate(idParamValidation), recipeController.getLabel);
+
+// Smart Import
+router.post('/recipes/import/text', requireAuth, validate(importTextValidation), recipeController.importFromText);
+router.post('/recipes/import/url', requireAuth, validate(importUrlValidation), recipeController.importFromUrl);
+router.post('/recipes/import/file', requireAuth, upload.single('file'), recipeController.importFromFile);
 
 export default router;

@@ -7,6 +7,8 @@ import { EmptyState } from '../../components/common/EmptyState';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { format } from 'date-fns';
 
+import { MEDIA_BASE_URL } from '../../services/api';
+
 export const JournalList = () => {
     const { recipeId } = useParams<{ recipeId: string }>();
     const isGlobal = !recipeId;
@@ -146,7 +148,7 @@ export const JournalList = () => {
                                 <div className="mt-4 flex gap-2">
                                     {entry.images.slice(0, 3).map((img, idx) => (
                                         <div key={idx} className="w-16 h-16 rounded-lg bg-gray-100 overflow-hidden border border-gray-200">
-                                            <img src={img} alt="Bake thumbnail" className="w-full h-full object-cover" />
+                                            <img src={img.startsWith('http') ? img : `${MEDIA_BASE_URL}${img}`} alt="Bake thumbnail" className="w-full h-full object-cover" />
                                         </div>
                                     ))}
                                     {entry.images.length > 3 && (

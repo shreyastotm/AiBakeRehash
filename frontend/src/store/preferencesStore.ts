@@ -13,7 +13,8 @@ interface UserPreferences {
   [key: string]: any
 }
 
-interface PreferencesStore {
+export interface PreferencesStore {
+
   preferences: UserPreferences
   setPreferences: (preferences: Partial<UserPreferences>) => void
   resetPreferences: () => void

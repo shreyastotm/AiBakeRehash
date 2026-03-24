@@ -1,0 +1,122 @@
+﻿[
+  {
+    "table_name": "recipe_ingredients",
+    "column_name": "id"
+  },
+  {
+    "table_name": "recipe_ingredients",
+    "column_name": "recipe_id"
+  },
+  {
+    "table_name": "recipe_ingredients",
+    "column_name": "ingredient_master_id"
+  },
+  {
+    "table_name": "recipe_ingredients",
+    "column_name": "display_name"
+  },
+  {
+    "table_name": "recipe_ingredients",
+    "column_name": "quantity_original"
+  },
+  {
+    "table_name": "recipe_ingredients",
+    "column_name": "unit_original"
+  },
+  {
+    "table_name": "recipe_ingredients",
+    "column_name": "quantity_grams"
+  },
+  {
+    "table_name": "recipe_ingredients",
+    "column_name": "position"
+  },
+  {
+    "table_name": "recipe_ingredients",
+    "column_name": "created_at"
+  },
+  {
+    "table_name": "recipe_ingredients",
+    "column_name": "updated_at"
+  },
+  {
+    "table_name": "recipe_ingredients",
+    "column_name": "is_flour"
+  },
+  {
+    "table_name": "recipe_ingredients",
+    "column_name": "is_liquid"
+  },
+  {
+    "table_name": "recipe_ingredients",
+    "column_name": "inventory_item_id"
+  },
+  {
+    "table_name": "recipe_sections",
+    "column_name": "id"
+  },
+  {
+    "table_name": "recipe_sections",
+    "column_name": "recipe_id"
+  },
+  {
+    "table_name": "recipe_sections",
+    "column_name": "type"
+  },
+  {
+    "table_name": "recipe_sections",
+    "column_name": "title"
+  },
+  {
+    "table_name": "recipe_sections",
+    "column_name": "position"
+  },
+  {
+    "table_name": "recipe_sections",
+    "column_name": "created_at"
+  },
+  {
+    "table_name": "recipe_sections",
+    "column_name": "updated_at"
+  },
+  {
+    "table_name": "recipe_steps",
+    "column_name": "id"
+  },
+  {
+    "table_name": "recipe_steps",
+    "column_name": "section_id"
+  },
+  {
+    "table_name": "recipe_steps",
+    "column_name": "instruction"
+  },
+  {
+    "table_name": "recipe_steps",
+    "column_name": "duration_seconds"
+  },
+  {
+    "table_name": "recipe_steps",
+    "column_name": "temperature_celsius"
+  },
+  {
+    "table_name": "recipe_steps",
+    "column_name": "position"
+  },
+  {
+    "table_name": "recipe_steps",
+    "column_name": "dependency_step_id"
+  },
+  {
+    "table_name": "recipe_steps",
+    "column_name": "created_at"
+  },
+  {
+    "table_name": "recipe_steps",
+    "column_name": "updated_at"
+  },
+  {
+    "table_name": "recipe_steps",
+    "column_name": "recipe_id"
+  }
+]

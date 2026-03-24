@@ -1,11 +1,13 @@
-import React from 'react'
 import { useLocalization } from '../../hooks/useLocalization'
+
 
 export interface NutritionData {
   energy_kcal: number
   protein_g: number
   fat_g: number
   carbs_g: number
+  sugar_g?: number
+  added_sugar_g?: number
   fiber_g?: number
 }
 
@@ -33,10 +35,10 @@ function NutritionRow({ label, per100g, perServing, unit, bold }: NutritionRowPr
     <tr className={`border-b border-gray-100 ${bold ? 'font-semibold' : ''}`}>
       <th scope="row" className="py-2 text-left text-gray-700 font-normal">{label}</th>
       <td className="py-2 text-right text-gray-900">
-        {per100g.toFixed(1)}{unit}
+        {(Number(per100g) || 0).toFixed(1)}{unit}
       </td>
       <td className="py-2 text-right text-gray-900">
-        {perServing.toFixed(1)}{unit}
+        {(Number(perServing) || 0).toFixed(1)}{unit}
       </td>
     </tr>
   )
@@ -101,6 +103,22 @@ export function NutritionDisplay({ nutrition, className = '' }: NutritionDisplay
               perServing={nutrition.per_serving.carbs_g}
               unit="g"
             />
+            {nutrition.per_100g.sugar_g !== undefined && (
+              <NutritionRow
+                label={t('recipes.sugar', 'Sugars')}
+                per100g={nutrition.per_100g.sugar_g}
+                perServing={nutrition.per_serving.sugar_g ?? 0}
+                unit="g"
+              />
+            )}
+            {nutrition.per_100g.added_sugar_g !== undefined && (
+              <NutritionRow
+                label={t('recipes.addedSugar', 'Added Sugars')}
+                per100g={nutrition.per_100g.added_sugar_g}
+                perServing={nutrition.per_serving.added_sugar_g ?? 0}
+                unit="g"
+              />
+            )}
             {nutrition.per_100g.fiber_g !== undefined && (
               <NutritionRow
                 label={t('recipes.fiber', 'Fiber')}

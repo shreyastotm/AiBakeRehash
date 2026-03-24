@@ -156,7 +156,7 @@ function handleQuery(text: string, params?: unknown[]): { rows: unknown[]; rowCo
     return { rows: found, rowCount: found.length };
   }
   if (text.includes('INSERT INTO recipe_journal_entries')) {
-    const newEntry: MockJournalEntry = {
+    const newEntry = {
       id: uid(),
       recipe_id: params?.[0] as string,
       user_id: params?.[1] as string,
@@ -171,11 +171,12 @@ function handleQuery(text: string, params?: unknown[]): { rows: unknown[]; rowCo
       measured_water_activity: params?.[10] as number | null,
       storage_days_achieved: params?.[11] as number | null,
       images: JSON.parse((params?.[12] as string) || '[]'),
-      recipe_version_id: params?.[13] as string | null,
+      version_id: params?.[13] as string | null,
+      recipe_version_id: params?.[13] as string | null, // for consistency in mock if needed
       created_at: new Date(),
       updated_at: new Date(),
     };
-    if (!transactionRolledBack) mockJournalEntries.push(newEntry);
+    if (!transactionRolledBack) mockJournalEntries.push(newEntry as any);
     return { rows: [newEntry], rowCount: 1 };
   }
   if (text.includes('UPDATE recipe_journal_entries SET') && text.includes('images')) {
@@ -235,11 +236,12 @@ function handleQuery(text: string, params?: unknown[]): { rows: unknown[]; rowCo
     const newAudio: MockAudioNote = {
       id: uid(),
       journal_entry_id: params?.[0] as string,
-      audio_url: params?.[1] as string,
-      duration_seconds: params?.[2] as number | null,
+      // params[1] is recipe_id
+      audio_url: params?.[2] as string,
+      duration_seconds: params?.[3] as number | null,
       transcription_text: null,
       transcription_status: 'pending',
-      recorded_at_stage: params?.[3] as string | null,
+      recorded_at_stage: params?.[4] as string | null,
       created_at: new Date(),
     };
     mockAudioNotes.push(newAudio);

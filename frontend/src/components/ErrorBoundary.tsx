@@ -29,9 +29,10 @@ export class ErrorBoundary extends React.Component<Props, State> {
     }
   }
 
-  static getDerivedStateFromError(error: Error): Partial<State> {
+  static getDerivedStateFromError(_error: Error): Partial<State> {
     return { hasError: true }
   }
+
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     // Log error details for debugging
@@ -44,9 +45,10 @@ export class ErrorBoundary extends React.Component<Props, State> {
     }))
 
     // Send error to monitoring service in production
-    if (process.env.NODE_ENV === 'production') {
+    if (import.meta.env.PROD) {
       // TODO: Send to error tracking service (Sentry, etc.)
     }
+
   }
 
   handleReset = () => {
@@ -63,7 +65,8 @@ export class ErrorBoundary extends React.Component<Props, State> {
 
   render() {
     if (this.state.hasError) {
-      const isDevelopment = process.env.NODE_ENV === 'development'
+      const isDevelopment = import.meta.env.DEV
+
 
       return (
         <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-50 flex items-center justify-center p-4">

@@ -6,9 +6,17 @@ export interface User {
   id: string
   email: string
   display_name: string
+  business_brand_name?: string
+  business_manufacturer_name?: string
+  business_manufacturer_address?: string
+  business_fssai_license?: string
+  business_contact_number?: string
+  business_email_id?: string
+  default_recipe_creation_mode?: 'manual' | 'smart'
 }
 
-interface AuthStore {
+export interface AuthStore {
+
   user: User | null
   token: string | null
   isAuthenticated: boolean

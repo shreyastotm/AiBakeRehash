@@ -7,6 +7,8 @@ export interface InventoryItem {
   unit: string
   cost_per_unit: number
   currency: string
+  brand_name?: string
+  moisture_content?: number
   expiration_date?: string
   min_stock_level?: number
 }
@@ -39,5 +41,10 @@ export const inventoryService = {
   getAlerts: async () => {
     const response = await api.get('/inventory/alerts')
     return response.data
+  },
+
+  getInventoryByIngredient: async (ingredientId: string): Promise<InventoryItem[]> => {
+    const response = await api.get(`/inventory/by-ingredient/${ingredientId}`)
+    return response.data.data
   },
 }

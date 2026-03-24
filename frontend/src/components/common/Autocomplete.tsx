@@ -80,14 +80,14 @@ export const Autocomplete: React.FC<AutocompleteProps> = ({
     if (value === lastSyncedValue.current) return
     lastSyncedValue.current = value
 
-    if (value === undefined || value === '') {
-      setInputValue('')
+    // Priority: displayLabel prop > match in current options > empty.
+    if (displayLabel) {
+      setInputValue(displayLabel)
       return
     }
 
-    // Use the explicitly provided display label first
-    if (displayLabel) {
-      setInputValue(displayLabel)
+    if (value === undefined || value === '') {
+      setInputValue('')
       return
     }
 
@@ -273,10 +273,10 @@ export const Autocomplete: React.FC<AutocompleteProps> = ({
                   }}
                   onMouseEnter={() => setActiveIndex(index)}
                   className={`px-3 py-2.5 text-sm cursor-pointer min-h-[44px] flex flex-col justify-center ${index === activeIndex
-                      ? 'bg-amber-50 text-amber-700'
-                      : option.value === value
-                        ? 'bg-amber-50 text-amber-700 font-medium'
-                        : 'text-gray-900 hover:bg-gray-50'
+                    ? 'bg-amber-50 text-amber-700'
+                    : option.value === value
+                      ? 'bg-amber-50 text-amber-700 font-medium'
+                      : 'text-gray-900 hover:bg-gray-50'
                     }`}
                 >
                   <span>{option.label}</span>

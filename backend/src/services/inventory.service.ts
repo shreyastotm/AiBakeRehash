@@ -104,6 +104,19 @@ export async function listInventoryItems(
   return { items: dataResult.rows, total, page, limit };
 }
 
+export async function listInventoryByIngredient(
+  userId: string,
+  ingredientMasterId: string,
+): Promise<InventoryItem[]> {
+  const result = await db.query<InventoryItem>(
+    `SELECT * FROM inventory_items 
+     WHERE user_id = $1 AND ingredient_master_id = $2
+     ORDER BY brand_name ASC, created_at DESC`,
+    [userId, ingredientMasterId],
+  );
+  return result.rows;
+}
+
 // ---------------------------------------------------------------------------
 // Get single inventory item
 // ---------------------------------------------------------------------------
@@ -151,8 +164,8 @@ export async function createInventoryItem(
     `INSERT INTO inventory_items
       (user_id, ingredient_master_id, quantity_on_hand, unit, cost_per_unit,
        currency, purchase_date, expiration_date, supplier_id,
-       min_stock_level, reorder_quantity, notes)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+       min_stock_level, reorder_quantity, notes, brand_name, moisture_content, nutrition_overrides)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
      RETURNING *`,
     [
       userId,
@@ -167,6 +180,9 @@ export async function createInventoryItem(
       input.min_stock_level ?? null,
       input.reorder_quantity ?? null,
       input.notes ?? null,
+      input.brand_name ?? null,
+      input.moisture_content ?? null,
+      input.nutrition_overrides ? JSON.stringify(input.nutrition_overrides) : null,
     ],
   );
 
@@ -199,6 +215,9 @@ export async function updateInventoryItem(
     ['min_stock_level', input.min_stock_level],
     ['reorder_quantity', input.reorder_quantity],
     ['notes', input.notes],
+    ['brand_name', input.brand_name],
+    ['moisture_content', input.moisture_content],
+    ['nutrition_overrides', input.nutrition_overrides ? JSON.stringify(input.nutrition_overrides) : undefined],
   ];
 
   for (const [field, value] of fields) {

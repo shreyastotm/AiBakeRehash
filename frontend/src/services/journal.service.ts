@@ -124,8 +124,12 @@ export const journalService = {
         return response.data.hasOwnProperty('data') ? response.data.data : response.data;
     },
 
-    estimateWaterActivity: async (recipeId: string): Promise<{ estimated_aw: number; explanation: string }> => {
-        const response = await api.get(`/recipes/${recipeId}/journal/estimate-aw`);
+    estimateWaterActivity: async (recipeId: string): Promise<{
+        estimated_aw: number;
+        estimated_shelf_life_days: number;
+        explanation: string;
+    }> => {
+        const response = await api.get(`/recipes/${recipeId}/ai/estimate-properties`);
         return response.data.hasOwnProperty('data') ? response.data.data : response.data;
     },
 };

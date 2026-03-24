@@ -181,14 +181,24 @@ function handleQuery(text: string, params?: unknown[]): { rows: unknown[]; rowCo
   }
   if (text.includes('INSERT INTO recipes')) {
     const newRecipe: MockRecipe = {
-      id: uid(), user_id: params?.[0] as string, title: params?.[1] as string,
-      description: params?.[2] as string | null, source_type: params?.[3] as string,
-      source_url: params?.[4] as string | null, original_author: params?.[5] as string | null,
-      original_author_url: null, servings: params?.[6] as number,
-      yield_weight_grams: params?.[7] as number, preferred_unit_system: params?.[8] as string,
-      status: params?.[9] as string, target_water_activity: null, min_safe_water_activity: null,
-      estimated_shelf_life_days: null, total_hydration_percentage: null,
-      created_at: new Date(), updated_at: new Date(),
+      id: uid(),
+      user_id: params?.[0] as string,
+      title: params?.[1] as string,
+      description: params?.[2] as string | null,
+      source_type: params?.[3] as string,
+      source_url: params?.[4] as string | null,
+      original_author: params?.[5] as string | null,
+      original_author_url: params?.[6] as string | null,
+      servings: params?.[7] as number,
+      yield_weight_grams: params?.[8] as number,
+      preferred_unit_system: params?.[9] as string,
+      status: params?.[10] as string,
+      target_water_activity: null,
+      min_safe_water_activity: null,
+      estimated_shelf_life_days: null,
+      total_hydration_percentage: null,
+      created_at: new Date(),
+      updated_at: new Date(),
     };
     if (!transactionRolledBack) mockRecipes.push(newRecipe);
     return { rows: [newRecipe], rowCount: 1 };
@@ -197,12 +207,16 @@ function handleQuery(text: string, params?: unknown[]): { rows: unknown[]; rowCo
     const recipeId = params?.[params!.length - 1] as string;
     const recipe = mockRecipes.find((r) => r.id === recipeId);
     if (recipe) {
-      // Simple field update based on params
-      let pIdx = 0;
-      if (text.includes('title =')) { recipe.title = params?.[pIdx++] as string; }
-      if (text.includes('description =')) { recipe.description = params?.[pIdx++] as string; }
-      if (text.includes('status =')) { recipe.status = params?.[pIdx++] as string; }
-      if (text.includes('servings =')) { recipe.servings = params?.[pIdx++] as number; }
+      // Find field indices dynamically by looking at the query
+      const fields = text.match(/(\w+) = \$/g);
+      if (fields) {
+        fields.forEach((field, i) => {
+          const fieldName = field.split(' ')[0];
+          if (fieldName in recipe) {
+            (recipe as any)[fieldName] = params?.[i];
+          }
+        });
+      }
       recipe.updated_at = new Date();
       return { rows: [recipe], rowCount: 1 };
     }
@@ -225,17 +239,24 @@ function handleQuery(text: string, params?: unknown[]): { rows: unknown[]; rowCo
   }
 
   // --- Ingredients ---
-  if (text.includes('SELECT') && text.includes('FROM recipe_ingredients WHERE recipe_id')) {
-    const recipeId = params?.[0] as string;
+  if (text.includes('SELECT') && text.includes('FROM recipe_ingredients') && text.includes('WHERE')) {
+    const rIdMatch = text.match(/recipe_id = \$(\d+)/);
+    const recipeId = rIdMatch ? params?.[parseInt(rIdMatch[1], 10) - 1] as string : params?.[0] as string;
     const found = mockIngredients.filter((i) => i.recipe_id === recipeId).sort((a, b) => a.position - b.position);
     return { rows: found, rowCount: found.length };
   }
   if (text.includes('INSERT INTO recipe_ingredients')) {
     const newIng: MockIngredient = {
-      id: uid(), recipe_id: params?.[0] as string, ingredient_master_id: params?.[1] as string,
-      display_name: params?.[2] as string, quantity_original: params?.[3] as number,
-      unit_original: params?.[4] as string, quantity_grams: params?.[5] as number,
-      position: params?.[6] as number, is_flour: params?.[7] as boolean, is_liquid: params?.[8] as boolean,
+      id: uid(),
+      recipe_id: params?.[0] as string,
+      ingredient_master_id: params?.[1] as string,
+      display_name: params?.[2] as string,
+      quantity_original: params?.[3] as number,
+      unit_original: params?.[4] as string,
+      quantity_grams: params?.[5] as number,
+      position: params?.[6] as number,
+      is_flour: params?.[7] as boolean,
+      is_liquid: params?.[8] as boolean,
     };
     if (!transactionRolledBack) mockIngredients.push(newIng);
     return { rows: [newIng], rowCount: 1 };
@@ -487,9 +508,9 @@ vi.mock('../../../middleware/src/recipeScaler', () => ({
 
 vi.mock('../../../middleware/src/nutritionCalculator', () => ({
   calculateNutrition: vi.fn(() => ({
-    total: { energy_kcal: 0, protein_g: 0, fat_g: 0, carbs_g: 0, fiber_g: 0 },
-    per_100g: { energy_kcal: 0, protein_g: 0, fat_g: 0, carbs_g: 0, fiber_g: 0 },
-    per_serving: { energy_kcal: 0, protein_g: 0, fat_g: 0, carbs_g: 0, fiber_g: 0 },
+    total: { energy_kcal: 0, protein_g: 0, fat_g: 0, carbs_g: 0, fiber_g: 0, sugar_g: 0, added_sugar_g: 0 },
+    per_100g: { energy_kcal: 0, protein_g: 0, fat_g: 0, carbs_g: 0, fiber_g: 0, sugar_g: 0, added_sugar_g: 0 },
+    per_serving: { energy_kcal: 0, protein_g: 0, fat_g: 0, carbs_g: 0, fiber_g: 0, sugar_g: 0, added_sugar_g: 0 },
   })),
 }));
 

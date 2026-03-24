@@ -186,6 +186,30 @@ export async function updateUserPreferences(
     setClauses.push(`language = $${paramIndex++}`);
     values.push(input.language);
   }
+  if (input.business_brand_name !== undefined) {
+    setClauses.push(`business_brand_name = $${paramIndex++}`);
+    values.push(input.business_brand_name);
+  }
+  if (input.business_manufacturer_name !== undefined) {
+    setClauses.push(`business_manufacturer_name = $${paramIndex++}`);
+    values.push(input.business_manufacturer_name);
+  }
+  if (input.business_manufacturer_address !== undefined) {
+    setClauses.push(`business_manufacturer_address = $${paramIndex++}`);
+    values.push(input.business_manufacturer_address);
+  }
+  if (input.business_fssai_license !== undefined) {
+    setClauses.push(`business_fssai_license = $${paramIndex++}`);
+    values.push(input.business_fssai_license);
+  }
+  if (input.business_contact_number !== undefined) {
+    setClauses.push(`business_contact_number = $${paramIndex++}`);
+    values.push(input.business_contact_number);
+  }
+  if (input.business_email_id !== undefined) {
+    setClauses.push(`business_email_id = $${paramIndex++}`);
+    values.push(input.business_email_id);
+  }
 
   if (setClauses.length === 0) {
     return getUserProfile(userId);

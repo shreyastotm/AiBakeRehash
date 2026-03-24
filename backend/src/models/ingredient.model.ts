@@ -19,6 +19,8 @@ export interface NutritionPer100g {
   protein_g: number;
   fat_g: number;
   carbs_g: number;
+  sugars_g?: number;
+  added_sugars_g?: number;
   fiber_g?: number;
 }
 
@@ -27,6 +29,9 @@ export interface AllergenFlags {
   dairy?: boolean;
   nuts?: boolean;
   eggs?: boolean;
+  soy?: boolean;
+  is_vegan?: boolean;
+  is_vegetarian?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -41,6 +46,8 @@ export interface IngredientMaster {
   nutrition_per_100g: NutritionPer100g | null;
   allergen_flags: AllergenFlags | null;
   is_composite: boolean;
+  ai_estimated: boolean;
+  user_id: string | null;
   created_at: Date;
   updated_at: Date;
 }
@@ -51,6 +58,7 @@ export interface IngredientAlias {
   alias_name: string;
   alias_type: 'abbreviation' | 'regional' | 'brand' | 'common';
   locale: string | null;
+  user_id: string | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -64,6 +72,8 @@ export interface CreateIngredientInput {
   nutrition_per_100g?: NutritionPer100g | null;
   allergen_flags?: AllergenFlags | null;
   is_composite?: boolean;
+  ai_estimated?: boolean;
+  user_id?: string | null;
 }
 
 // ---------------------------------------------------------------------------

@@ -180,6 +180,15 @@ router.get(
 );
 
 router.get(
+  '/inventory/by-ingredient/:ingredientId',
+  requireAuth,
+  validate([
+    param('ingredientId').isUUID().withMessage('Invalid ingredient ID')
+  ]),
+  inventoryController.listByIngredient,
+);
+
+router.get(
   '/inventory/:id',
   requireAuth,
   validate(idParamValidation),

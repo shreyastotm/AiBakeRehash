@@ -1,0 +1,304 @@
+﻿{"level":30,"time":"2026-03-10T06:22:45.801Z","service":"aibake-api","env":"development","min":2,"max":20,"idleTimeoutMs":30000,"msg":"Database connection pool created"}
+{"level":30,"time":"2026-03-10T06:22:45.862Z","service":"aibake-api","env":"development","attempt":1,"msg":"Database connection established"}
+[
+  {
+    "table_name": "recipe_ingredients",
+    "column_name": "id",
+    "data_type": "uuid",
+    "is_nullable": "NO"
+  },
+  {
+    "table_name": "recipe_ingredients",
+    "column_name": "recipe_id",
+    "data_type": "uuid",
+    "is_nullable": "NO"
+  },
+  {
+    "table_name": "recipe_ingredients",
+    "column_name": "ingredient_master_id",
+    "data_type": "uuid",
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "recipe_ingredients",
+    "column_name": "display_name",
+    "data_type": "text",
+    "is_nullable": "NO"
+  },
+  {
+    "table_name": "recipe_ingredients",
+    "column_name": "quantity_original",
+    "data_type": "numeric",
+    "is_nullable": "NO"
+  },
+  {
+    "table_name": "recipe_ingredients",
+    "column_name": "unit_original",
+    "data_type": "text",
+    "is_nullable": "NO"
+  },
+  {
+    "table_name": "recipe_ingredients",
+    "column_name": "quantity_grams",
+    "data_type": "numeric",
+    "is_nullable": "NO"
+  },
+  {
+    "table_name": "recipe_ingredients",
+    "column_name": "position",
+    "data_type": "integer",
+    "is_nullable": "NO"
+  },
+  {
+    "table_name": "recipe_ingredients",
+    "column_name": "created_at",
+    "data_type": "timestamp without time zone",
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "recipe_ingredients",
+    "column_name": "updated_at",
+    "data_type": "timestamp without time zone",
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "recipe_ingredients",
+    "column_name": "is_flour",
+    "data_type": "boolean",
+    "is_nullable": "NO"
+  },
+  {
+    "table_name": "recipe_ingredients",
+    "column_name": "is_liquid",
+    "data_type": "boolean",
+    "is_nullable": "NO"
+  },
+  {
+    "table_name": "recipe_ingredients",
+    "column_name": "inventory_item_id",
+    "data_type": "uuid",
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "recipe_sections",
+    "column_name": "id",
+    "data_type": "uuid",
+    "is_nullable": "NO"
+  },
+  {
+    "table_name": "recipe_sections",
+    "column_name": "recipe_id",
+    "data_type": "uuid",
+    "is_nullable": "NO"
+  },
+  {
+    "table_name": "recipe_sections",
+    "column_name": "type",
+    "data_type": "USER-DEFINED",
+    "is_nullable": "NO"
+  },
+  {
+    "table_name": "recipe_sections",
+    "column_name": "title",
+    "data_type": "text",
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "recipe_sections",
+    "column_name": "position",
+    "data_type": "integer",
+    "is_nullable": "NO"
+  },
+  {
+    "table_name": "recipe_sections",
+    "column_name": "created_at",
+    "data_type": "timestamp without time zone",
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "recipe_sections",
+    "column_name": "updated_at",
+    "data_type": "timestamp without time zone",
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "recipe_steps",
+    "column_name": "id",
+    "data_type": "uuid",
+    "is_nullable": "NO"
+  },
+  {
+    "table_name": "recipe_steps",
+    "column_name": "section_id",
+    "data_type": "uuid",
+    "is_nullable": "NO"
+  },
+  {
+    "table_name": "recipe_steps",
+    "column_name": "instruction",
+    "data_type": "text",
+    "is_nullable": "NO"
+  },
+  {
+    "table_name": "recipe_steps",
+    "column_name": "duration_seconds",
+    "data_type": "integer",
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "recipe_steps",
+    "column_name": "temperature_celsius",
+    "data_type": "numeric",
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "recipe_steps",
+    "column_name": "position",
+    "data_type": "integer",
+    "is_nullable": "NO"
+  },
+  {
+    "table_name": "recipe_steps",
+    "column_name": "dependency_step_id",
+    "data_type": "uuid",
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "recipe_steps",
+    "column_name": "created_at",
+    "data_type": "timestamp without time zone",
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "recipe_steps",
+    "column_name": "updated_at",
+    "data_type": "timestamp without time zone",
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "recipe_steps",
+    "column_name": "recipe_id",
+    "data_type": "uuid",
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "recipes",
+    "column_name": "id",
+    "data_type": "uuid",
+    "is_nullable": "NO"
+  },
+  {
+    "table_name": "recipes",
+    "column_name": "user_id",
+    "data_type": "uuid",
+    "is_nullable": "NO"
+  },
+  {
+    "table_name": "recipes",
+    "column_name": "title",
+    "data_type": "text",
+    "is_nullable": "NO"
+  },
+  {
+    "table_name": "recipes",
+    "column_name": "description",
+    "data_type": "text",
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "recipes",
+    "column_name": "source_type",
+    "data_type": "USER-DEFINED",
+    "is_nullable": "NO"
+  },
+  {
+    "table_name": "recipes",
+    "column_name": "source_url",
+    "data_type": "text",
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "recipes",
+    "column_name": "original_author",
+    "data_type": "text",
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "recipes",
+    "column_name": "original_author_url",
+    "data_type": "text",
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "recipes",
+    "column_name": "servings",
+    "data_type": "integer",
+    "is_nullable": "NO"
+  },
+  {
+    "table_name": "recipes",
+    "column_name": "yield_weight_grams",
+    "data_type": "numeric",
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "recipes",
+    "column_name": "preferred_unit_system",
+    "data_type": "USER-DEFINED",
+    "is_nullable": "NO"
+  },
+  {
+    "table_name": "recipes",
+    "column_name": "status",
+    "data_type": "USER-DEFINED",
+    "is_nullable": "NO"
+  },
+  {
+    "table_name": "recipes",
+    "column_name": "created_at",
+    "data_type": "timestamp without time zone",
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "recipes",
+    "column_name": "updated_at",
+    "data_type": "timestamp without time zone",
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "recipes",
+    "column_name": "target_water_activity",
+    "data_type": "numeric",
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "recipes",
+    "column_name": "min_safe_water_activity",
+    "data_type": "numeric",
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "recipes",
+    "column_name": "estimated_shelf_life_days",
+    "data_type": "integer",
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "recipes",
+    "column_name": "total_hydration_percentage",
+    "data_type": "numeric",
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "recipes",
+    "column_name": "estimated_aw_explanation",
+    "data_type": "text",
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "recipes",
+    "column_name": "tags",
+    "data_type": "ARRAY",
+    "is_nullable": "YES"
+  }
+]

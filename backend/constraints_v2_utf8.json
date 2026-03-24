@@ -1,0 +1,109 @@
+﻿{"level":30,"time":"2026-03-10T06:34:07.907Z","service":"aibake-api","env":"development","min":2,"max":20,"idleTimeoutMs":30000,"msg":"Database connection pool created"}
+{"level":30,"time":"2026-03-10T06:34:07.958Z","service":"aibake-api","env":"development","attempt":1,"msg":"Database connection established"}
+[
+  {
+    "constraint_name": "chk_recipes_hydration_non_negative",
+    "table_name": "recipes",
+    "constraint_definition": "CHECK (((total_hydration_percentage IS NULL) OR (total_hydration_percentage >= (0)::numeric)))"
+  },
+  {
+    "constraint_name": "chk_recipes_min_safe_aw_range",
+    "table_name": "recipes",
+    "constraint_definition": "CHECK (((min_safe_water_activity IS NULL) OR ((min_safe_water_activity >= 0.00) AND (min_safe_water_activity <= 1.00))))"
+  },
+  {
+    "constraint_name": "chk_recipes_servings_positive",
+    "table_name": "recipes",
+    "constraint_definition": "CHECK ((servings > 0))"
+  },
+  {
+    "constraint_name": "chk_recipes_shelf_life_positive",
+    "table_name": "recipes",
+    "constraint_definition": "CHECK (((estimated_shelf_life_days IS NULL) OR (estimated_shelf_life_days > 0)))"
+  },
+  {
+    "constraint_name": "chk_recipes_target_aw_range",
+    "table_name": "recipes",
+    "constraint_definition": "CHECK (((target_water_activity IS NULL) OR ((target_water_activity >= 0.00) AND (target_water_activity <= 1.00))))"
+  },
+  {
+    "constraint_name": "chk_recipes_yield_positive",
+    "table_name": "recipes",
+    "constraint_definition": "CHECK (((yield_weight_grams IS NULL) OR (yield_weight_grams > (0)::numeric)))"
+  },
+  {
+    "constraint_name": "recipes_pkey",
+    "table_name": "recipes",
+    "constraint_definition": "PRIMARY KEY (id)"
+  },
+  {
+    "constraint_name": "recipes_user_id_fkey",
+    "table_name": "recipes",
+    "constraint_definition": "FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE"
+  },
+  {
+    "constraint_name": "chk_recipe_ingredients_qty_grams_positive",
+    "table_name": "recipe_ingredients",
+    "constraint_definition": "CHECK ((quantity_grams > (0)::numeric))"
+  },
+  {
+    "constraint_name": "chk_recipe_ingredients_qty_original_positive",
+    "table_name": "recipe_ingredients",
+    "constraint_definition": "CHECK ((quantity_original > (0)::numeric))"
+  },
+  {
+    "constraint_name": "recipe_ingredients_ingredient_master_id_fkey",
+    "table_name": "recipe_ingredients",
+    "constraint_definition": "FOREIGN KEY (ingredient_master_id) REFERENCES ingredient_master(id)"
+  },
+  {
+    "constraint_name": "recipe_ingredients_inventory_item_id_fkey",
+    "table_name": "recipe_ingredients",
+    "constraint_definition": "FOREIGN KEY (inventory_item_id) REFERENCES inventory_items(id)"
+  },
+  {
+    "constraint_name": "recipe_ingredients_pkey",
+    "table_name": "recipe_ingredients",
+    "constraint_definition": "PRIMARY KEY (id)"
+  },
+  {
+    "constraint_name": "recipe_ingredients_recipe_id_fkey",
+    "table_name": "recipe_ingredients",
+    "constraint_definition": "FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE CASCADE"
+  },
+  {
+    "constraint_name": "recipe_sections_pkey",
+    "table_name": "recipe_sections",
+    "constraint_definition": "PRIMARY KEY (id)"
+  },
+  {
+    "constraint_name": "recipe_sections_recipe_id_fkey",
+    "table_name": "recipe_sections",
+    "constraint_definition": "FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE CASCADE"
+  },
+  {
+    "constraint_name": "chk_recipe_steps_duration_positive",
+    "table_name": "recipe_steps",
+    "constraint_definition": "CHECK (((duration_seconds IS NULL) OR (duration_seconds > 0)))"
+  },
+  {
+    "constraint_name": "recipe_steps_dependency_step_id_fkey",
+    "table_name": "recipe_steps",
+    "constraint_definition": "FOREIGN KEY (dependency_step_id) REFERENCES recipe_steps(id) ON DELETE SET NULL"
+  },
+  {
+    "constraint_name": "recipe_steps_pkey",
+    "table_name": "recipe_steps",
+    "constraint_definition": "PRIMARY KEY (id)"
+  },
+  {
+    "constraint_name": "recipe_steps_recipe_id_fkey",
+    "table_name": "recipe_steps",
+    "constraint_definition": "FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE CASCADE"
+  },
+  {
+    "constraint_name": "recipe_steps_section_id_fkey",
+    "table_name": "recipe_steps",
+    "constraint_definition": "FOREIGN KEY (section_id) REFERENCES recipe_sections(id) ON DELETE CASCADE"
+  }
+]

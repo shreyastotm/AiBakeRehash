@@ -63,7 +63,8 @@ export const useRecipe = (recipeId: string) => {
  */
 export const useCreateRecipe = () => {
   return useApiPost<Recipe, RecipeCreateRequest>('/recipes', {
-    onSuccess: (newRecipe) => {
+    onSuccess: (newRecipe: Recipe) => {
+
       // Invalidate recipes list to refetch
       queryClient.invalidateQueries({ queryKey: ['recipes'] })
       // Optionally add to cache
@@ -80,7 +81,8 @@ export const useUpdateRecipe = (recipeId: string) => {
   return useApiPatch<Recipe, RecipeUpdateRequest>(
     `/recipes/${recipeId}`,
     {
-      onMutate: async (updatedData) => {
+      onMutate: async (updatedData: RecipeUpdateRequest) => {
+
         // Cancel ongoing queries
         await queryClient.cancelQueries({ queryKey: ['recipe', recipeId] })
 
@@ -100,13 +102,16 @@ export const useUpdateRecipe = (recipeId: string) => {
 
         return { previousRecipe }
       },
-      onError: (error, variables, context) => {
+      onError: (_error: any, _variables: any, context: any) => {
+
+
         // Revert on error
         if (context?.previousRecipe) {
           queryClient.setQueryData(['recipe', recipeId], context.previousRecipe)
         }
       },
-      onSuccess: (updatedRecipe) => {
+      onSuccess: (updatedRecipe: Recipe) => {
+
         // Update cache with server response
         queryClient.setQueryData(['recipe', recipeId], updatedRecipe)
         // Invalidate list to ensure consistency
@@ -139,7 +144,8 @@ export const useScaleRecipe = (recipeId: string) => {
   return useApiPost<Recipe, { target_yield_grams: number }>(
     `/recipes/${recipeId}/scale`,
     {
-      onSuccess: (scaledRecipe) => {
+      onSuccess: (scaledRecipe: Recipe) => {
+
         // Update cache with scaled recipe
         queryClient.setQueryData(['recipe', recipeId], scaledRecipe)
       },

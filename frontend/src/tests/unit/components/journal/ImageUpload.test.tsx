@@ -54,7 +54,7 @@ describe('ImageUpload', () => {
     it('calls onFilesSelect for valid files', async () => {
         const onFilesSelect = vi.fn();
         // Mock URL.createObjectURL since it's not available in JSDOM
-        global.URL.createObjectURL = vi.fn(() => 'mock-url');
+        window.URL.createObjectURL = vi.fn(() => 'mock-url');
 
         render(<ImageUpload images={[]} onFilesSelect={onFilesSelect} />);
 

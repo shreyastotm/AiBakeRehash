@@ -1,0 +1,1820 @@
+-- DROP SCHEMA public;
+
+CREATE SCHEMA public AUTHORIZATION pg_database_owner;
+
+-- DROP TYPE public.gtrgm;
+
+CREATE TYPE public.gtrgm (
+	INPUT = gtrgm_in,
+	OUTPUT = gtrgm_out,
+	ALIGNMENT = 4,
+	STORAGE = plain,
+	CATEGORY = U,
+	DELIMITER = ',');
+
+-- DROP TYPE public."ingredient_category";
+
+CREATE TYPE public."ingredient_category" AS ENUM (
+	'flour',
+	'fat',
+	'sugar',
+	'leavening',
+	'dairy',
+	'liquid',
+	'fruit',
+	'nut',
+	'spice',
+	'other');
+
+-- DROP TYPE public."recipe_source_type";
+
+CREATE TYPE public."recipe_source_type" AS ENUM (
+	'manual',
+	'image',
+	'whatsapp',
+	'url');
+
+-- DROP TYPE public."recipe_status";
+
+CREATE TYPE public."recipe_status" AS ENUM (
+	'draft',
+	'active',
+	'archived');
+
+-- DROP TYPE public."section_type";
+
+CREATE TYPE public."section_type" AS ENUM (
+	'pre_prep',
+	'prep',
+	'bake',
+	'rest',
+	'notes');
+
+-- DROP TYPE public."substitution_moisture_impact";
+
+CREATE TYPE public."substitution_moisture_impact" AS ENUM (
+	'increase',
+	'decrease',
+	'neutral');
+
+-- DROP TYPE public."substitution_structural_impact";
+
+CREATE TYPE public."substitution_structural_impact" AS ENUM (
+	'stronger',
+	'weaker',
+	'neutral');
+
+-- DROP TYPE public."timer_status";
+
+CREATE TYPE public."timer_status" AS ENUM (
+	'running',
+	'paused',
+	'completed',
+	'cancelled');
+
+-- DROP TYPE public."unit_system";
+
+CREATE TYPE public."unit_system" AS ENUM (
+	'metric',
+	'cups',
+	'hybrid',
+	'bakers_percent');
+-- public.common_issues definition
+
+-- Drop table
+
+-- DROP TABLE public.common_issues;
+
+CREATE TABLE public.common_issues (
+	id uuid DEFAULT gen_random_uuid() NOT NULL,
+	issue_type varchar(100) NOT NULL,
+	symptoms text NOT NULL,
+	solution text NOT NULL,
+	prevention_tip text NULL,
+	created_at timestamp DEFAULT now() NULL,
+	CONSTRAINT common_issues_pkey PRIMARY KEY (id)
+);
+CREATE INDEX idx_common_issues_symptoms_trgm ON public.common_issues USING gin (symptoms gin_trgm_ops);
+CREATE INDEX idx_common_issues_type ON public.common_issues USING btree (issue_type);
+
+
+-- public.ingredient_master definition
+
+-- Drop table
+
+-- DROP TABLE public.ingredient_master;
+
+CREATE TABLE public.ingredient_master (
+	id uuid DEFAULT gen_random_uuid() NOT NULL,
+	"name" text NOT NULL,
+	category public."ingredient_category" DEFAULT 'other'::ingredient_category NOT NULL,
+	default_density_g_per_ml numeric(10, 4) NULL,
+	allergen_flags jsonb DEFAULT '{}'::jsonb NULL,
+	nutrition_per_100g jsonb DEFAULT '{}'::jsonb NULL,
+	created_at timestamp DEFAULT now() NULL,
+	updated_at timestamp DEFAULT now() NULL,
+	is_composite bool DEFAULT false NULL,
+	CONSTRAINT ingredient_master_name_key UNIQUE (name),
+	CONSTRAINT ingredient_master_pkey PRIMARY KEY (id)
+);
+CREATE INDEX idx_ingredient_master_category ON public.ingredient_master USING btree (category);
+CREATE INDEX idx_ingredient_master_name ON public.ingredient_master USING btree (name);
+CREATE INDEX idx_ingredient_master_name_trgm ON public.ingredient_master USING gin (name gin_trgm_ops);
+
+-- Table Triggers
+
+create trigger update_ingredient_master_timestamp before
+update
+    on
+    public.ingredient_master for each row execute function update_timestamp();
+
+
+-- public.users definition
+
+-- Drop table
+
+-- DROP TABLE public.users;
+
+CREATE TABLE public.users (
+	id uuid DEFAULT gen_random_uuid() NOT NULL,
+	email text NOT NULL,
+	password_hash text NOT NULL,
+	display_name text NULL,
+	unit_preferences jsonb DEFAULT '{}'::jsonb NULL,
+	default_currency varchar(3) DEFAULT 'INR'::character varying NULL,
+	"language" varchar(5) DEFAULT 'en'::character varying NULL,
+	created_at timestamp DEFAULT now() NULL,
+	updated_at timestamp DEFAULT now() NULL,
+	business_brand_name varchar(255) NULL,
+	business_manufacturer_name varchar(255) NULL,
+	business_manufacturer_address text NULL,
+	business_fssai_license varchar(255) NULL,
+	business_contact_number varchar(255) NULL,
+	business_email_id varchar(255) NULL,
+	default_recipe_creation_mode varchar(20) DEFAULT 'manual'::character varying NULL,
+	CONSTRAINT users_email_key UNIQUE (email),
+	CONSTRAINT users_pkey PRIMARY KEY (id)
+);
+CREATE INDEX idx_users_email ON public.users USING btree (email);
+
+-- Table Triggers
+
+create trigger update_users_timestamp before
+update
+    on
+    public.users for each row execute function update_timestamp();
+
+
+-- public.water_activity_reference definition
+
+-- Drop table
+
+-- DROP TABLE public.water_activity_reference;
+
+CREATE TABLE public.water_activity_reference (
+	id uuid DEFAULT gen_random_uuid() NOT NULL,
+	product_category varchar(100) NOT NULL,
+	typical_aw_min numeric(3, 2) NOT NULL,
+	typical_aw_max numeric(3, 2) NOT NULL,
+	shelf_life_days int4 NULL,
+	safety_notes text NULL,
+	created_at timestamp DEFAULT now() NULL,
+	CONSTRAINT chk_aw_max_range CHECK (((typical_aw_max >= 0.00) AND (typical_aw_max <= 1.00))),
+	CONSTRAINT chk_aw_min_lte_max CHECK ((typical_aw_min <= typical_aw_max)),
+	CONSTRAINT chk_aw_min_range CHECK (((typical_aw_min >= 0.00) AND (typical_aw_min <= 1.00))),
+	CONSTRAINT chk_shelf_life_positive CHECK (((shelf_life_days IS NULL) OR (shelf_life_days > 0))),
+	CONSTRAINT water_activity_reference_pkey PRIMARY KEY (id)
+);
+CREATE INDEX idx_water_activity_category ON public.water_activity_reference USING btree (product_category);
+
+
+-- public.delivery_zones definition
+
+-- Drop table
+
+-- DROP TABLE public.delivery_zones;
+
+CREATE TABLE public.delivery_zones (
+	id uuid DEFAULT gen_random_uuid() NOT NULL,
+	user_id uuid NOT NULL,
+	zone_name text NOT NULL,
+	base_charge numeric(10, 2) NOT NULL,
+	per_km_charge numeric(10, 2) NULL,
+	free_delivery_threshold numeric(10, 2) NULL,
+	currency varchar(3) DEFAULT 'INR'::character varying NULL,
+	created_at timestamp DEFAULT now() NULL,
+	updated_at timestamp DEFAULT now() NULL,
+	CONSTRAINT chk_delivery_base_non_negative CHECK ((base_charge >= (0)::numeric)),
+	CONSTRAINT chk_delivery_per_km_non_negative CHECK (((per_km_charge IS NULL) OR (per_km_charge >= (0)::numeric))),
+	CONSTRAINT chk_delivery_threshold_positive CHECK (((free_delivery_threshold IS NULL) OR (free_delivery_threshold > (0)::numeric))),
+	CONSTRAINT delivery_zones_pkey PRIMARY KEY (id),
+	CONSTRAINT delivery_zones_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE
+);
+CREATE INDEX idx_delivery_zones_user ON public.delivery_zones USING btree (user_id);
+
+-- Table Triggers
+
+create trigger update_delivery_zones_timestamp before
+update
+    on
+    public.delivery_zones for each row execute function update_timestamp();
+
+
+-- public.ingredient_aliases definition
+
+-- Drop table
+
+-- DROP TABLE public.ingredient_aliases;
+
+CREATE TABLE public.ingredient_aliases (
+	id uuid DEFAULT gen_random_uuid() NOT NULL,
+	ingredient_master_id uuid NOT NULL,
+	alias_name text NOT NULL,
+	alias_type varchar(50) NULL,
+	locale varchar(10) NULL,
+	created_at timestamp DEFAULT now() NULL,
+	updated_at timestamp DEFAULT now() NULL,
+	CONSTRAINT ingredient_aliases_pkey PRIMARY KEY (id),
+	CONSTRAINT uq_ingredient_aliases_alias_name UNIQUE (alias_name),
+	CONSTRAINT ingredient_aliases_ingredient_master_id_fkey FOREIGN KEY (ingredient_master_id) REFERENCES public.ingredient_master(id) ON DELETE CASCADE
+);
+CREATE INDEX idx_ingredient_aliases_master ON public.ingredient_aliases USING btree (ingredient_master_id);
+CREATE INDEX idx_ingredient_aliases_name ON public.ingredient_aliases USING btree (alias_name);
+CREATE INDEX idx_ingredient_aliases_name_trgm ON public.ingredient_aliases USING gin (alias_name gin_trgm_ops);
+
+-- Table Triggers
+
+create trigger update_ingredient_aliases_timestamp before
+update
+    on
+    public.ingredient_aliases for each row execute function update_timestamp();
+
+
+-- public.ingredient_substitutions definition
+
+-- Drop table
+
+-- DROP TABLE public.ingredient_substitutions;
+
+CREATE TABLE public.ingredient_substitutions (
+	id uuid DEFAULT gen_random_uuid() NOT NULL,
+	original_ingredient_id uuid NOT NULL,
+	substitute_ingredient_id uuid NOT NULL,
+	ratio_multiplier numeric(10, 4) NOT NULL,
+	moisture_impact public."substitution_moisture_impact" DEFAULT 'neutral'::substitution_moisture_impact NULL,
+	structural_impact public."substitution_structural_impact" DEFAULT 'neutral'::substitution_structural_impact NULL,
+	flavor_impact text NULL,
+	preparation_method text NULL,
+	created_at timestamp DEFAULT now() NULL,
+	CONSTRAINT ingredient_substitutions_pkey PRIMARY KEY (id),
+	CONSTRAINT uq_substitution_pair UNIQUE (original_ingredient_id, substitute_ingredient_id),
+	CONSTRAINT ingredient_substitutions_original_ingredient_id_fkey FOREIGN KEY (original_ingredient_id) REFERENCES public.ingredient_master(id) ON DELETE CASCADE,
+	CONSTRAINT ingredient_substitutions_substitute_ingredient_id_fkey FOREIGN KEY (substitute_ingredient_id) REFERENCES public.ingredient_master(id) ON DELETE CASCADE
+);
+CREATE INDEX idx_substitutions_original ON public.ingredient_substitutions USING btree (original_ingredient_id);
+CREATE INDEX idx_substitutions_substitute ON public.ingredient_substitutions USING btree (substitute_ingredient_id);
+
+
+-- public.packaging_items definition
+
+-- Drop table
+
+-- DROP TABLE public.packaging_items;
+
+CREATE TABLE public.packaging_items (
+	id uuid DEFAULT gen_random_uuid() NOT NULL,
+	user_id uuid NOT NULL,
+	"name" text NOT NULL,
+	cost_per_unit numeric(10, 2) NOT NULL,
+	currency varchar(3) DEFAULT 'INR'::character varying NULL,
+	quantity_on_hand int4 NULL,
+	notes text NULL,
+	created_at timestamp DEFAULT now() NULL,
+	updated_at timestamp DEFAULT now() NULL,
+	CONSTRAINT chk_packaging_cost_non_negative CHECK ((cost_per_unit >= (0)::numeric)),
+	CONSTRAINT chk_packaging_qty_non_negative CHECK (((quantity_on_hand IS NULL) OR (quantity_on_hand >= 0))),
+	CONSTRAINT packaging_items_pkey PRIMARY KEY (id),
+	CONSTRAINT packaging_items_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE
+);
+CREATE INDEX idx_packaging_items_user ON public.packaging_items USING btree (user_id);
+
+-- Table Triggers
+
+create trigger update_packaging_items_timestamp before
+update
+    on
+    public.packaging_items for each row execute function update_timestamp();
+
+
+-- public.recipes definition
+
+-- Drop table
+
+-- DROP TABLE public.recipes;
+
+CREATE TABLE public.recipes (
+	id uuid DEFAULT gen_random_uuid() NOT NULL,
+	user_id uuid NOT NULL,
+	title text NOT NULL,
+	description text NULL,
+	source_type public."recipe_source_type" DEFAULT 'manual'::recipe_source_type NOT NULL,
+	source_url text NULL,
+	original_author text NULL,
+	original_author_url text NULL,
+	servings int4 DEFAULT 1 NOT NULL,
+	yield_weight_grams numeric(12, 2) NULL,
+	preferred_unit_system public."unit_system" DEFAULT 'metric'::unit_system NOT NULL,
+	status public."recipe_status" DEFAULT 'draft'::recipe_status NOT NULL,
+	created_at timestamp DEFAULT now() NULL,
+	updated_at timestamp DEFAULT now() NULL,
+	target_water_activity numeric(4, 3) NULL,
+	min_safe_water_activity numeric(4, 3) NULL,
+	estimated_shelf_life_days int4 NULL,
+	total_hydration_percentage numeric(7, 3) NULL,
+	estimated_aw_explanation text NULL,
+	tags _text DEFAULT '{}'::text[] NULL,
+	CONSTRAINT chk_recipes_hydration_non_negative CHECK (((total_hydration_percentage IS NULL) OR (total_hydration_percentage >= (0)::numeric))),
+	CONSTRAINT chk_recipes_min_safe_aw_range CHECK (((min_safe_water_activity IS NULL) OR ((min_safe_water_activity >= 0.00) AND (min_safe_water_activity <= 1.00)))),
+	CONSTRAINT chk_recipes_servings_positive CHECK ((servings > 0)),
+	CONSTRAINT chk_recipes_shelf_life_positive CHECK (((estimated_shelf_life_days IS NULL) OR (estimated_shelf_life_days > 0))),
+	CONSTRAINT chk_recipes_target_aw_range CHECK (((target_water_activity IS NULL) OR ((target_water_activity >= 0.00) AND (target_water_activity <= 1.00)))),
+	CONSTRAINT chk_recipes_yield_positive CHECK (((yield_weight_grams IS NULL) OR (yield_weight_grams > (0)::numeric))),
+	CONSTRAINT recipes_pkey PRIMARY KEY (id),
+	CONSTRAINT recipes_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE
+);
+CREATE INDEX idx_recipes_active ON public.recipes USING btree (user_id, updated_at DESC) WHERE (status = 'active'::recipe_status);
+CREATE INDEX idx_recipes_status ON public.recipes USING btree (status);
+CREATE INDEX idx_recipes_tags ON public.recipes USING gin (tags);
+CREATE INDEX idx_recipes_title_trgm ON public.recipes USING gin (title gin_trgm_ops);
+CREATE INDEX idx_recipes_user_created ON public.recipes USING btree (user_id, created_at DESC);
+CREATE INDEX idx_recipes_user_id ON public.recipes USING btree (user_id);
+CREATE INDEX idx_recipes_user_status ON public.recipes USING btree (user_id, status);
+
+-- Table Triggers
+
+create trigger update_recipes_timestamp before
+update
+    on
+    public.recipes for each row execute function update_timestamp();
+
+
+-- public.suppliers definition
+
+-- Drop table
+
+-- DROP TABLE public.suppliers;
+
+CREATE TABLE public.suppliers (
+	id uuid DEFAULT gen_random_uuid() NOT NULL,
+	user_id uuid NOT NULL,
+	"name" text NOT NULL,
+	contact_person text NULL,
+	phone text NULL,
+	email text NULL,
+	address text NULL,
+	notes text NULL,
+	created_at timestamp DEFAULT now() NULL,
+	updated_at timestamp DEFAULT now() NULL,
+	CONSTRAINT suppliers_pkey PRIMARY KEY (id),
+	CONSTRAINT suppliers_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE
+);
+CREATE INDEX idx_suppliers_user ON public.suppliers USING btree (user_id);
+
+-- Table Triggers
+
+create trigger update_suppliers_timestamp before
+update
+    on
+    public.suppliers for each row execute function update_timestamp();
+
+
+-- public.user_tags definition
+
+-- Drop table
+
+-- DROP TABLE public.user_tags;
+
+CREATE TABLE public.user_tags (
+	id uuid DEFAULT gen_random_uuid() NOT NULL,
+	user_id uuid NOT NULL,
+	"label" varchar(50) NOT NULL,
+	color varchar(30) DEFAULT 'default'::character varying NULL,
+	created_at timestamptz DEFAULT now() NULL,
+	updated_at timestamptz DEFAULT now() NULL,
+	CONSTRAINT user_tags_pkey PRIMARY KEY (id),
+	CONSTRAINT user_tags_user_id_label_key UNIQUE (user_id, label),
+	CONSTRAINT user_tags_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE
+);
+CREATE INDEX idx_user_tags_user_id ON public.user_tags USING btree (user_id);
+
+
+-- public.composite_ingredients definition
+
+-- Drop table
+
+-- DROP TABLE public.composite_ingredients;
+
+CREATE TABLE public.composite_ingredients (
+	id uuid DEFAULT gen_random_uuid() NOT NULL,
+	ingredient_master_id uuid NOT NULL,
+	is_user_defined bool DEFAULT true NULL,
+	recipe_id uuid NULL,
+	created_at timestamp DEFAULT now() NULL,
+	updated_at timestamp DEFAULT now() NULL,
+	CONSTRAINT composite_ingredients_pkey PRIMARY KEY (id),
+	CONSTRAINT uq_composite_ingredients_master UNIQUE (ingredient_master_id),
+	CONSTRAINT composite_ingredients_ingredient_master_id_fkey FOREIGN KEY (ingredient_master_id) REFERENCES public.ingredient_master(id) ON DELETE CASCADE,
+	CONSTRAINT composite_ingredients_recipe_id_fkey FOREIGN KEY (recipe_id) REFERENCES public.recipes(id) ON DELETE SET NULL
+);
+CREATE INDEX idx_composite_ingredients_master ON public.composite_ingredients USING btree (ingredient_master_id);
+
+-- Table Triggers
+
+create trigger update_composite_ingredients_timestamp before
+update
+    on
+    public.composite_ingredients for each row execute function update_timestamp();
+
+
+-- public.inventory_items definition
+
+-- Drop table
+
+-- DROP TABLE public.inventory_items;
+
+CREATE TABLE public.inventory_items (
+	id uuid DEFAULT gen_random_uuid() NOT NULL,
+	user_id uuid NOT NULL,
+	ingredient_master_id uuid NOT NULL,
+	quantity_on_hand numeric(12, 4) NOT NULL,
+	unit text NOT NULL,
+	cost_per_unit numeric(10, 2) NULL,
+	currency varchar(3) DEFAULT 'INR'::character varying NULL,
+	purchase_date date NULL,
+	expiration_date date NULL,
+	supplier_id uuid NULL,
+	min_stock_level numeric(12, 4) NULL,
+	reorder_quantity numeric(12, 4) NULL,
+	notes text NULL,
+	created_at timestamp DEFAULT now() NULL,
+	updated_at timestamp DEFAULT now() NULL,
+	brand_name text NULL,
+	moisture_content numeric NULL,
+	nutrition_overrides jsonb NULL,
+	CONSTRAINT chk_inventory_cost_positive CHECK (((cost_per_unit IS NULL) OR (cost_per_unit >= (0)::numeric))),
+	CONSTRAINT chk_inventory_min_stock_positive CHECK (((min_stock_level IS NULL) OR (min_stock_level >= (0)::numeric))),
+	CONSTRAINT chk_inventory_qty_non_negative CHECK ((quantity_on_hand >= (0)::numeric)),
+	CONSTRAINT chk_inventory_reorder_positive CHECK (((reorder_quantity IS NULL) OR (reorder_quantity > (0)::numeric))),
+	CONSTRAINT inventory_items_pkey PRIMARY KEY (id),
+	CONSTRAINT inventory_items_ingredient_master_id_fkey FOREIGN KEY (ingredient_master_id) REFERENCES public.ingredient_master(id),
+	CONSTRAINT inventory_items_supplier_id_fkey FOREIGN KEY (supplier_id) REFERENCES public.suppliers(id) ON DELETE SET NULL,
+	CONSTRAINT inventory_items_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE
+);
+CREATE INDEX idx_inventory_items_expiration ON public.inventory_items USING btree (expiration_date) WHERE (expiration_date IS NOT NULL);
+CREATE INDEX idx_inventory_items_ingredient ON public.inventory_items USING btree (ingredient_master_id);
+CREATE INDEX idx_inventory_items_low_stock ON public.inventory_items USING btree (user_id) WHERE ((min_stock_level IS NOT NULL) AND (quantity_on_hand <= min_stock_level));
+CREATE INDEX idx_inventory_items_supplier ON public.inventory_items USING btree (supplier_id) WHERE (supplier_id IS NOT NULL);
+CREATE INDEX idx_inventory_items_user ON public.inventory_items USING btree (user_id);
+CREATE INDEX idx_inventory_items_user_ingredient ON public.inventory_items USING btree (user_id, ingredient_master_id);
+
+-- Table Triggers
+
+create trigger update_inventory_items_timestamp before
+update
+    on
+    public.inventory_items for each row execute function update_timestamp();
+
+
+-- public.inventory_purchases definition
+
+-- Drop table
+
+-- DROP TABLE public.inventory_purchases;
+
+CREATE TABLE public.inventory_purchases (
+	id uuid DEFAULT gen_random_uuid() NOT NULL,
+	user_id uuid NOT NULL,
+	ingredient_master_id uuid NOT NULL,
+	quantity numeric(12, 4) NOT NULL,
+	unit text NOT NULL,
+	"cost" numeric(10, 2) NOT NULL,
+	currency varchar(3) DEFAULT 'INR'::character varying NULL,
+	supplier_id uuid NULL,
+	invoice_number text NULL,
+	purchase_date date NOT NULL,
+	notes text NULL,
+	created_at timestamp DEFAULT now() NULL,
+	CONSTRAINT chk_purchase_cost_non_negative CHECK ((cost >= (0)::numeric)),
+	CONSTRAINT chk_purchase_qty_positive CHECK ((quantity > (0)::numeric)),
+	CONSTRAINT inventory_purchases_pkey PRIMARY KEY (id),
+	CONSTRAINT inventory_purchases_ingredient_master_id_fkey FOREIGN KEY (ingredient_master_id) REFERENCES public.ingredient_master(id),
+	CONSTRAINT inventory_purchases_supplier_id_fkey FOREIGN KEY (supplier_id) REFERENCES public.suppliers(id) ON DELETE SET NULL,
+	CONSTRAINT inventory_purchases_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE
+);
+CREATE INDEX idx_inventory_purchases_date ON public.inventory_purchases USING btree (purchase_date DESC);
+CREATE INDEX idx_inventory_purchases_ingredient ON public.inventory_purchases USING btree (ingredient_master_id);
+CREATE INDEX idx_inventory_purchases_supplier ON public.inventory_purchases USING btree (supplier_id) WHERE (supplier_id IS NOT NULL);
+CREATE INDEX idx_inventory_purchases_user ON public.inventory_purchases USING btree (user_id);
+CREATE INDEX idx_inventory_purchases_user_date ON public.inventory_purchases USING btree (user_id, purchase_date DESC);
+
+
+-- public.recipe_costs definition
+
+-- Drop table
+
+-- DROP TABLE public.recipe_costs;
+
+CREATE TABLE public.recipe_costs (
+	id uuid DEFAULT gen_random_uuid() NOT NULL,
+	recipe_id uuid NOT NULL,
+	ingredient_cost numeric(10, 2) NOT NULL,
+	overhead_cost numeric(10, 2) DEFAULT 0 NULL,
+	packaging_cost numeric(10, 2) DEFAULT 0 NULL,
+	labor_cost numeric(10, 2) DEFAULT 0 NULL,
+	total_cost numeric(10, 2) NOT NULL,
+	currency varchar(3) DEFAULT 'INR'::character varying NULL,
+	calculated_at timestamp DEFAULT now() NULL,
+	CONSTRAINT chk_recipe_costs_ingredient_non_negative CHECK ((ingredient_cost >= (0)::numeric)),
+	CONSTRAINT chk_recipe_costs_labor_non_negative CHECK ((labor_cost >= (0)::numeric)),
+	CONSTRAINT chk_recipe_costs_overhead_non_negative CHECK ((overhead_cost >= (0)::numeric)),
+	CONSTRAINT chk_recipe_costs_packaging_non_negative CHECK ((packaging_cost >= (0)::numeric)),
+	CONSTRAINT chk_recipe_costs_total_non_negative CHECK ((total_cost >= (0)::numeric)),
+	CONSTRAINT recipe_costs_pkey PRIMARY KEY (id),
+	CONSTRAINT recipe_costs_recipe_id_fkey FOREIGN KEY (recipe_id) REFERENCES public.recipes(id) ON DELETE CASCADE
+);
+CREATE INDEX idx_recipe_costs_calculated ON public.recipe_costs USING btree (calculated_at DESC);
+CREATE INDEX idx_recipe_costs_recipe ON public.recipe_costs USING btree (recipe_id);
+CREATE INDEX idx_recipe_costs_recipe_latest ON public.recipe_costs USING btree (recipe_id, calculated_at DESC);
+
+
+-- public.recipe_ingredients definition
+
+-- Drop table
+
+-- DROP TABLE public.recipe_ingredients;
+
+CREATE TABLE public.recipe_ingredients (
+	id uuid DEFAULT gen_random_uuid() NOT NULL,
+	recipe_id uuid NOT NULL,
+	ingredient_master_id uuid NULL,
+	display_name text NOT NULL,
+	quantity_original numeric(12, 4) NOT NULL,
+	unit_original text NOT NULL,
+	quantity_grams numeric(12, 4) NOT NULL,
+	"position" int4 DEFAULT 0 NOT NULL,
+	created_at timestamp DEFAULT now() NULL,
+	updated_at timestamp DEFAULT now() NULL,
+	is_flour bool DEFAULT false NOT NULL,
+	is_liquid bool DEFAULT false NOT NULL,
+	inventory_item_id uuid NULL,
+	CONSTRAINT chk_recipe_ingredients_qty_grams_positive CHECK ((quantity_grams > (0)::numeric)),
+	CONSTRAINT chk_recipe_ingredients_qty_original_positive CHECK ((quantity_original > (0)::numeric)),
+	CONSTRAINT recipe_ingredients_pkey PRIMARY KEY (id),
+	CONSTRAINT recipe_ingredients_ingredient_master_id_fkey FOREIGN KEY (ingredient_master_id) REFERENCES public.ingredient_master(id),
+	CONSTRAINT recipe_ingredients_inventory_item_id_fkey FOREIGN KEY (inventory_item_id) REFERENCES public.inventory_items(id),
+	CONSTRAINT recipe_ingredients_recipe_id_fkey FOREIGN KEY (recipe_id) REFERENCES public.recipes(id) ON DELETE CASCADE
+);
+CREATE INDEX idx_recipe_ingredients_ingredient_master_id ON public.recipe_ingredients USING btree (ingredient_master_id);
+CREATE INDEX idx_recipe_ingredients_position ON public.recipe_ingredients USING btree (recipe_id, "position");
+CREATE INDEX idx_recipe_ingredients_recipe_id ON public.recipe_ingredients USING btree (recipe_id);
+
+-- Table Triggers
+
+create trigger update_recipe_ingredients_timestamp before
+update
+    on
+    public.recipe_ingredients for each row execute function update_timestamp();
+create trigger cascade_recipe_update_on_ingredient_update after
+update
+    on
+    public.recipe_ingredients for each row execute function cascade_recipe_update_on_ingredient_change();
+create trigger cascade_recipe_update_on_ingredient_insert after
+insert
+    on
+    public.recipe_ingredients for each row execute function cascade_recipe_update_on_ingredient_change();
+create trigger cascade_recipe_update_on_ingredient_delete after
+delete
+    on
+    public.recipe_ingredients for each row execute function cascade_recipe_update_on_ingredient_change();
+
+
+-- public.recipe_nutrition_cache definition
+
+-- Drop table
+
+-- DROP TABLE public.recipe_nutrition_cache;
+
+CREATE TABLE public.recipe_nutrition_cache (
+	recipe_id uuid NOT NULL,
+	nutrition_per_100g jsonb NOT NULL,
+	nutrition_per_serving jsonb NULL,
+	calculated_at timestamp DEFAULT now() NULL,
+	CONSTRAINT recipe_nutrition_cache_pkey PRIMARY KEY (recipe_id),
+	CONSTRAINT recipe_nutrition_cache_recipe_id_fkey FOREIGN KEY (recipe_id) REFERENCES public.recipes(id) ON DELETE CASCADE
+);
+CREATE INDEX idx_nutrition_cache_calculated ON public.recipe_nutrition_cache USING btree (calculated_at);
+
+
+-- public.recipe_sections definition
+
+-- Drop table
+
+-- DROP TABLE public.recipe_sections;
+
+CREATE TABLE public.recipe_sections (
+	id uuid DEFAULT gen_random_uuid() NOT NULL,
+	recipe_id uuid NOT NULL,
+	"type" public."section_type" DEFAULT 'prep'::section_type NOT NULL,
+	title text NULL,
+	"position" int4 DEFAULT 0 NOT NULL,
+	created_at timestamp DEFAULT now() NULL,
+	updated_at timestamp DEFAULT now() NULL,
+	CONSTRAINT recipe_sections_pkey PRIMARY KEY (id),
+	CONSTRAINT recipe_sections_recipe_id_fkey FOREIGN KEY (recipe_id) REFERENCES public.recipes(id) ON DELETE CASCADE
+);
+CREATE INDEX idx_recipe_sections_position ON public.recipe_sections USING btree (recipe_id, "position");
+CREATE INDEX idx_recipe_sections_recipe_id ON public.recipe_sections USING btree (recipe_id);
+
+-- Table Triggers
+
+create trigger update_recipe_sections_timestamp before
+update
+    on
+    public.recipe_sections for each row execute function update_timestamp();
+
+
+-- public.recipe_steps definition
+
+-- Drop table
+
+-- DROP TABLE public.recipe_steps;
+
+CREATE TABLE public.recipe_steps (
+	id uuid DEFAULT gen_random_uuid() NOT NULL,
+	section_id uuid NOT NULL,
+	instruction text NOT NULL,
+	duration_seconds int4 NULL,
+	temperature_celsius numeric(6, 1) NULL,
+	"position" int4 DEFAULT 0 NOT NULL,
+	dependency_step_id uuid NULL,
+	created_at timestamp DEFAULT now() NULL,
+	updated_at timestamp DEFAULT now() NULL,
+	recipe_id uuid NULL,
+	CONSTRAINT chk_recipe_steps_duration_positive CHECK (((duration_seconds IS NULL) OR (duration_seconds > 0))),
+	CONSTRAINT recipe_steps_pkey PRIMARY KEY (id),
+	CONSTRAINT recipe_steps_dependency_step_id_fkey FOREIGN KEY (dependency_step_id) REFERENCES public.recipe_steps(id) ON DELETE SET NULL,
+	CONSTRAINT recipe_steps_recipe_id_fkey FOREIGN KEY (recipe_id) REFERENCES public.recipes(id) ON DELETE CASCADE,
+	CONSTRAINT recipe_steps_section_id_fkey FOREIGN KEY (section_id) REFERENCES public.recipe_sections(id) ON DELETE CASCADE
+);
+CREATE INDEX idx_recipe_steps_dependency ON public.recipe_steps USING btree (dependency_step_id) WHERE (dependency_step_id IS NOT NULL);
+CREATE INDEX idx_recipe_steps_position ON public.recipe_steps USING btree (section_id, "position");
+CREATE INDEX idx_recipe_steps_recipe_id ON public.recipe_steps USING btree (recipe_id) WHERE (recipe_id IS NOT NULL);
+CREATE INDEX idx_recipe_steps_section_id ON public.recipe_steps USING btree (section_id);
+
+-- Table Triggers
+
+create trigger update_recipe_steps_timestamp before
+update
+    on
+    public.recipe_steps for each row execute function update_timestamp();
+
+
+-- public.recipe_versions definition
+
+-- Drop table
+
+-- DROP TABLE public.recipe_versions;
+
+CREATE TABLE public.recipe_versions (
+	id uuid DEFAULT gen_random_uuid() NOT NULL,
+	recipe_id uuid NOT NULL,
+	version_number int4 NOT NULL,
+	change_summary text NULL,
+	created_at timestamp DEFAULT now() NULL,
+	CONSTRAINT recipe_versions_pkey PRIMARY KEY (id),
+	CONSTRAINT uq_recipe_versions_recipe_version UNIQUE (recipe_id, version_number),
+	CONSTRAINT recipe_versions_recipe_id_fkey FOREIGN KEY (recipe_id) REFERENCES public.recipes(id) ON DELETE CASCADE
+);
+CREATE INDEX idx_recipe_versions_recipe_id ON public.recipe_versions USING btree (recipe_id);
+
+
+-- public.timer_instances definition
+
+-- Drop table
+
+-- DROP TABLE public.timer_instances;
+
+CREATE TABLE public.timer_instances (
+	id uuid DEFAULT gen_random_uuid() NOT NULL,
+	recipe_id uuid NOT NULL,
+	step_id uuid NOT NULL,
+	duration_seconds int4 NOT NULL,
+	status public."timer_status" DEFAULT 'running'::timer_status NULL,
+	started_at timestamp NULL,
+	created_at timestamp DEFAULT now() NULL,
+	CONSTRAINT chk_timer_duration_positive CHECK ((duration_seconds > 0)),
+	CONSTRAINT timer_instances_pkey PRIMARY KEY (id),
+	CONSTRAINT timer_instances_recipe_id_fkey FOREIGN KEY (recipe_id) REFERENCES public.recipes(id) ON DELETE CASCADE,
+	CONSTRAINT timer_instances_step_id_fkey FOREIGN KEY (step_id) REFERENCES public.recipe_steps(id) ON DELETE CASCADE
+);
+CREATE INDEX idx_timer_active ON public.timer_instances USING btree (recipe_id, status) WHERE (status = ANY (ARRAY['running'::timer_status, 'paused'::timer_status]));
+CREATE INDEX idx_timer_recipe_id ON public.timer_instances USING btree (recipe_id);
+CREATE INDEX idx_timer_status ON public.timer_instances USING btree (status);
+CREATE INDEX idx_timer_step_id ON public.timer_instances USING btree (step_id);
+
+
+-- public.composite_ingredient_components definition
+
+-- Drop table
+
+-- DROP TABLE public.composite_ingredient_components;
+
+CREATE TABLE public.composite_ingredient_components (
+	id uuid DEFAULT gen_random_uuid() NOT NULL,
+	composite_ingredient_id uuid NOT NULL,
+	component_ingredient_id uuid NOT NULL,
+	percentage numeric(5, 2) NOT NULL,
+	weight_grams_per_100g numeric(8, 4) NOT NULL,
+	"position" int4 DEFAULT 0 NOT NULL,
+	notes text NULL,
+	created_at timestamp DEFAULT now() NULL,
+	updated_at timestamp DEFAULT now() NULL,
+	CONSTRAINT chk_component_percentage_valid CHECK (((percentage > (0)::numeric) AND (percentage <= (100)::numeric))),
+	CONSTRAINT chk_component_weight_positive CHECK ((weight_grams_per_100g > (0)::numeric)),
+	CONSTRAINT composite_ingredient_components_pkey PRIMARY KEY (id),
+	CONSTRAINT uq_composite_component_pair UNIQUE (composite_ingredient_id, component_ingredient_id),
+	CONSTRAINT composite_ingredient_components_component_ingredient_id_fkey FOREIGN KEY (component_ingredient_id) REFERENCES public.ingredient_master(id),
+	CONSTRAINT composite_ingredient_components_composite_ingredient_id_fkey FOREIGN KEY (composite_ingredient_id) REFERENCES public.composite_ingredients(id) ON DELETE CASCADE
+);
+CREATE INDEX idx_composite_components_component ON public.composite_ingredient_components USING btree (component_ingredient_id);
+CREATE INDEX idx_composite_components_composite ON public.composite_ingredient_components USING btree (composite_ingredient_id);
+
+-- Table Triggers
+
+create trigger update_composite_ingredient_components_timestamp before
+update
+    on
+    public.composite_ingredient_components for each row execute function update_timestamp();
+
+
+-- public.recipe_journal_entries definition
+
+-- Drop table
+
+-- DROP TABLE public.recipe_journal_entries;
+
+CREATE TABLE public.recipe_journal_entries (
+	id uuid DEFAULT gen_random_uuid() NOT NULL,
+	recipe_id uuid NOT NULL,
+	version_id uuid NULL,
+	bake_date date NULL,
+	notes text NULL,
+	private_notes text NULL,
+	rating int4 NULL,
+	outcome_weight_grams numeric(12, 4) NULL,
+	images jsonb DEFAULT '[]'::jsonb NULL,
+	created_at timestamp DEFAULT now() NULL,
+	measured_water_activity numeric(4, 3) NULL,
+	storage_days_achieved int4 NULL,
+	pre_bake_weight_grams numeric(12, 4) NULL,
+	baking_loss_grams numeric(12, 4) NULL,
+	baking_loss_percentage numeric(6, 3) NULL,
+	user_id uuid NULL,
+	updated_at timestamptz DEFAULT now() NULL,
+	CONSTRAINT chk_journal_baking_loss_grams_non_negative CHECK (((baking_loss_grams IS NULL) OR (baking_loss_grams >= (0)::numeric))),
+	CONSTRAINT chk_journal_baking_loss_pct_range CHECK (((baking_loss_percentage IS NULL) OR ((baking_loss_percentage >= (0)::numeric) AND (baking_loss_percentage <= (100)::numeric)))),
+	CONSTRAINT chk_journal_measured_aw_range CHECK (((measured_water_activity IS NULL) OR ((measured_water_activity >= 0.00) AND (measured_water_activity <= 1.00)))),
+	CONSTRAINT chk_journal_outcome_weight_positive CHECK (((outcome_weight_grams IS NULL) OR (outcome_weight_grams > (0)::numeric))),
+	CONSTRAINT chk_journal_pre_bake_weight_positive CHECK (((pre_bake_weight_grams IS NULL) OR (pre_bake_weight_grams > (0)::numeric))),
+	CONSTRAINT chk_journal_rating_range CHECK (((rating IS NULL) OR ((rating >= 1) AND (rating <= 5)))),
+	CONSTRAINT chk_journal_storage_days_positive CHECK (((storage_days_achieved IS NULL) OR (storage_days_achieved >= 0))),
+	CONSTRAINT recipe_journal_entries_pkey PRIMARY KEY (id),
+	CONSTRAINT recipe_journal_entries_recipe_id_fkey FOREIGN KEY (recipe_id) REFERENCES public.recipes(id) ON DELETE CASCADE,
+	CONSTRAINT recipe_journal_entries_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE,
+	CONSTRAINT recipe_journal_entries_version_id_fkey FOREIGN KEY (version_id) REFERENCES public.recipe_versions(id)
+);
+CREATE INDEX idx_recipe_journal_bake_date ON public.recipe_journal_entries USING btree (bake_date DESC);
+CREATE INDEX idx_recipe_journal_recipe_created ON public.recipe_journal_entries USING btree (recipe_id, created_at DESC);
+CREATE INDEX idx_recipe_journal_recipe_id ON public.recipe_journal_entries USING btree (recipe_id);
+CREATE INDEX idx_recipe_journal_version_id ON public.recipe_journal_entries USING btree (version_id) WHERE (version_id IS NOT NULL);
+
+-- Table Triggers
+
+create trigger calculate_baking_loss_on_insert before
+insert
+    on
+    public.recipe_journal_entries for each row execute function calculate_baking_loss();
+create trigger calculate_baking_loss_on_update before
+update
+    on
+    public.recipe_journal_entries for each row execute function calculate_baking_loss();
+
+
+-- public.recipe_version_snapshots definition
+
+-- Drop table
+
+-- DROP TABLE public.recipe_version_snapshots;
+
+CREATE TABLE public.recipe_version_snapshots (
+	id uuid DEFAULT gen_random_uuid() NOT NULL,
+	recipe_version_id uuid NOT NULL,
+	snapshot_data jsonb NOT NULL,
+	created_at timestamp DEFAULT now() NULL,
+	CONSTRAINT recipe_version_snapshots_pkey PRIMARY KEY (id),
+	CONSTRAINT recipe_version_snapshots_recipe_version_id_fkey FOREIGN KEY (recipe_version_id) REFERENCES public.recipe_versions(id) ON DELETE CASCADE
+);
+CREATE INDEX idx_recipe_version_snapshots_version_id ON public.recipe_version_snapshots USING btree (recipe_version_id);
+
+
+-- public.recipe_audio_notes definition
+
+-- Drop table
+
+-- DROP TABLE public.recipe_audio_notes;
+
+CREATE TABLE public.recipe_audio_notes (
+	id uuid DEFAULT gen_random_uuid() NOT NULL,
+	recipe_id uuid NOT NULL,
+	step_id uuid NULL,
+	audio_url text NOT NULL,
+	duration_seconds int4 NULL,
+	transcription_text text NULL,
+	recorded_at_stage varchar(50) NULL,
+	created_at timestamp DEFAULT now() NULL,
+	journal_entry_id uuid NULL,
+	transcription_status varchar(20) DEFAULT 'pending'::character varying NULL,
+	updated_at timestamptz DEFAULT now() NULL,
+	CONSTRAINT chk_audio_duration_positive CHECK (((duration_seconds IS NULL) OR (duration_seconds > 0))),
+	CONSTRAINT chk_audio_transcription_status CHECK (((transcription_status)::text = ANY ((ARRAY['pending'::character varying, 'processing'::character varying, 'completed'::character varying, 'failed'::character varying])::text[]))),
+	CONSTRAINT recipe_audio_notes_pkey PRIMARY KEY (id),
+	CONSTRAINT recipe_audio_notes_journal_entry_id_fkey FOREIGN KEY (journal_entry_id) REFERENCES public.recipe_journal_entries(id) ON DELETE CASCADE,
+	CONSTRAINT recipe_audio_notes_recipe_id_fkey FOREIGN KEY (recipe_id) REFERENCES public.recipes(id) ON DELETE CASCADE,
+	CONSTRAINT recipe_audio_notes_step_id_fkey FOREIGN KEY (step_id) REFERENCES public.recipe_steps(id) ON DELETE SET NULL
+);
+CREATE INDEX idx_audio_notes_recipe_id ON public.recipe_audio_notes USING btree (recipe_id);
+CREATE INDEX idx_audio_notes_step_id ON public.recipe_audio_notes USING btree (step_id) WHERE (step_id IS NOT NULL);
+
+
+
+-- DROP FUNCTION public.armor(bytea);
+
+CREATE OR REPLACE FUNCTION public.armor(bytea)
+ RETURNS text
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/pgcrypto', $function$pg_armor$function$
+;
+
+-- DROP FUNCTION public.armor(bytea, _text, _text);
+
+CREATE OR REPLACE FUNCTION public.armor(bytea, text[], text[])
+ RETURNS text
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/pgcrypto', $function$pg_armor$function$
+;
+
+-- DROP FUNCTION public.calculate_baking_loss();
+
+CREATE OR REPLACE FUNCTION public.calculate_baking_loss()
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $function$
+BEGIN
+  -- Only calculate if both pre_bake_weight_grams and outcome_weight_grams are provided
+  IF NEW.pre_bake_weight_grams IS NOT NULL AND NEW.outcome_weight_grams IS NOT NULL THEN
+    -- Calculate baking loss in grams
+    NEW.baking_loss_grams := NEW.pre_bake_weight_grams - NEW.outcome_weight_grams;
+    
+    -- Calculate baking loss percentage: (loss / pre_bake) × 100
+    -- Only calculate if pre_bake_weight_grams > 0 to avoid division by zero
+    IF NEW.pre_bake_weight_grams > 0 THEN
+      NEW.baking_loss_percentage := (NEW.baking_loss_grams / NEW.pre_bake_weight_grams) * 100;
+    ELSE
+      NEW.baking_loss_percentage := NULL;
+    END IF;
+  ELSE
+    -- If either weight is NULL, clear the calculated fields
+    NEW.baking_loss_grams := NULL;
+    NEW.baking_loss_percentage := NULL;
+  END IF;
+  
+  RETURN NEW;
+END;
+$function$
+;
+
+-- DROP FUNCTION public.calculate_hydration_percentage(uuid);
+
+CREATE OR REPLACE FUNCTION public.calculate_hydration_percentage(recipe_id uuid)
+ RETURNS numeric
+ LANGUAGE plpgsql
+ STABLE
+AS $function$
+DECLARE
+  v_flour_weight NUMERIC;
+  v_liquid_weight NUMERIC;
+  v_hydration NUMERIC;
+BEGIN
+  -- Sum all flour category ingredients
+  SELECT COALESCE(SUM(ri.quantity_grams), 0) INTO v_flour_weight
+  FROM recipe_ingredients ri
+  JOIN ingredient_master im ON ri.ingredient_master_id = im.id
+  WHERE ri.recipe_id = recipe_id
+    AND im.category = 'flour';
+  
+  -- Sum all liquid and dairy category ingredients
+  SELECT COALESCE(SUM(ri.quantity_grams), 0) INTO v_liquid_weight
+  FROM recipe_ingredients ri
+  JOIN ingredient_master im ON ri.ingredient_master_id = im.id
+  WHERE ri.recipe_id = recipe_id
+    AND im.category IN ('liquid', 'dairy');
+  
+  -- Return NULL for non-dough recipes (zero flour)
+  IF v_flour_weight = 0 THEN
+    RETURN NULL;
+  END IF;
+  
+  -- Calculate hydration percentage
+  v_hydration := (v_liquid_weight / v_flour_weight) * 100;
+  
+  RETURN ROUND(v_hydration::NUMERIC, 2);
+END;
+$function$
+;
+
+-- DROP FUNCTION public.cascade_recipe_update_on_ingredient_change();
+
+CREATE OR REPLACE FUNCTION public.cascade_recipe_update_on_ingredient_change()
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $function$
+BEGIN
+  -- Update the parent recipe's updated_at timestamp
+  UPDATE recipes
+  SET updated_at = NOW()
+  WHERE id = NEW.recipe_id;
+  
+  RETURN NEW;
+END;
+$function$
+;
+
+-- DROP FUNCTION public.check_composite_ingredient_validity(uuid);
+
+CREATE OR REPLACE FUNCTION public.check_composite_ingredient_validity(p_composite_id uuid)
+ RETURNS TABLE(composite_id uuid, total_percentage numeric, is_valid boolean, component_count integer, error_message text)
+ LANGUAGE plpgsql
+AS $function$
+DECLARE
+  v_total_percentage NUMERIC(5,2);
+  v_component_count INTEGER;
+BEGIN
+  -- Get total percentage and component count
+  SELECT 
+    COALESCE(SUM(percentage), 0),
+    COUNT(*)
+  INTO v_total_percentage, v_component_count
+  FROM composite_ingredient_components
+  WHERE composite_ingredient_id = p_composite_id;
+  
+  -- Return validation result
+  RETURN QUERY SELECT
+    p_composite_id,
+    v_total_percentage,
+    (v_total_percentage = 100) AS is_valid,
+    v_component_count,
+    CASE 
+      WHEN v_component_count = 0 THEN 'No components defined'
+      WHEN v_total_percentage < 100 THEN 'Percentages sum to ' || v_total_percentage || '% (need 100%)'
+      WHEN v_total_percentage > 100 THEN 'Percentages sum to ' || v_total_percentage || '% (exceeds 100%)'
+      ELSE NULL
+    END AS error_message;
+END;
+$function$
+;
+
+-- DROP FUNCTION public.crypt(text, text);
+
+CREATE OR REPLACE FUNCTION public.crypt(text, text)
+ RETURNS text
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/pgcrypto', $function$pg_crypt$function$
+;
+
+-- DROP FUNCTION public.dearmor(text);
+
+CREATE OR REPLACE FUNCTION public.dearmor(text)
+ RETURNS bytea
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/pgcrypto', $function$pg_dearmor$function$
+;
+
+-- DROP FUNCTION public.decrypt(bytea, bytea, text);
+
+CREATE OR REPLACE FUNCTION public.decrypt(bytea, bytea, text)
+ RETURNS bytea
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/pgcrypto', $function$pg_decrypt$function$
+;
+
+-- DROP FUNCTION public.decrypt_iv(bytea, bytea, bytea, text);
+
+CREATE OR REPLACE FUNCTION public.decrypt_iv(bytea, bytea, bytea, text)
+ RETURNS bytea
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/pgcrypto', $function$pg_decrypt_iv$function$
+;
+
+-- DROP FUNCTION public.digest(text, text);
+
+CREATE OR REPLACE FUNCTION public.digest(text, text)
+ RETURNS bytea
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/pgcrypto', $function$pg_digest$function$
+;
+
+-- DROP FUNCTION public.digest(bytea, text);
+
+CREATE OR REPLACE FUNCTION public.digest(bytea, text)
+ RETURNS bytea
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/pgcrypto', $function$pg_digest$function$
+;
+
+-- DROP FUNCTION public.encrypt(bytea, bytea, text);
+
+CREATE OR REPLACE FUNCTION public.encrypt(bytea, bytea, text)
+ RETURNS bytea
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/pgcrypto', $function$pg_encrypt$function$
+;
+
+-- DROP FUNCTION public.encrypt_iv(bytea, bytea, bytea, text);
+
+CREATE OR REPLACE FUNCTION public.encrypt_iv(bytea, bytea, bytea, text)
+ RETURNS bytea
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/pgcrypto', $function$pg_encrypt_iv$function$
+;
+
+-- DROP FUNCTION public.gen_random_bytes(int4);
+
+CREATE OR REPLACE FUNCTION public.gen_random_bytes(integer)
+ RETURNS bytea
+ LANGUAGE c
+ PARALLEL SAFE STRICT
+AS '$libdir/pgcrypto', $function$pg_random_bytes$function$
+;
+
+-- DROP FUNCTION public.gen_random_uuid();
+
+CREATE OR REPLACE FUNCTION public.gen_random_uuid()
+ RETURNS uuid
+ LANGUAGE c
+ PARALLEL SAFE
+AS '$libdir/pgcrypto', $function$pg_random_uuid$function$
+;
+
+-- DROP FUNCTION public.gen_salt(text);
+
+CREATE OR REPLACE FUNCTION public.gen_salt(text)
+ RETURNS text
+ LANGUAGE c
+ PARALLEL SAFE STRICT
+AS '$libdir/pgcrypto', $function$pg_gen_salt$function$
+;
+
+-- DROP FUNCTION public.gen_salt(text, int4);
+
+CREATE OR REPLACE FUNCTION public.gen_salt(text, integer)
+ RETURNS text
+ LANGUAGE c
+ PARALLEL SAFE STRICT
+AS '$libdir/pgcrypto', $function$pg_gen_salt_rounds$function$
+;
+
+-- DROP FUNCTION public.get_recipe_with_details(uuid);
+
+CREATE OR REPLACE FUNCTION public.get_recipe_with_details(recipe_id uuid)
+ RETURNS json
+ LANGUAGE plpgsql
+ STABLE
+AS $function$
+DECLARE
+  v_recipe JSON;
+  v_ingredients JSON;
+  v_sections JSON;
+BEGIN
+  -- Get base recipe data
+  SELECT json_build_object(
+    'id', r.id,
+    'user_id', r.user_id,
+    'title', r.title,
+    'description', r.description,
+    'source_type', r.source_type,
+    'source_url', r.source_url,
+    'original_author', r.original_author,
+    'original_author_url', r.original_author_url,
+    'servings', r.servings,
+    'yield_weight_grams', r.yield_weight_grams,
+    'preferred_unit_system', r.preferred_unit_system,
+    'status', r.status,
+    'target_water_activity', r.target_water_activity,
+    'min_safe_water_activity', r.min_safe_water_activity,
+    'estimated_shelf_life_days', r.estimated_shelf_life_days,
+    'total_hydration_percentage', calculate_hydration_percentage(r.id),
+    'created_at', r.created_at,
+    'updated_at', r.updated_at
+  ) INTO v_recipe
+  FROM recipes r
+  WHERE r.id = recipe_id;
+  
+  -- Get ingredients with master data
+  SELECT json_agg(
+    json_build_object(
+      'id', ri.id,
+      'ingredient_master_id', ri.ingredient_master_id,
+      'display_name', ri.display_name,
+      'quantity_original', ri.quantity_original,
+      'unit_original', ri.unit_original,
+      'quantity_grams', ri.quantity_grams,
+      'position', ri.position,
+      'ingredient_master', json_build_object(
+        'id', im.id,
+        'name', im.name,
+        'category', im.category,
+        'default_density_g_per_ml', im.default_density_g_per_ml,
+        'nutrition_per_100g', im.nutrition_per_100g
+      )
+    )
+    ORDER BY ri.position ASC
+  ) INTO v_ingredients
+  FROM recipe_ingredients ri
+  JOIN ingredient_master im ON ri.ingredient_master_id = im.id
+  WHERE ri.recipe_id = recipe_id;
+  
+  -- Get sections with steps
+  SELECT json_agg(
+    json_build_object(
+      'id', rs.id,
+      'type', rs.type,
+      'title', rs.title,
+      'position', rs.position,
+      'steps', (
+        SELECT json_agg(
+          json_build_object(
+            'id', rsp.id,
+            'instruction', rsp.instruction,
+            'duration_seconds', rsp.duration_seconds,
+            'temperature_celsius', rsp.temperature_celsius,
+            'position', rsp.position,
+            'dependency_step_id', rsp.dependency_step_id
+          )
+          ORDER BY rsp.position ASC
+        )
+        FROM recipe_steps rsp
+        WHERE rsp.recipe_section_id = rs.id
+      )
+    )
+    ORDER BY rs.position ASC
+  ) INTO v_sections
+  FROM recipe_sections rs
+  WHERE rs.recipe_id = recipe_id;
+  
+  -- Combine all data
+  RETURN v_recipe || json_build_object(
+    'ingredients', COALESCE(v_ingredients, '[]'::json),
+    'sections', COALESCE(v_sections, '[]'::json)
+  );
+END;
+$function$
+;
+
+-- DROP FUNCTION public.gin_extract_query_trgm(text, internal, int2, internal, internal, internal, internal);
+
+CREATE OR REPLACE FUNCTION public.gin_extract_query_trgm(text, internal, smallint, internal, internal, internal, internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/pg_trgm', $function$gin_extract_query_trgm$function$
+;
+
+-- DROP FUNCTION public.gin_extract_value_trgm(text, internal);
+
+CREATE OR REPLACE FUNCTION public.gin_extract_value_trgm(text, internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/pg_trgm', $function$gin_extract_value_trgm$function$
+;
+
+-- DROP FUNCTION public.gin_trgm_consistent(internal, int2, text, int4, internal, internal, internal, internal);
+
+CREATE OR REPLACE FUNCTION public.gin_trgm_consistent(internal, smallint, text, integer, internal, internal, internal, internal)
+ RETURNS boolean
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/pg_trgm', $function$gin_trgm_consistent$function$
+;
+
+-- DROP FUNCTION public.gin_trgm_triconsistent(internal, int2, text, int4, internal, internal, internal);
+
+CREATE OR REPLACE FUNCTION public.gin_trgm_triconsistent(internal, smallint, text, integer, internal, internal, internal)
+ RETURNS "char"
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/pg_trgm', $function$gin_trgm_triconsistent$function$
+;
+
+-- DROP FUNCTION public.gtrgm_compress(internal);
+
+CREATE OR REPLACE FUNCTION public.gtrgm_compress(internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/pg_trgm', $function$gtrgm_compress$function$
+;
+
+-- DROP FUNCTION public.gtrgm_consistent(internal, text, int2, oid, internal);
+
+CREATE OR REPLACE FUNCTION public.gtrgm_consistent(internal, text, smallint, oid, internal)
+ RETURNS boolean
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/pg_trgm', $function$gtrgm_consistent$function$
+;
+
+-- DROP FUNCTION public.gtrgm_decompress(internal);
+
+CREATE OR REPLACE FUNCTION public.gtrgm_decompress(internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/pg_trgm', $function$gtrgm_decompress$function$
+;
+
+-- DROP FUNCTION public.gtrgm_distance(internal, text, int2, oid, internal);
+
+CREATE OR REPLACE FUNCTION public.gtrgm_distance(internal, text, smallint, oid, internal)
+ RETURNS double precision
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/pg_trgm', $function$gtrgm_distance$function$
+;
+
+-- DROP FUNCTION public.gtrgm_in(cstring);
+
+CREATE OR REPLACE FUNCTION public.gtrgm_in(cstring)
+ RETURNS gtrgm
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/pg_trgm', $function$gtrgm_in$function$
+;
+
+-- DROP FUNCTION public.gtrgm_options(internal);
+
+CREATE OR REPLACE FUNCTION public.gtrgm_options(internal)
+ RETURNS void
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE
+AS '$libdir/pg_trgm', $function$gtrgm_options$function$
+;
+
+-- DROP FUNCTION public.gtrgm_out(gtrgm);
+
+CREATE OR REPLACE FUNCTION public.gtrgm_out(gtrgm)
+ RETURNS cstring
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/pg_trgm', $function$gtrgm_out$function$
+;
+
+-- DROP FUNCTION public.gtrgm_penalty(internal, internal, internal);
+
+CREATE OR REPLACE FUNCTION public.gtrgm_penalty(internal, internal, internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/pg_trgm', $function$gtrgm_penalty$function$
+;
+
+-- DROP FUNCTION public.gtrgm_picksplit(internal, internal);
+
+CREATE OR REPLACE FUNCTION public.gtrgm_picksplit(internal, internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/pg_trgm', $function$gtrgm_picksplit$function$
+;
+
+-- DROP FUNCTION public.gtrgm_same(gtrgm, gtrgm, internal);
+
+CREATE OR REPLACE FUNCTION public.gtrgm_same(gtrgm, gtrgm, internal)
+ RETURNS internal
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/pg_trgm', $function$gtrgm_same$function$
+;
+
+-- DROP FUNCTION public.gtrgm_union(internal, internal);
+
+CREATE OR REPLACE FUNCTION public.gtrgm_union(internal, internal)
+ RETURNS gtrgm
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/pg_trgm', $function$gtrgm_union$function$
+;
+
+-- DROP FUNCTION public.hmac(text, text, text);
+
+CREATE OR REPLACE FUNCTION public.hmac(text, text, text)
+ RETURNS bytea
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/pgcrypto', $function$pg_hmac$function$
+;
+
+-- DROP FUNCTION public.hmac(bytea, bytea, text);
+
+CREATE OR REPLACE FUNCTION public.hmac(bytea, bytea, text)
+ RETURNS bytea
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/pgcrypto', $function$pg_hmac$function$
+;
+
+-- DROP FUNCTION public.pgp_armor_headers(in text, out text, out text);
+
+CREATE OR REPLACE FUNCTION public.pgp_armor_headers(text, OUT key text, OUT value text)
+ RETURNS SETOF record
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/pgcrypto', $function$pgp_armor_headers$function$
+;
+
+-- DROP FUNCTION public.pgp_key_id(bytea);
+
+CREATE OR REPLACE FUNCTION public.pgp_key_id(bytea)
+ RETURNS text
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/pgcrypto', $function$pgp_key_id_w$function$
+;
+
+-- DROP FUNCTION public.pgp_pub_decrypt(bytea, bytea);
+
+CREATE OR REPLACE FUNCTION public.pgp_pub_decrypt(bytea, bytea)
+ RETURNS text
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/pgcrypto', $function$pgp_pub_decrypt_text$function$
+;
+
+-- DROP FUNCTION public.pgp_pub_decrypt(bytea, bytea, text);
+
+CREATE OR REPLACE FUNCTION public.pgp_pub_decrypt(bytea, bytea, text)
+ RETURNS text
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/pgcrypto', $function$pgp_pub_decrypt_text$function$
+;
+
+-- DROP FUNCTION public.pgp_pub_decrypt(bytea, bytea, text, text);
+
+CREATE OR REPLACE FUNCTION public.pgp_pub_decrypt(bytea, bytea, text, text)
+ RETURNS text
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/pgcrypto', $function$pgp_pub_decrypt_text$function$
+;
+
+-- DROP FUNCTION public.pgp_pub_decrypt_bytea(bytea, bytea, text);
+
+CREATE OR REPLACE FUNCTION public.pgp_pub_decrypt_bytea(bytea, bytea, text)
+ RETURNS bytea
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/pgcrypto', $function$pgp_pub_decrypt_bytea$function$
+;
+
+-- DROP FUNCTION public.pgp_pub_decrypt_bytea(bytea, bytea, text, text);
+
+CREATE OR REPLACE FUNCTION public.pgp_pub_decrypt_bytea(bytea, bytea, text, text)
+ RETURNS bytea
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/pgcrypto', $function$pgp_pub_decrypt_bytea$function$
+;
+
+-- DROP FUNCTION public.pgp_pub_decrypt_bytea(bytea, bytea);
+
+CREATE OR REPLACE FUNCTION public.pgp_pub_decrypt_bytea(bytea, bytea)
+ RETURNS bytea
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/pgcrypto', $function$pgp_pub_decrypt_bytea$function$
+;
+
+-- DROP FUNCTION public.pgp_pub_encrypt(text, bytea);
+
+CREATE OR REPLACE FUNCTION public.pgp_pub_encrypt(text, bytea)
+ RETURNS bytea
+ LANGUAGE c
+ PARALLEL SAFE STRICT
+AS '$libdir/pgcrypto', $function$pgp_pub_encrypt_text$function$
+;
+
+-- DROP FUNCTION public.pgp_pub_encrypt(text, bytea, text);
+
+CREATE OR REPLACE FUNCTION public.pgp_pub_encrypt(text, bytea, text)
+ RETURNS bytea
+ LANGUAGE c
+ PARALLEL SAFE STRICT
+AS '$libdir/pgcrypto', $function$pgp_pub_encrypt_text$function$
+;
+
+-- DROP FUNCTION public.pgp_pub_encrypt_bytea(bytea, bytea, text);
+
+CREATE OR REPLACE FUNCTION public.pgp_pub_encrypt_bytea(bytea, bytea, text)
+ RETURNS bytea
+ LANGUAGE c
+ PARALLEL SAFE STRICT
+AS '$libdir/pgcrypto', $function$pgp_pub_encrypt_bytea$function$
+;
+
+-- DROP FUNCTION public.pgp_pub_encrypt_bytea(bytea, bytea);
+
+CREATE OR REPLACE FUNCTION public.pgp_pub_encrypt_bytea(bytea, bytea)
+ RETURNS bytea
+ LANGUAGE c
+ PARALLEL SAFE STRICT
+AS '$libdir/pgcrypto', $function$pgp_pub_encrypt_bytea$function$
+;
+
+-- DROP FUNCTION public.pgp_sym_decrypt(bytea, text, text);
+
+CREATE OR REPLACE FUNCTION public.pgp_sym_decrypt(bytea, text, text)
+ RETURNS text
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/pgcrypto', $function$pgp_sym_decrypt_text$function$
+;
+
+-- DROP FUNCTION public.pgp_sym_decrypt(bytea, text);
+
+CREATE OR REPLACE FUNCTION public.pgp_sym_decrypt(bytea, text)
+ RETURNS text
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/pgcrypto', $function$pgp_sym_decrypt_text$function$
+;
+
+-- DROP FUNCTION public.pgp_sym_decrypt_bytea(bytea, text, text);
+
+CREATE OR REPLACE FUNCTION public.pgp_sym_decrypt_bytea(bytea, text, text)
+ RETURNS bytea
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/pgcrypto', $function$pgp_sym_decrypt_bytea$function$
+;
+
+-- DROP FUNCTION public.pgp_sym_decrypt_bytea(bytea, text);
+
+CREATE OR REPLACE FUNCTION public.pgp_sym_decrypt_bytea(bytea, text)
+ RETURNS bytea
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/pgcrypto', $function$pgp_sym_decrypt_bytea$function$
+;
+
+-- DROP FUNCTION public.pgp_sym_encrypt(text, text, text);
+
+CREATE OR REPLACE FUNCTION public.pgp_sym_encrypt(text, text, text)
+ RETURNS bytea
+ LANGUAGE c
+ PARALLEL SAFE STRICT
+AS '$libdir/pgcrypto', $function$pgp_sym_encrypt_text$function$
+;
+
+-- DROP FUNCTION public.pgp_sym_encrypt(text, text);
+
+CREATE OR REPLACE FUNCTION public.pgp_sym_encrypt(text, text)
+ RETURNS bytea
+ LANGUAGE c
+ PARALLEL SAFE STRICT
+AS '$libdir/pgcrypto', $function$pgp_sym_encrypt_text$function$
+;
+
+-- DROP FUNCTION public.pgp_sym_encrypt_bytea(bytea, text);
+
+CREATE OR REPLACE FUNCTION public.pgp_sym_encrypt_bytea(bytea, text)
+ RETURNS bytea
+ LANGUAGE c
+ PARALLEL SAFE STRICT
+AS '$libdir/pgcrypto', $function$pgp_sym_encrypt_bytea$function$
+;
+
+-- DROP FUNCTION public.pgp_sym_encrypt_bytea(bytea, text, text);
+
+CREATE OR REPLACE FUNCTION public.pgp_sym_encrypt_bytea(bytea, text, text)
+ RETURNS bytea
+ LANGUAGE c
+ PARALLEL SAFE STRICT
+AS '$libdir/pgcrypto', $function$pgp_sym_encrypt_bytea$function$
+;
+
+-- DROP FUNCTION public.search_ingredient(text);
+
+CREATE OR REPLACE FUNCTION public.search_ingredient(query text)
+ RETURNS TABLE(ingredient_id uuid, ingredient_name text, match_type text, similarity_score real, category text, density_g_per_ml numeric)
+ LANGUAGE plpgsql
+ STABLE
+AS $function$
+BEGIN
+  RETURN QUERY
+  -- Search canonical ingredient names
+  SELECT 
+    im.id,
+    im.name,
+    'canonical'::TEXT as match_type,
+    similarity(im.name, query) as similarity_score,
+    im.category::TEXT,
+    im.default_density_g_per_ml
+  FROM ingredient_master im
+  WHERE im.name % query  -- trigram operator for fuzzy match
+  
+  UNION ALL
+  
+  -- Search ingredient aliases
+  SELECT 
+    im.id,
+    im.name,
+    'alias'::TEXT as match_type,
+    similarity(ia.alias_name, query) as similarity_score,
+    im.category::TEXT,
+    im.default_density_g_per_ml
+  FROM ingredient_aliases ia
+  JOIN ingredient_master im ON ia.ingredient_master_id = im.id
+  WHERE ia.alias_name % query  -- trigram operator for fuzzy match
+  
+  ORDER BY similarity_score DESC, ingredient_name ASC;
+END;
+$function$
+;
+
+-- DROP FUNCTION public.set_limit(float4);
+
+CREATE OR REPLACE FUNCTION public.set_limit(real)
+ RETURNS real
+ LANGUAGE c
+ STRICT
+AS '$libdir/pg_trgm', $function$set_limit$function$
+;
+
+-- DROP FUNCTION public.show_limit();
+
+CREATE OR REPLACE FUNCTION public.show_limit()
+ RETURNS real
+ LANGUAGE c
+ STABLE PARALLEL SAFE STRICT
+AS '$libdir/pg_trgm', $function$show_limit$function$
+;
+
+-- DROP FUNCTION public.show_trgm(text);
+
+CREATE OR REPLACE FUNCTION public.show_trgm(text)
+ RETURNS text[]
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/pg_trgm', $function$show_trgm$function$
+;
+
+-- DROP FUNCTION public.similarity(text, text);
+
+CREATE OR REPLACE FUNCTION public.similarity(text, text)
+ RETURNS real
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/pg_trgm', $function$similarity$function$
+;
+
+-- DROP FUNCTION public.similarity_dist(text, text);
+
+CREATE OR REPLACE FUNCTION public.similarity_dist(text, text)
+ RETURNS real
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/pg_trgm', $function$similarity_dist$function$
+;
+
+-- DROP FUNCTION public.similarity_op(text, text);
+
+CREATE OR REPLACE FUNCTION public.similarity_op(text, text)
+ RETURNS boolean
+ LANGUAGE c
+ STABLE PARALLEL SAFE STRICT
+AS '$libdir/pg_trgm', $function$similarity_op$function$
+;
+
+-- DROP FUNCTION public.strict_word_similarity(text, text);
+
+CREATE OR REPLACE FUNCTION public.strict_word_similarity(text, text)
+ RETURNS real
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/pg_trgm', $function$strict_word_similarity$function$
+;
+
+-- DROP FUNCTION public.strict_word_similarity_commutator_op(text, text);
+
+CREATE OR REPLACE FUNCTION public.strict_word_similarity_commutator_op(text, text)
+ RETURNS boolean
+ LANGUAGE c
+ STABLE PARALLEL SAFE STRICT
+AS '$libdir/pg_trgm', $function$strict_word_similarity_commutator_op$function$
+;
+
+-- DROP FUNCTION public.strict_word_similarity_dist_commutator_op(text, text);
+
+CREATE OR REPLACE FUNCTION public.strict_word_similarity_dist_commutator_op(text, text)
+ RETURNS real
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/pg_trgm', $function$strict_word_similarity_dist_commutator_op$function$
+;
+
+-- DROP FUNCTION public.strict_word_similarity_dist_op(text, text);
+
+CREATE OR REPLACE FUNCTION public.strict_word_similarity_dist_op(text, text)
+ RETURNS real
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/pg_trgm', $function$strict_word_similarity_dist_op$function$
+;
+
+-- DROP FUNCTION public.strict_word_similarity_op(text, text);
+
+CREATE OR REPLACE FUNCTION public.strict_word_similarity_op(text, text)
+ RETURNS boolean
+ LANGUAGE c
+ STABLE PARALLEL SAFE STRICT
+AS '$libdir/pg_trgm', $function$strict_word_similarity_op$function$
+;
+
+-- DROP FUNCTION public.update_timestamp();
+
+CREATE OR REPLACE FUNCTION public.update_timestamp()
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $function$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$function$
+;
+
+-- DROP FUNCTION public.uuid_generate_v1();
+
+CREATE OR REPLACE FUNCTION public.uuid_generate_v1()
+ RETURNS uuid
+ LANGUAGE c
+ PARALLEL SAFE STRICT
+AS '$libdir/uuid-ossp', $function$uuid_generate_v1$function$
+;
+
+-- DROP FUNCTION public.uuid_generate_v1mc();
+
+CREATE OR REPLACE FUNCTION public.uuid_generate_v1mc()
+ RETURNS uuid
+ LANGUAGE c
+ PARALLEL SAFE STRICT
+AS '$libdir/uuid-ossp', $function$uuid_generate_v1mc$function$
+;
+
+-- DROP FUNCTION public.uuid_generate_v3(uuid, text);
+
+CREATE OR REPLACE FUNCTION public.uuid_generate_v3(namespace uuid, name text)
+ RETURNS uuid
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/uuid-ossp', $function$uuid_generate_v3$function$
+;
+
+-- DROP FUNCTION public.uuid_generate_v4();
+
+CREATE OR REPLACE FUNCTION public.uuid_generate_v4()
+ RETURNS uuid
+ LANGUAGE c
+ PARALLEL SAFE STRICT
+AS '$libdir/uuid-ossp', $function$uuid_generate_v4$function$
+;
+
+-- DROP FUNCTION public.uuid_generate_v5(uuid, text);
+
+CREATE OR REPLACE FUNCTION public.uuid_generate_v5(namespace uuid, name text)
+ RETURNS uuid
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/uuid-ossp', $function$uuid_generate_v5$function$
+;
+
+-- DROP FUNCTION public.uuid_nil();
+
+CREATE OR REPLACE FUNCTION public.uuid_nil()
+ RETURNS uuid
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/uuid-ossp', $function$uuid_nil$function$
+;
+
+-- DROP FUNCTION public.uuid_ns_dns();
+
+CREATE OR REPLACE FUNCTION public.uuid_ns_dns()
+ RETURNS uuid
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/uuid-ossp', $function$uuid_ns_dns$function$
+;
+
+-- DROP FUNCTION public.uuid_ns_oid();
+
+CREATE OR REPLACE FUNCTION public.uuid_ns_oid()
+ RETURNS uuid
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/uuid-ossp', $function$uuid_ns_oid$function$
+;
+
+-- DROP FUNCTION public.uuid_ns_url();
+
+CREATE OR REPLACE FUNCTION public.uuid_ns_url()
+ RETURNS uuid
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/uuid-ossp', $function$uuid_ns_url$function$
+;
+
+-- DROP FUNCTION public.uuid_ns_x500();
+
+CREATE OR REPLACE FUNCTION public.uuid_ns_x500()
+ RETURNS uuid
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/uuid-ossp', $function$uuid_ns_x500$function$
+;
+
+-- DROP FUNCTION public.word_similarity(text, text);
+
+CREATE OR REPLACE FUNCTION public.word_similarity(text, text)
+ RETURNS real
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/pg_trgm', $function$word_similarity$function$
+;
+
+-- DROP FUNCTION public.word_similarity_commutator_op(text, text);
+
+CREATE OR REPLACE FUNCTION public.word_similarity_commutator_op(text, text)
+ RETURNS boolean
+ LANGUAGE c
+ STABLE PARALLEL SAFE STRICT
+AS '$libdir/pg_trgm', $function$word_similarity_commutator_op$function$
+;
+
+-- DROP FUNCTION public.word_similarity_dist_commutator_op(text, text);
+
+CREATE OR REPLACE FUNCTION public.word_similarity_dist_commutator_op(text, text)
+ RETURNS real
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/pg_trgm', $function$word_similarity_dist_commutator_op$function$
+;
+
+-- DROP FUNCTION public.word_similarity_dist_op(text, text);
+
+CREATE OR REPLACE FUNCTION public.word_similarity_dist_op(text, text)
+ RETURNS real
+ LANGUAGE c
+ IMMUTABLE PARALLEL SAFE STRICT
+AS '$libdir/pg_trgm', $function$word_similarity_dist_op$function$
+;
+
+-- DROP FUNCTION public.word_similarity_op(text, text);
+
+CREATE OR REPLACE FUNCTION public.word_similarity_op(text, text)
+ RETURNS boolean
+ LANGUAGE c
+ STABLE PARALLEL SAFE STRICT
+AS '$libdir/pg_trgm', $function$word_similarity_op$function$
+;

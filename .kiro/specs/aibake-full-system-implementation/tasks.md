@@ -1321,14 +1321,14 @@ aibake/
 
 ### 25. Frontend - Baking Journal Interface
 
-- [ ] 25.1 Create journal entry list
+- [x] 25.1 Create journal entry list
   - Create JournalList page displaying entries in chronological order
   - Display entry date, rating, outcome weight, thumbnail
   - Filter by recipe
   - Sort by date
   - _Requirements: 32.3_
 
-- [ ] 25.2 Create journal entry form
+- [x] 25.2 Create journal entry form
   - Create JournalEntryForm with date picker, notes, rating, outcome weight inputs
   - Add pre-bake weight input for hydration loss tracking
   - Add measured water activity input
@@ -1337,7 +1337,7 @@ aibake/
   - Add "Deduct from inventory" checkbox with ingredient preview
   - _Requirements: 32.1, 32.2, 35.3, 35.4_
 
-- [ ] 25.3 Create journal entry detail view
+- [x] 25.3 Create journal entry detail view
   - Display all entry details (date, notes, rating, weights)
   - Display photo gallery with lightbox
   - Display calculated baking loss percentage
@@ -1345,7 +1345,7 @@ aibake/
   - Show inventory deductions if applicable
   - _Requirements: 32.4, 35.4_
 
-- [ ] 25.4 Implement image upload
+- [x] 25.4 Implement image upload
   - Support drag-and-drop and file picker
   - Validate image format (JPEG, PNG, WebP) and size (max 10MB)
   - Show upload progress
@@ -1353,7 +1353,7 @@ aibake/
   - Allow image deletion
   - _Requirements: 32.2, 52.1, 52.2_
 
-- [ ] 25.5 Implement audio recording
+- [x] 25.5 Implement audio recording
   - Use browser MediaRecorder API for recording
   - Display recording duration and waveform
   - Support pause/resume
@@ -1361,13 +1361,81 @@ aibake/
   - Display transcription when available
   - _Requirements: 53.1, 53.2_
 
-- [ ] 25.6 Write component tests for journal
+- [x] 25.6 Write component tests for journal
   - Test journal entry form validation
   - Test image upload and preview
   - Test audio recording interface
   - Test baking loss calculation display
   - _Requirements: 32.1, 32.2, 53.1_
 
+
+### 25A. AI-Powered Baking Properties (Mistral AI)
+
+- [x] 25A.1 Implement AI Service with Mistral.ai API
+  - Configure `MISTRAL_API_KEY` in backend `.env`
+  - Implement `MistralProvider` in `AIService` for ingredient and shelf-life logic
+  - Update `estimateWaterActivity` to prompt Mistral with ingredient moisture, bake time, and drying context
+  - Update `predictShelfLife` to correlate `aw` with packaging types and storage conditions
+- [x] 25A.2 Frontend AI Integration
+  - Add color-coded "Safe Zone" meters (Red/Amber/Green) for `aw` and Shelf Life in `RecipeDetail` and `JournalEntryForm`
+  - Add `DisclaimerTooltip` ("estimates for guidance only") to all AI outputs
+  - Implement on-demand AI estimation trigger with loading states
+
+
+### 25B. SaaS Brand & Inventory Architecture
+
+- [x] 25B.1 Database: User-Specific Brand Logic
+  - Database Migration: Update `inventory_items` with `brand_name`, `nutrition_override` (JSONB), and `moisture_content`
+  - Database Migration: Update `recipe_ingredients` with optional `inventory_item_id` (FK)
+- [x] 25B.2 Backend: Brand-Aware Calculations
+  - Refine `nutritionCalculator` to prioritize `inventory_item` overrides over master defaults
+  - Include brand names and moisture context in AI estimation prompts
+- [x] 25B.3 Frontend: Brand Selection
+  - Add brand/inventory-link selector to `RecipeForm` ingredient rows
+  - Display brand info in `RecipeDetail` ingredient lists
+
+
+### 25C. FSSAI Compliance & Label Generation
+
+- [/] 25C.1 Data Preparation & Sorting
+  - Backend: Auto-sort ingredients by weight (descending) for the label declaration
+  - Backend: Aggregate allergens from all recipe ingredients ("Contains: Wheat, Milk, etc.")
+- [ ] 25C.2 Label Designer & Sizes
+  - Frontend: Implement adaptive label component with 3 sizes: Small (2x2"), Medium (3x4"), Large (4x6")
+  - UI: Include FSSAI mandatory fields (MRP, Best Before, Packed Date, Veg/Non-Veg icons)
+  - UI: Label nutrition section as **"Special Claims (Not Certified)"**
+- [ ] 25C.3 PDF Export
+  - Export: Implement PDF generation using `react-pdf` with size-based layout optimization
+
+
+### 25D. Recipe Smart Import (AI-Powered)
+
+- [ ] 25D.1 Backend: Unstructured Text Parsing
+  - Implement API endpoint `POST /recipes/import/text` to parse raw text into a structured recipe format using Mistral AI
+  - Extract title, ingredients, quantities, instructions, and baking settings
+- [ ] 25D.2 Backend: URL Parsing
+  - Implement API endpoint `POST /recipes/import/url` to fetch webpage content and pass it to the AI parser
+- [ ] 25D.3 Backend: Document Upload (Excel/Word)
+  - Implement API endpoint `POST /recipes/import/file` to accept file uploads (`.xlsx`, `.csv`, `.docx`)
+  - Extract text/tabular data and pass to the AI parser
+- [x] 25D.4 Frontend: Smart Import Modal
+  - Create "Smart Import" UI with options for Text, URL, and File Upload workflows
+  - Add a review/mapping screen so users can verify the parsed recipe before saving
+- [x] 25D.5 Frontend: Default Preferences
+  - Update User Settings to allow saving a default/preferred recipe creation method (e.g., Manual vs Smart Import)
+
+### 25E. Smart Recipe Tags
+- [x] 25E.1 Database & Schema Updates
+  - Add `tags TEXT[] DEFAULT '{}'` to `recipes` table
+  - Update `Recipe` and `RecipeCreateRequest` interfaces in backend and frontend
+- [x] 25E.2 Backend Logic
+  - Update `recipe.controller.ts` to accept `tags` on creation and update
+  - Add `GET /recipes/tags` endpoint to fetch distinct user tags
+  - Update Mistral AI prompt to extract relevant tags during Smart Import
+- [x] 25E.3 Frontend: Recipe Form & List
+  - Implement a multi-select Tag input in `RecipeForm` that autosuggests
+  - Display tags on `RecipeCard`
+  - Enhance `RecipeList` to allow filtering by tags
 
 ### 26. Frontend - Inventory Management Interface
 
@@ -1384,6 +1452,7 @@ aibake/
   - Create form for adding/editing inventory items
   - Ingredient selector with autocomplete
   - Quantity, unit, cost per unit inputs with INR formatting
+  - **Brand Onboarding**: Add `brand_name`, `nutrition_overrides`, and `moisture_content` fields
   - Purchase date and expiration date pickers
   - Supplier selector
   - Min stock level and reorder quantity inputs
@@ -1425,6 +1494,7 @@ aibake/
 
 - [ ] 27.1 Create cost calculator page
   - Create CostCalculator page for recipe cost calculation
+  - **Brand Costing**: Prefer linked `inventory_item` cost over generic averages
   - Display ingredient cost breakdown table
   - Input fields for overhead, packaging, labor costs
   - Display total cost, cost per serving, cost per 100g

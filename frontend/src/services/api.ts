@@ -1,6 +1,7 @@
 import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig, AxiosResponse } from 'axios'
 
 const API_BASE_URL = (import.meta.env.VITE_API_URL as string) || 'http://localhost:3000/api/v1'
+export const MEDIA_BASE_URL = API_BASE_URL.replace('/api/v1', '')
 
 // Token storage keys
 export const TOKEN_KEY = 'aibake_token'
@@ -39,7 +40,8 @@ const isRetryableError = (error: AxiosError): boolean => {
     return true
   }
   const status = error.response.status
-  return status === 408 || status === 429 || (status >= 500 && status < 600)
+  // Removed 429 from retryable to avoid amplifying rate limit loops
+  return status === 408 || (status >= 500 && status < 600)
 }
 
 // Parse JWT payload to get expiry time
@@ -132,6 +134,7 @@ api.interceptors.request.use(async (config: InternalAxiosRequestConfig): Promise
     const token = localStorage.getItem(TOKEN_KEY)
 
     if (token) {
+      console.log(`🌐 API Request: ${config.method?.toUpperCase()} ${config.url} [Auth: Yes]`)
       // Proactively refresh if token expires within 5 minutes
       if (isTokenExpiringSoon()) {
         const newToken = await refreshToken()

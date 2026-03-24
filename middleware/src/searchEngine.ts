@@ -38,6 +38,8 @@ export interface SearchResult {
   density_g_per_ml: number | null;
   /** The alias that matched (only set when match_type is 'alias') */
   matched_alias?: string;
+  /** Whether these properties were estimated by AI */
+  ai_estimated: boolean;
 }
 
 /** Minimal ingredient record for in-memory search */
@@ -46,6 +48,8 @@ export interface SearchableIngredient {
   name: string;
   category: string;
   default_density_g_per_ml: number | null;
+  ai_estimated: boolean;
+  user_id?: string | null;
 }
 
 /** Alias record for in-memory search */
@@ -160,6 +164,7 @@ export function searchIngredient(
         similarity_score: score,
         category: ing.category,
         density_g_per_ml: ing.default_density_g_per_ml,
+        ai_estimated: ing.ai_estimated,
       });
     }
   }
@@ -178,6 +183,7 @@ export function searchIngredient(
           category: ing.category,
           density_g_per_ml: ing.default_density_g_per_ml,
           matched_alias: alias.alias_name,
+          ai_estimated: ing.ai_estimated,
         });
       }
     }

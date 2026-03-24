@@ -53,7 +53,11 @@ async function checkHealth(): Promise<RedisHealthResult> {
   const start = Date.now();
   try {
     const client = await getClient();
-    const pong = await client.ping();
+    // Use a Promise.race or a short timeout for the ping
+    const pong = await Promise.race([
+      client.ping(),
+      new Promise<string>((_, reject) => setTimeout(() => reject(new Error('Redis ping timeout')), 2000))
+    ]);
     return {
       healthy: pong === 'PONG',
       latencyMs: Date.now() - start,

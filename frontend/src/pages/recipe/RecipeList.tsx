@@ -1,13 +1,18 @@
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useEffect } from 'react'
 import { Link } from 'react-router-dom'
+
 import { useRecipes } from '../../hooks/useRecipes'
-import { RecipeCard } from '../../components/recipe/RecipeCard'
+import { recipeService, userTagService, type RecipeListParams, type UserTag } from '../../services/recipe.service'
+import { useAuthStore } from '../../store/authStore'
+import { Button } from '../../components/common/Button'
 import { SearchInput } from '../../components/common/SearchInput'
 import { Select, SelectOption } from '../../components/common/Select'
-import { Button } from '../../components/common/Button'
-import { EmptyState } from '../../components/common/EmptyState'
+
 import { LoadingSpinner } from '../../components/common/LoadingSpinner'
-import type { RecipeListParams } from '../../services/recipe.service'
+import { EmptyState } from '../../components/common/EmptyState'
+import { TagInput } from '../../components/common/TagInput'
+import { SmartImportModal } from '../../components/recipe/SmartImportModal' // Keep this if it's used later
+import { RecipeCard } from '../../components/recipe/RecipeCard' // Keep this if it's used later
 
 // ─── Filter / sort options ────────────────────────────────────────────────────
 
@@ -111,11 +116,10 @@ const Pagination = ({ page, totalPages, onPageChange }: PaginationProps) => {
             <button
               onClick={() => onPageChange(p)}
               aria-current={p === page ? 'page' : undefined}
-              className={`min-w-[36px] h-9 rounded-md text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500 ${
-                p === page
-                  ? 'bg-amber-600 text-white'
-                  : 'text-gray-700 hover:bg-gray-100'
-              }`}
+              className={`min - w - [36px] h - 9 rounded - md text - sm font - medium transition - colors focus: outline - none focus: ring - 2 focus: ring - amber - 500 ${p === page
+                ? 'bg-amber-600 text-white'
+                : 'text-gray-700 hover:bg-gray-100'
+                } `}
             >
               {p}
             </button>
@@ -139,6 +143,9 @@ const Pagination = ({ page, totalPages, onPageChange }: PaginationProps) => {
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export const RecipeList = () => {
+  const { user } = useAuthStore()
+  const defaultMode = user?.default_recipe_creation_mode ?? 'manual'
+
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState<RecipeListParams['status']>('')
   const [sourceType, setSourceType] = useState<RecipeListParams['source_type']>('')
@@ -146,11 +153,27 @@ export const RecipeList = () => {
   const [sortOrder, setSortOrder] = useState<RecipeListParams['sort_order']>('desc')
   const [page, setPage] = useState(1)
   const [viewMode, setViewMode] = useState<ViewMode>('grid')
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false)
+
+  const [tags, setTags] = useState<string[]>([])
+  const [userTags, setUserTags] = useState<UserTag[]>([])
+  const [suggestedLabels, setSuggestedLabels] = useState<string[]>([])
+
+  useEffect(() => {
+    userTagService.getTags()
+      .then(t => setUserTags(t))
+      .catch(console.error)
+
+    recipeService.getUserTags()
+      .then(labels => setSuggestedLabels(labels))
+      .catch(console.error)
+  }, [])
 
   const params: RecipeListParams = {
     search: search || undefined,
     status: status || undefined,
     source_type: sourceType || undefined,
+    tags: tags.length > 0 ? tags : undefined,
     sort_by: sortBy,
     sort_order: sortOrder,
     page,
@@ -189,12 +212,13 @@ export const RecipeList = () => {
     setPage(1)
   }
 
-  const hasActiveFilters = !!(search || status || sourceType)
+  const hasActiveFilters = !!(search || status || sourceType || tags.length > 0)
 
   const clearFilters = () => {
     setSearch('')
     setStatus('')
     setSourceType('')
+    setTags([])
     setPage(1)
   }
 
@@ -210,9 +234,27 @@ export const RecipeList = () => {
             </p>
           )}
         </div>
-        <Link to="/recipes/new">
-          <Button>+ New Recipe</Button>
-        </Link>
+        <div className="flex items-center gap-2">
+          {defaultMode === 'smart' ? (
+            <>
+              <Link to="/recipes/new">
+                <Button variant="outline" className="bg-white hover:bg-gray-50 border-gray-200 text-gray-700 shadow-sm">+ Manual Recipe</Button>
+              </Link>
+              <Button onClick={() => setIsImportModalOpen(true)} className="bg-amber-500 hover:bg-amber-600 text-white shadow-sm">
+                ✨ Smart Import
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button onClick={() => setIsImportModalOpen(true)} variant="outline" className="bg-white hover:bg-amber-50 border-amber-200 text-amber-700 shadow-sm">
+                ✨ Smart Import
+              </Button>
+              <Link to="/recipes/new">
+                <Button>+ Manual Recipe</Button>
+              </Link>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Search + Filters */}
@@ -258,6 +300,15 @@ export const RecipeList = () => {
               onChange={handleOrder}
             />
           </div>
+          <div className="w-64">
+            <TagInput
+              value={tags}
+              onChange={(t) => { setTags(t); setPage(1); }}
+              suggestions={suggestedLabels}
+              userTags={userTags}
+              placeholder="Filter by tags"
+            />
+          </div>
 
           {hasActiveFilters && (
             <Button variant="ghost" size="sm" onClick={clearFilters}>
@@ -271,9 +322,8 @@ export const RecipeList = () => {
               onClick={() => setViewMode('grid')}
               aria-label="Grid view"
               aria-pressed={viewMode === 'grid'}
-              className={`p-1.5 rounded transition-colors ${
-                viewMode === 'grid' ? 'bg-amber-100 text-amber-700' : 'text-gray-400 hover:text-gray-600'
-              }`}
+              className={`p - 1.5 rounded transition - colors ${viewMode === 'grid' ? 'bg-amber-100 text-amber-700' : 'text-gray-400 hover:text-gray-600'
+                } `}
             >
               <GridIcon />
             </button>
@@ -281,9 +331,8 @@ export const RecipeList = () => {
               onClick={() => setViewMode('list')}
               aria-label="List view"
               aria-pressed={viewMode === 'list'}
-              className={`p-1.5 rounded transition-colors ${
-                viewMode === 'list' ? 'bg-amber-100 text-amber-700' : 'text-gray-400 hover:text-gray-600'
-              }`}
+              className={`p - 1.5 rounded transition - colors ${viewMode === 'list' ? 'bg-amber-100 text-amber-700' : 'text-gray-400 hover:text-gray-600'
+                } `}
             >
               <ListIcon />
             </button>
@@ -342,6 +391,7 @@ export const RecipeList = () => {
               <RecipeCard
                 key={recipe.id}
                 recipe={recipe}
+                userTags={userTags}
                 className={viewMode === 'list' ? 'flex-row' : ''}
               />
             ))}
@@ -358,6 +408,11 @@ export const RecipeList = () => {
           Updating…
         </div>
       )}
+
+      <SmartImportModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+      />
     </div>
   )
 }

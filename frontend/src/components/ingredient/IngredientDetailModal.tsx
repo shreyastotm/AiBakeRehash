@@ -93,9 +93,8 @@ export const IngredientDetailModal: React.FC<IngredientDetailModalProps> = ({
             ) : ingredient ? (
                 <div className="space-y-5">
 
-                    {/* Header row */}
                     <div className="flex items-center gap-3 flex-wrap">
-                        <Badge variant="secondary">{CATEGORY_LABEL[ingredient.category] ?? ingredient.category}</Badge>
+                        <Badge variant="default">{CATEGORY_LABEL[ingredient.category] ?? ingredient.category}</Badge>
                         {ingredient.is_composite && <Badge variant="warning">Composite</Badge>}
                     </div>
 
@@ -151,9 +150,12 @@ export const IngredientDetailModal: React.FC<IngredientDetailModalProps> = ({
                                 <NutritionRow label="Protein" value={ingredient.nutrition_per_100g.protein_g} unit="g" />
                                 <NutritionRow label="Fat" value={ingredient.nutrition_per_100g.fat_g} unit="g" />
                                 <NutritionRow label="Carbohydrates" value={ingredient.nutrition_per_100g.carbs_g} unit="g" />
+                                <NutritionRow label="Sugars" value={ingredient.nutrition_per_100g.sugars_g} unit="g" />
+                                <NutritionRow label="Added Sugars" value={ingredient.nutrition_per_100g.added_sugars_g} unit="g" />
                                 {ingredient.nutrition_per_100g.fiber_g !== undefined && (
                                     <NutritionRow label="Dietary Fibre" value={ingredient.nutrition_per_100g.fiber_g} unit="g" />
                                 )}
+
                             </div>
                         </div>
                     )}

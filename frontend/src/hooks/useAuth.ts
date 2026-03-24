@@ -45,15 +45,15 @@ export const useAuth = () => {
     queryFn: () => authService.getCurrentUser(),
     enabled: isAuthenticated && initialCheckDone,
     retry: false,
-    select: (data) => data?.data ?? data,
   })
 
-  // Sync fetched user into store
+  // Sync fetched user into store safely
   useEffect(() => {
-    if (currentUser) {
+    if (currentUser && currentUser.id !== user?.id) {
+      console.log(`👤 useAuth: Syncing user "${currentUser.display_name}" to store`)
       setUser(currentUser)
     }
-  }, [currentUser, setUser])
+  }, [currentUser, setUser, user?.id])
 
   const loading = !initialCheckDone || isCurrentUserLoading || isLoading
 

@@ -1,4 +1,5 @@
-import React, { useState, useCallback } from 'react'
+import { useState, useCallback } from 'react'
+
 import { useLocalization } from '../../hooks/useLocalization'
 import { Button } from '../common/Button'
 import { Input } from '../common/Input'
@@ -56,11 +57,10 @@ export function ScalingControl({
           <button
             type="button"
             onClick={() => setMode('servings')}
-            className={`px-4 py-2 text-sm font-medium transition-colors ${
-              mode === 'servings'
+            className={`px-4 py-2 text-sm font-medium transition-colors ${mode === 'servings'
                 ? 'bg-amber-600 text-white'
                 : 'bg-white text-amber-700 hover:bg-amber-50'
-            }`}
+              }`}
             aria-pressed={mode === 'servings'}
           >
             {t('recipes.targetServings')}
@@ -68,11 +68,10 @@ export function ScalingControl({
           <button
             type="button"
             onClick={() => setMode('yield')}
-            className={`px-4 py-2 text-sm font-medium transition-colors ${
-              mode === 'yield'
+            className={`px-4 py-2 text-sm font-medium transition-colors ${mode === 'yield'
                 ? 'bg-amber-600 text-white'
                 : 'bg-white text-amber-700 hover:bg-amber-50'
-            }`}
+              }`}
             aria-pressed={mode === 'yield'}
           >
             {t('recipes.targetYield')}

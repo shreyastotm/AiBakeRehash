@@ -17,13 +17,98 @@ import {
   UpdateRecipeInput,
   RecipeListQuery,
   RecipeSearchQuery,
+  LabelData,
 } from '../models/recipe.model';
 import { logger } from '../utils/logger';
 import { AIService } from './ai.service';
+import { convertToGrams, normalizeUnit, isVolumeUnit } from '../../../middleware/src/unitConverter';
+
+// ---------------------------------------------------------------------------
+// Fallback density table for when ingredient_master has no density
+// Values in g/ml — covers the most common baking ingredients
+// ---------------------------------------------------------------------------
+const FALLBACK_DENSITY: Record<string, number> = {
+  flour: 0.65,    // all-purpose / plain / self-raising
+  sugar: 0.85,    // white / caster / granulated
+  'brown sugar': 0.80,
+  'icing sugar': 0.56,
+  'cocoa powder': 0.53,
+  'baking powder': 0.92,
+  'baking soda': 1.07,
+  butter: 0.91,
+  oil: 0.92,
+  honey: 1.42,
+  milk: 1.03,
+  cream: 1.00,
+  water: 1.00,
+  salt: 1.22,
+  oats: 0.36,
+  cornstarch: 0.61,
+  'bread crumbs': 0.37,
+  yeast: 0.72,
+  vanilla: 0.88,
+  cinnamon: 0.56,
+  nutmeg: 0.48,
+};
+
+function getFallbackDensity(name: string): number {
+  const lower = name.toLowerCase();
+  for (const [key, density] of Object.entries(FALLBACK_DENSITY)) {
+    if (lower.includes(key)) return density;
+  }
+  // Generic fallback: 1 g/ml (water-like) for unknowns
+  return 1.0;
+}
+
+/**
+ * Converts ingredient quantity from original unit to grams.
+ * Preserves quantity_original and unit_original for display.
+ */
+async function resolveQuantityGrams(
+  ingredientMasterId: string | null | undefined,
+  displayName: string,
+  quantityOriginal: number,
+  unitOriginal: string,
+  densityMap: Map<string, number | null>,
+): Promise<number> {
+  const norm = normalizeUnit(unitOriginal);
+  
+  // Already in grams or a weight unit — convert directly
+  if (!isVolumeUnit(norm)) {
+    try {
+      return convertToGrams(
+        { id: ingredientMasterId || '', name: displayName, default_density_g_per_ml: null },
+        quantityOriginal,
+        norm,
+      );
+    } catch {
+      return quantityOriginal; // fallback if unit is unrecognised (e.g. 'piece')
+    }
+  }
+
+  // Volume unit — need density
+  const storedDensity = ingredientMasterId ? densityMap.get(ingredientMasterId) ?? null : null;
+  const density = storedDensity ?? getFallbackDensity(displayName);
+  return convertToGrams(
+    { id: ingredientMasterId || '', name: displayName, default_density_g_per_ml: density },
+    quantityOriginal,
+    norm,
+  );
+}
+
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+/**
+ * Returns null if the value is an empty string, whitespace, or undefined/null.
+ * Prevents Postgres from trying to cast "" to UUID.
+ */
+function toUuidOrNull(val: string | undefined | null): string | null {
+  if (!val || (typeof val === 'string' && val.trim() === '')) return null;
+  return val;
+}
 
 async function assertRecipeOwnership(
   recipeId: string,
@@ -67,7 +152,14 @@ async function fetchRecipeDetails(
   const recipe = recipeResult.rows[0] as Recipe;
 
   const [ingredientsResult, sectionsResult, stepsResult] = await Promise.all([
-    queryFn('SELECT * FROM recipe_ingredients WHERE recipe_id = $1 ORDER BY position', [recipeId]),
+    queryFn(
+      `SELECT ri.*, ii.brand_name, ii.moisture_content 
+       FROM recipe_ingredients ri 
+       LEFT JOIN inventory_items ii ON ii.id = ri.inventory_item_id 
+       WHERE ri.recipe_id = $1 
+       ORDER BY ri.position`,
+      [recipeId]
+    ),
     queryFn('SELECT * FROM recipe_sections WHERE recipe_id = $1 ORDER BY position', [recipeId]),
     queryFn('SELECT * FROM recipe_steps WHERE recipe_id = $1 ORDER BY position', [recipeId]),
   ]);
@@ -119,6 +211,10 @@ export async function listRecipes(
   if (query.source_type) {
     conditions.push(`source_type = $${paramIdx++}`);
     params.push(query.source_type);
+  }
+  if (query.tags && query.tags.length > 0) {
+    conditions.push(`tags @> $${paramIdx++}`);
+    params.push(query.tags);
   }
 
   const where = conditions.join(' AND ');
@@ -176,7 +272,7 @@ export async function calculateRecipeNutrition(
   }
 
   const nutritionCalc: {
-    calculateNutrition: (ingredients: any[], servings: number) => any;
+    calculateNutrition: (ingredients: any[], servings: number, yieldWeightGrams?: number | null) => any;
     // @ts-ignore TS6059 - cross-package import
   } = await import('../../../middleware/src/nutritionCalculator');
 
@@ -187,19 +283,53 @@ export async function calculateRecipeNutrition(
   if (ingredientIds.length > 0) {
     const placeholders = ingredientIds.map((_, i) => `$${i + 1}`).join(',');
     const nutritionResult = await db.query(
-      `SELECT id, nutrition_per_100g FROM ingredient_master WHERE id IN (${placeholders})`,
+      `SELECT id, name, nutrition_per_100g FROM ingredient_master WHERE id IN (${placeholders})`,
       ingredientIds,
     );
 
     const nutritionMap = new Map<string, unknown>();
     for (const row of nutritionResult.rows) {
-      nutritionMap.set(row.id, row.nutrition_per_100g);
+      // Normalize all known field name variants coming from DB JSONB
+      const nutr = row.nutrition_per_100g as any;
+      if (nutr) {
+          nutritionMap.set(row.id, {
+              energy_kcal: Number(nutr.energy_kcal ?? nutr.calories) || 0,
+              fat_g: Number(nutr.fat_g ?? nutr.fats_grams ?? nutr.fat_grams) || 0,
+              carbs_g: Number(nutr.carbs_g ?? nutr.carbs_grams ?? nutr.carbohydrates_g) || 0,
+              protein_g: Number(nutr.protein_g ?? nutr.proteins_grams ?? nutr.protein_grams) || 0,
+              // Accept ALL known naming styles from DB
+              sugar_g: Number(nutr.sugar_g ?? nutr.sugars_g ?? nutr.sugars_grams ?? nutr.sugar_grams) || 0,
+              added_sugar_g: Number(nutr.added_sugar_g ?? nutr.added_sugars_g ?? nutr.added_sugars_grams ?? nutr.added_sugar_grams) || 0,
+              fiber_g: Number(nutr.fiber_g ?? nutr.fiber_grams ?? nutr.dietary_fiber_g) || 0,
+          });
+      }
+    }
+
+    const inventoryItemIds = recipe.ingredients
+      .map((i) => i.inventory_item_id)
+      .filter(Boolean) as string[];
+
+    const inventoryMap = new Map<string, any>();
+    if (inventoryItemIds.length > 0) {
+      const invPlaceholders = inventoryItemIds.map((_, i) => `$${i + 1}`).join(',');
+      const inventoryResult = await db.query(
+        `SELECT id, nutrition_overrides FROM inventory_items WHERE id IN (${invPlaceholders})`,
+        inventoryItemIds,
+      );
+      for (const row of inventoryResult.rows) {
+        inventoryMap.set(row.id, row.nutrition_overrides);
+      }
     }
 
     for (const ing of recipe.ingredients) {
-      let nutritionData = nutritionMap.get(ing.ingredient_master_id);
+      let nutritionData: any = nutritionMap.get(ing.ingredient_master_id);
+      const overrides = ing.inventory_item_id ? inventoryMap.get(ing.inventory_item_id) : null;
 
-      if (!nutritionData) {
+      if (overrides && Object.keys(overrides).length > 0) {
+        nutritionData = { ...nutritionData, ...overrides };
+      }
+
+      if (!nutritionData && !overrides) {
         try {
           const estimate = await AIService.estimateNutrition(ing.display_name);
           nutritionData = {
@@ -207,6 +337,9 @@ export async function calculateRecipeNutrition(
             fat_g: estimate.fats_grams,
             carbs_g: estimate.carbs_grams,
             protein_g: estimate.proteins_grams,
+            sugar_g: estimate.sugar_g,
+            added_sugar_g: estimate.added_sugar_g,
+            fiber_g: estimate.fiber_g || 0,
           };
         } catch (err) {
           logger.warn({ ing: ing.display_name }, 'AI nutrition estimation failed');
@@ -220,31 +353,34 @@ export async function calculateRecipeNutrition(
         nutrition_per_100g: nutritionData || null,
       });
     }
-  }
 
-  const nutrition = nutritionCalc.calculateNutrition(
-    nutritionIngredients,
-    recipe.servings,
-  );
+    const nutrition = nutritionCalc.calculateNutrition(
+      nutritionIngredients,
+      recipe.servings,
+      recipe.yield_weight_grams,
+    );
 
-  const result = {
-    ...nutrition,
-    servings: recipe.servings,
-    calculated_at: new Date().toISOString(),
-  };
+    const result = {
+      ...nutrition,
+      servings: recipe.servings,
+      calculated_at: new Date().toISOString(),
+    };
 
-  // Cache it
-  await db.query(
-    `INSERT INTO recipe_nutrition_cache (recipe_id, nutrition_per_100g, nutrition_per_serving, calculated_at)
+    // Cache it
+    await db.query(
+      `INSERT INTO recipe_nutrition_cache (recipe_id, nutrition_per_100g, nutrition_per_serving, calculated_at)
      VALUES ($1, $2, $3, NOW())
      ON CONFLICT (recipe_id) DO UPDATE SET
        nutrition_per_100g = EXCLUDED.nutrition_per_100g,
        nutrition_per_serving = EXCLUDED.nutrition_per_serving,
        calculated_at = NOW()`,
-    [recipeId, JSON.stringify(result.per_100g), JSON.stringify(result.per_serving)],
-  );
+      [recipeId, JSON.stringify(result.per_100g), JSON.stringify(result.per_serving)],
+    );
 
-  return result;
+    return result;
+  }
+
+  return null;
 }
 
 // ---------------------------------------------------------------------------
@@ -256,9 +392,17 @@ export async function createRecipe(
   input: CreateRecipeInput,
 ): Promise<RecipeWithDetails> {
   return db.withTransaction(async (client) => {
+    // Basic validation to prevent 500s from DB check constraints
+    if (input.servings <= 0) {
+      throw new ValidationError('Servings must be greater than 0');
+    }
+    if (input.yield_weight_grams !== undefined && input.yield_weight_grams !== null && input.yield_weight_grams <= 0) {
+      throw new ValidationError('Yield weight must be greater than 0');
+    }
+
     const recipeResult = await client.query<Recipe>(
-      `INSERT INTO recipes (user_id, title, description, source_type, source_url, original_author, servings, yield_weight_grams, preferred_unit_system, status)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      `INSERT INTO recipes (user_id, title, description, source_type, source_url, original_author, original_author_url, servings, yield_weight_grams, preferred_unit_system, status, tags)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
        RETURNING *`,
       [
         userId,
@@ -267,23 +411,73 @@ export async function createRecipe(
         input.source_type || 'manual',
         input.source_url || null,
         input.original_author || null,
+        input.original_author_url || null,
         input.servings,
-        input.yield_weight_grams,
+        input.yield_weight_grams || null,
         input.preferred_unit_system || 'metric',
         input.status || 'active',
+        input.tags || [],
       ],
     );
     const recipe = recipeResult.rows[0];
 
+    // Create initial version immediately so it exists before related records
+    const versionResult = await client.query<RecipeVersion>(
+      "INSERT INTO recipe_versions (recipe_id, version_number, change_summary) VALUES ($1, 1, 'Initial version') RETURNING *",
+      [recipe.id],
+    );
+    const versionId = versionResult.rows[0].id;
+
     if (input.ingredients && input.ingredients.length > 0) {
+      // Bulk-fetch ingredient densities so we can convert volumetric units → grams
+      const ingIds = input.ingredients
+        .map(i => toUuidOrNull(i.ingredient_master_id))
+        .filter(Boolean) as string[];
+      const densityMap = new Map<string, number | null>();
+      if (ingIds.length > 0) {
+        const placeholders = ingIds.map((_, i) => `$${i + 1}`).join(',');
+        const densityRes = await client.query(
+          `SELECT id, default_density_g_per_ml FROM ingredient_master WHERE id IN (${placeholders})`,
+          ingIds,
+        );
+        for (const row of densityRes.rows) {
+          densityMap.set(row.id, row.default_density_g_per_ml);
+        }
+      }
+
       for (const ing of input.ingredients) {
-        // quantity_grams may not be sent by the frontend (unit conversion not yet implemented);
-        // fall back to quantity_original so the insert doesn't violate the NOT NULL constraint.
-        const quantityGrams = ing.quantity_grams ?? ing.quantity_original;
+        if (ing.quantity_original <= 0) {
+          throw new ValidationError(`Ingredient "${ing.display_name}" must have a quantity greater than 0`);
+        }
+
+        // Convert from the user's preferred unit to canonical grams
+        const quantityGrams = await resolveQuantityGrams(
+          toUuidOrNull(ing.ingredient_master_id),
+          ing.display_name,
+          ing.quantity_original,
+          ing.unit_original,
+          densityMap,
+        );
+
+        if (quantityGrams <= 0) {
+          throw new ValidationError(`Ingredient "${ing.display_name}" resolved to 0g — check quantity and unit`);
+        }
+
         await client.query(
-          `INSERT INTO recipe_ingredients (recipe_id, ingredient_master_id, display_name, quantity_original, unit_original, quantity_grams, position, is_flour, is_liquid)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-          [recipe.id, ing.ingredient_master_id, ing.display_name, ing.quantity_original, ing.unit_original, quantityGrams, ing.position, ing.is_flour || false, ing.is_liquid || false],
+          `INSERT INTO recipe_ingredients (recipe_id, ingredient_master_id, display_name, quantity_original, unit_original, quantity_grams, position, is_flour, is_liquid, inventory_item_id)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+          [
+            recipe.id,
+            toUuidOrNull(ing.ingredient_master_id),
+            ing.display_name,
+            ing.quantity_original,
+            ing.unit_original,
+            quantityGrams,
+            ing.position,
+            ing.is_flour || false,
+            ing.is_liquid || false,
+            toUuidOrNull(ing.inventory_item_id)
+          ],
         );
       }
     }
@@ -299,22 +493,27 @@ export async function createRecipe(
         if (sec.steps && sec.steps.length > 0) {
           for (const step of sec.steps) {
             await client.query(
-              'INSERT INTO recipe_steps (section_id, instruction, duration_seconds, temperature_celsius, position, dependency_step_id) VALUES ($1, $2, $3, $4, $5, $6)',
-              [section.id, step.instruction, step.duration_seconds ?? null, step.temperature_celsius ?? null, step.position, step.dependency_step_id ?? null],
+              'INSERT INTO recipe_steps (recipe_id, section_id, instruction, duration_seconds, temperature_celsius, position, dependency_step_id) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+              [
+                recipe.id,
+                section.id,
+                step.instruction,
+                step.duration_seconds ?? null,
+                step.temperature_celsius ?? null,
+                step.position,
+                toUuidOrNull(step.dependency_step_id)
+              ],
             );
           }
         }
       }
     }
 
-    // Create initial version
-    const versionResult = await client.query<RecipeVersion>(
-      "INSERT INTO recipe_versions (recipe_id, version_number, change_summary) VALUES ($1, 1, 'Initial version') RETURNING *",
-      [recipe.id],
-    );
-    await createSnapshot(client, versionResult.rows[0].id, recipe.id);
+    // Now take the snapshot after all data is inserted
+    await createSnapshot(client, versionId, recipe.id);
 
     return fetchRecipeDetails(recipe.id, client);
+
   });
 }
 
@@ -338,10 +537,14 @@ export async function updateRecipe(
       ['title', input.title],
       ['description', input.description],
       ['source_type', input.source_type],
+      ['source_url', input.source_url],
+      ['original_author', input.original_author],
+      ['original_author_url', input.original_author_url],
       ['servings', input.servings],
       ['yield_weight_grams', input.yield_weight_grams],
       ['preferred_unit_system', input.preferred_unit_system],
       ['status', input.status],
+      ['tags', input.tags],
     ];
 
     for (const [field, value] of fields) {
@@ -360,14 +563,66 @@ export async function updateRecipe(
       );
     }
 
+    // Create new version immediately
+    const maxVersionResult = await client.query(
+      'SELECT COALESCE(MAX(version_number), 0) as max_version FROM recipe_versions WHERE recipe_id = $1',
+      [recipeId],
+    );
+    const nextVersion = parseInt(maxVersionResult.rows[0].max_version, 10) + 1;
+
+    const versionResult = await client.query<RecipeVersion>(
+      'INSERT INTO recipe_versions (recipe_id, version_number, change_summary) VALUES ($1, $2, $3) RETURNING *',
+      [recipeId, nextVersion, input.change_summary || `Version ${nextVersion}`],
+    );
+    const versionId = versionResult.rows[0].id;
+
     if (input.ingredients) {
       await client.query('DELETE FROM recipe_ingredients WHERE recipe_id = $1', [recipeId]);
+
+      // Bulk-fetch ingredient densities for unit conversion
+      const ingIds = input.ingredients
+        .map(i => toUuidOrNull(i.ingredient_master_id))
+        .filter(Boolean) as string[];
+      const densityMap = new Map<string, number | null>();
+      if (ingIds.length > 0) {
+        const placeholders = ingIds.map((_, i) => `$${i + 1}`).join(',');
+        const densityRes = await client.query(
+          `SELECT id, default_density_g_per_ml FROM ingredient_master WHERE id IN (${placeholders})`,
+          ingIds,
+        );
+        for (const row of densityRes.rows) {
+          densityMap.set(row.id, row.default_density_g_per_ml);
+        }
+      }
+
       for (const ing of input.ingredients) {
-        const quantityGrams = ing.quantity_grams ?? ing.quantity_original;
+        const quantityGrams = await resolveQuantityGrams(
+          toUuidOrNull(ing.ingredient_master_id),
+          ing.display_name,
+          ing.quantity_original,
+          ing.unit_original,
+          densityMap,
+        );
+
+        if (quantityGrams <= 0) {
+          throw new ValidationError(`Ingredient "${ing.display_name}" resolved to 0g — check quantity and unit`);
+        }
+
         await client.query(
-          `INSERT INTO recipe_ingredients (recipe_id, ingredient_master_id, display_name, quantity_original, unit_original, quantity_grams, position, is_flour, is_liquid)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-          [recipeId, ing.ingredient_master_id, ing.display_name, ing.quantity_original, ing.unit_original, quantityGrams, ing.position, ing.is_flour || false, ing.is_liquid || false],
+          `INSERT INTO recipe_ingredients (recipe_id, ingredient_master_id, display_name, quantity_original, unit_original, quantity_grams, position, is_flour, is_liquid, inventory_item_id)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+          [
+            recipeId,
+            toUuidOrNull(ing.ingredient_master_id),
+            ing.display_name,
+            ing.quantity_original,
+            ing.unit_original,
+            quantityGrams,
+            ing.position,
+            ing.is_flour || false,
+            ing.is_liquid || false,
+            toUuidOrNull(ing.inventory_item_id)
+          ],
         );
       }
     }
@@ -385,26 +640,25 @@ export async function updateRecipe(
         if (sec.steps && sec.steps.length > 0) {
           for (const step of sec.steps) {
             await client.query(
-              'INSERT INTO recipe_steps (section_id, instruction, duration_seconds, temperature_celsius, position, dependency_step_id) VALUES ($1, $2, $3, $4, $5, $6)',
-              [section.id, step.instruction, step.duration_seconds ?? null, step.temperature_celsius ?? null, step.position, step.dependency_step_id ?? null],
+              'INSERT INTO recipe_steps (recipe_id, section_id, instruction, duration_seconds, temperature_celsius, position, dependency_step_id) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+              [
+                recipeId,
+                section.id,
+                step.instruction,
+                step.duration_seconds ?? null,
+                step.temperature_celsius ?? null,
+                step.position,
+                toUuidOrNull(step.dependency_step_id)
+              ],
             );
           }
         }
       }
     }
 
-    // Create new version
-    const maxVersionResult = await client.query(
-      'SELECT COALESCE(MAX(version_number), 0) as max_version FROM recipe_versions WHERE recipe_id = $1',
-      [recipeId],
-    );
-    const nextVersion = parseInt(maxVersionResult.rows[0].max_version, 10) + 1;
+    // Now take the snapshot after all data is updated
+    await createSnapshot(client, versionId, recipeId);
 
-    const versionResult = await client.query<RecipeVersion>(
-      'INSERT INTO recipe_versions (recipe_id, version_number, change_summary) VALUES ($1, $2, $3) RETURNING *',
-      [recipeId, nextVersion, input.change_summary || `Version ${nextVersion}`],
-    );
-    await createSnapshot(client, versionResult.rows[0].id, recipeId);
 
     return fetchRecipeDetails(recipeId, client);
   });
@@ -420,6 +674,21 @@ export async function deleteRecipe(
 ): Promise<void> {
   await assertRecipeOwnership(recipeId, userId);
   await db.query('DELETE FROM recipes WHERE id = $1', [recipeId]);
+}
+
+// ---------------------------------------------------------------------------
+// Tag suggestions
+// ---------------------------------------------------------------------------
+
+export async function getUserTags(userId: string): Promise<string[]> {
+  const result = await db.query(
+    `SELECT DISTINCT unnest(tags) as tag 
+     FROM recipes 
+     WHERE user_id = $1 
+     ORDER BY tag ASC`,
+    [userId]
+  );
+  return result.rows.map(row => row.tag);
 }
 
 // ---------------------------------------------------------------------------
@@ -439,7 +708,7 @@ export async function scaleRecipe(
     // @ts-ignore TS6059 - cross-package import
   } = await import('../../../middleware/src/recipeScaler');
   const nutritionCalc: {
-    calculateNutrition: (ingredients: any[], servings: number) => any;
+    calculateNutrition: (ingredients: any[], servings: number, yieldWeightGrams?: number | null) => any;
     // @ts-ignore TS6059 - cross-package import
   } = await import('../../../middleware/src/nutritionCalculator');
 
@@ -496,6 +765,8 @@ export async function scaleRecipe(
                 fat_g: estimate.fats_grams,
                 carbs_g: estimate.carbs_grams,
                 protein_g: estimate.proteins_grams,
+                sugar_g: estimate.sugar_g,
+                added_sugar_g: estimate.added_sugar_g,
               };
             } catch (err) {
               logger.warn({ dr: ing.display_name }, 'AI nutrition estimation failed');
@@ -514,6 +785,7 @@ export async function scaleRecipe(
       const nutrition = nutritionCalc.calculateNutrition(
         nutritionIngredients as any,
         scaledResult.recipe.servings,
+        scaledResult.recipe.yield_weight_grams,
       );
 
       return { ...scaledResult, nutrition };
@@ -659,4 +931,90 @@ export async function searchRecipes(
   );
 
   return { recipes: dataResult.rows, total, page, limit };
+}
+
+export async function saveAIEstimates(
+  recipeId: string,
+  userId: string,
+  estimates: {
+    estimated_aw: number;
+    estimated_shelf_life_days: number;
+    explanation: string
+  }
+): Promise<void> {
+  await assertRecipeOwnership(recipeId, userId);
+  await db.query(
+    `UPDATE recipes 
+     SET target_water_activity = $1, 
+         estimated_shelf_life_days = $2, 
+         estimated_aw_explanation = $3,
+         updated_at = NOW()
+     WHERE id = $4`,
+    [estimates.estimated_aw, estimates.estimated_shelf_life_days, estimates.explanation, recipeId]
+  );
+}
+export async function getLabelData(
+  recipeId: string,
+  userId: string,
+): Promise<LabelData> {
+  const recipe = await fetchRecipeDetails(recipeId);
+  if (recipe.user_id !== userId) {
+    throw new ForbiddenError('You do not own this recipe');
+  }
+
+  // Sort ingredients by weight descending
+  const sortedIngredients = [...recipe.ingredients].sort(
+    (a, b) => (b.quantity_grams || 0) - (a.quantity_grams || 0),
+  );
+
+  // Aggregate allergens
+  const ingredientIds = recipe.ingredients.map((i) => i.ingredient_master_id);
+  const allergensSet = new Set<string>();
+
+  if (ingredientIds.length > 0) {
+    const placeholders = ingredientIds.map((_, i) => `$${i + 1}`).join(',');
+    const allergenResult = await db.query(
+      `SELECT allergen_flags FROM ingredient_master WHERE id IN (${placeholders})`,
+      ingredientIds,
+    );
+
+    const knownAllergens = ['gluten', 'dairy', 'nuts', 'eggs', 'soy', 'peanuts', 'shellfish', 'fish'];
+    for (const row of allergenResult.rows) {
+      const flags = (row.allergen_flags || {}) as Record<string, boolean>;
+      for (const [allergen, isPresent] of Object.entries(flags)) {
+        if (isPresent && knownAllergens.includes(allergen.toLowerCase())) {
+          // Capitalize first letter for better display
+          const formattedAllergen = allergen.charAt(0).toUpperCase() + allergen.slice(1);
+          allergensSet.add(formattedAllergen);
+        }
+      }
+    }
+  }
+
+  // Get nutrition cache
+  const nutrition = await getRecipeNutrition(recipeId, userId);
+
+  // Fetch user business details
+  const userResult = await db.query(
+    'SELECT business_brand_name, business_manufacturer_name, business_manufacturer_address, business_fssai_license FROM users WHERE id = $1',
+    [userId]
+  );
+  const user = userResult.rows[0];
+
+  return {
+    recipe_id: recipe.id,
+    title: recipe.title,
+    ingredients_sorted: sortedIngredients.map((i) => ({
+      display_name: i.display_name,
+      quantity_grams: i.quantity_grams,
+    })),
+    allergens: Array.from(allergensSet),
+    yield_weight_grams: recipe.yield_weight_grams,
+    servings: recipe.servings,
+    nutrition: nutrition ? (nutrition as any).per_100g : null,
+    business_brand_name: user?.business_brand_name,
+    business_manufacturer_name: user?.business_manufacturer_name,
+    business_manufacturer_address: user?.business_manufacturer_address,
+    business_fssai_license: user?.business_fssai_license,
+  };
 }

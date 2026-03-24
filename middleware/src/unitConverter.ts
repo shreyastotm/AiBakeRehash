@@ -90,16 +90,42 @@ const WEIGHT_UNITS = new Set<string>(Object.keys(GRAMS_PER_WEIGHT_UNIT));
 // Guards
 // ---------------------------------------------------------------------------
 
+/**
+ * Normalizes a unit string to its canonical form.
+ * Handles case-insensitivity and common aliases.
+ */
+export function normalizeUnit(unit: string): string {
+  if (!unit) return unit;
+
+  const low = unit.toLowerCase().trim().replace(/\./g, '');
+
+  // Volume aliases
+  if (low === 'millilitre' || low === 'millilitres' || low === 'ml') return 'ml';
+  if (low === 'litre' || low === 'litres' || low === 'l') return 'l';
+  if (low === 'teaspoon' || low === 'teaspoons' || low === 'tsp') return 'tsp';
+  if (low === 'tablespoon' || low === 'tablespoons' || low === 'tbsp' || low === 'tbs') return 'tbsp';
+  if (low === 'cup' || low === 'cups' || low === 'c') return 'cup';
+
+  // Weight aliases
+  if (low === 'gram' || low === 'grams' || low === 'g') return 'g';
+  if (low === 'kilogram' || low === 'kilograms' || low === 'kg' || low === 'kilo') return 'kg';
+  if (low === 'ounce' || low === 'ounces' || low === 'oz') return 'oz';
+  if (low === 'pound' || low === 'pounds' || low === 'lb' || low === 'lbs') return 'lb';
+
+  return low;
+}
+
 export function isVolumeUnit(unit: string): unit is VolumeUnit {
-  return VOLUME_UNITS.has(unit);
+  return VOLUME_UNITS.has(normalizeUnit(unit));
 }
 
 export function isWeightUnit(unit: string): unit is WeightUnit {
-  return WEIGHT_UNITS.has(unit);
+  return WEIGHT_UNITS.has(normalizeUnit(unit));
 }
 
 export function isSupportedUnit(unit: string): unit is Unit {
-  return isVolumeUnit(unit) || isWeightUnit(unit);
+  const norm = normalizeUnit(unit);
+  return VOLUME_UNITS.has(norm) || WEIGHT_UNITS.has(norm);
 }
 
 
@@ -138,7 +164,8 @@ function requireDensity(ingredient: IngredientDensity): number {
 }
 
 function validateUnit(unit: string): asserts unit is Unit {
-  if (!isSupportedUnit(unit)) {
+  const norm = normalizeUnit(unit);
+  if (!isSupportedUnit(norm)) {
     throw new InvalidUnitError(unit);
   }
 }
@@ -161,15 +188,16 @@ export function convertToGrams(
   quantity: number,
   fromUnit: string,
 ): number {
-  validateUnit(fromUnit);
+  const norm = normalizeUnit(fromUnit);
+  validateUnit(norm);
 
-  if (isWeightUnit(fromUnit)) {
-    return toGrams(quantity, fromUnit);
+  if (isWeightUnit(norm)) {
+    return toGrams(quantity, norm as WeightUnit);
   }
 
   // Volume → grams via density
   const density = requireDensity(ingredient);
-  const ml = toMillilitres(quantity, fromUnit);
+  const ml = toMillilitres(quantity, norm as VolumeUnit);
   return ml * density;
 }
 
@@ -187,16 +215,17 @@ export function convertFromGrams(
   grams: number,
   toUnit: string,
 ): number {
-  validateUnit(toUnit);
+  const norm = normalizeUnit(toUnit);
+  validateUnit(norm);
 
-  if (isWeightUnit(toUnit)) {
-    return fromGrams(grams, toUnit);
+  if (isWeightUnit(norm)) {
+    return fromGrams(grams, norm as WeightUnit);
   }
 
   // Grams → volume via density
   const density = requireDensity(ingredient);
   const ml = grams / density;
-  return fromMillilitres(ml, toUnit);
+  return fromMillilitres(ml, norm as VolumeUnit);
 }
 
 /**

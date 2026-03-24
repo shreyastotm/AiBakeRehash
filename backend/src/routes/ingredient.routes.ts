@@ -41,9 +41,12 @@ const searchValidation = [
   query('q').notEmpty().withMessage('Search query is required'),
 ];
 
-router.get('/ingredients/search', validate(searchValidation), ingredientController.search);
-router.get('/ingredients', ingredientController.list);
-router.get('/ingredients/:id', validate(idParamValidation), ingredientController.getById);
+router.get('/ingredients/suggestions', requireAuth, ingredientController.getSuggestions);
+router.get('/ingredients/search', requireAuth, validate(searchValidation), ingredientController.search);
+router.get('/ingredients', requireAuth, ingredientController.list);
+router.get('/ingredients/:id', requireAuth, validate(idParamValidation), ingredientController.getById);
 router.post('/ingredients', requireAuth, validate(createIngredientValidation), ingredientController.create);
+router.post('/ingredients/suggestions/ignore', requireAuth, ingredientController.ignoreSuggestion);
+router.post('/ingredients/merge', requireAuth, ingredientController.merge);
 
 export default router;

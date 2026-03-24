@@ -29,7 +29,7 @@ class MockMediaRecorder {
 describe('AudioRecorder', () => {
     beforeEach(() => {
         // Mock getUserMedia
-        Object.defineProperty(global.navigator, 'mediaDevices', {
+        Object.defineProperty(window.navigator, 'mediaDevices', {
             value: {
                 getUserMedia: vi.fn().mockResolvedValue({
                     getTracks: () => [{ stop: vi.fn() }],
@@ -39,11 +39,11 @@ describe('AudioRecorder', () => {
         });
 
         // Mock MediaRecorder globally
-        (global as any).MediaRecorder = MockMediaRecorder;
+        (window as any).MediaRecorder = MockMediaRecorder;
 
         // Mock URL
-        global.URL.createObjectURL = vi.fn(() => 'mock-audio-url');
-        global.URL.revokeObjectURL = vi.fn();
+        window.URL.createObjectURL = vi.fn(() => 'mock-audio-url');
+        window.URL.revokeObjectURL = vi.fn();
     });
 
     it('renders initial state correctly', () => {

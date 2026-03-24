@@ -12,7 +12,8 @@ interface InventoryItem {
   _pendingChanges?: Partial<InventoryItem>
 }
 
-interface InventoryStore {
+export interface InventoryStore {
+
   items: InventoryItem[]
   isLoading: boolean
   error: string | null
@@ -53,11 +54,11 @@ export const useInventoryStore = create<InventoryStore>()(
           items: state.items.map((i) =>
             i.id === id
               ? {
-                  ...i,
-                  ...updates,
-                  _optimistic: true,
-                  _pendingChanges: updates,
-                }
+                ...i,
+                ...updates,
+                _optimistic: true,
+                _pendingChanges: updates,
+              }
               : i
           ),
         })),
@@ -66,10 +67,10 @@ export const useInventoryStore = create<InventoryStore>()(
           items: state.items.map((i) =>
             i.id === id
               ? {
-                  ...i,
-                  _optimistic: false,
-                  _pendingChanges: undefined,
-                }
+                ...i,
+                _optimistic: false,
+                _pendingChanges: undefined,
+              }
               : i
           ),
         })),
@@ -81,10 +82,10 @@ export const useInventoryStore = create<InventoryStore>()(
             items: s.items.map((i) =>
               i.id === id
                 ? {
-                    ...i,
-                    _optimistic: false,
-                    _pendingChanges: undefined,
-                  }
+                  ...i,
+                  _optimistic: false,
+                  _pendingChanges: undefined,
+                }
                 : i
             ),
           }))
