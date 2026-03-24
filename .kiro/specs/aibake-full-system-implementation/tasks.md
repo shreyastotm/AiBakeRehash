@@ -1256,7 +1256,7 @@ aibake/
   - Show recipe version history
   - _Requirements: 29.2, 30.4, 34.1, 35.1, 35.5_
 
-- [-] 23.3 Create recipe creation/editing form
+- [x] 23.3 Create recipe creation/editing form
   - Create RecipeForm page with multi-step form (details, ingredients, instructions)
   - Implement recipe details section (title, description, servings, yield)
   - Implement ingredient section with autocomplete search, quantity, unit inputs
@@ -1280,7 +1280,7 @@ aibake/
   - Redirect to recipe list after deletion
   - _Requirements: 29.5_
 
-- [-] 23.6 Write component tests for recipe management
+- [x] 23.6 Write component tests for recipe management
   - Test recipe list rendering and filtering
   - Test recipe detail display
   - Test recipe form validation
@@ -1291,7 +1291,7 @@ aibake/
 
 ### 24. Frontend - Ingredient Management Interface
 
-- [ ] 24.1 Create ingredient search interface
+- [x] 24.1 Create ingredient search interface
   - Create IngredientSearch component with autocomplete
   - Display suggestions as user types (debounced 300ms)
   - Show ingredient category, density, allergen flags in suggestions
@@ -1299,20 +1299,20 @@ aibake/
   - Support keyboard navigation (arrow keys, enter)
   - _Requirements: 30.1, 30.2_
 
-- [ ] 24.2 Create ingredient detail modal
+- [x] 24.2 Create ingredient detail modal
   - Display ingredient name, category, density, nutrition facts
   - Show available substitutions with impact warnings
   - Display ingredient aliases
   - Show composite ingredient breakdown if applicable
   - _Requirements: 30.8, 35.7_
 
-- [ ] 24.3 Create custom ingredient form
+- [x] 24.3 Create custom ingredient form
   - Allow users to add custom ingredients
   - Input fields for name, category, density, nutrition
   - Validate required fields
   - _Requirements: 24.3_
 
-- [ ] 24.4 Write component tests for ingredient management
+- [x] 24.4 Write component tests for ingredient management
   - Test ingredient search autocomplete
   - Test ingredient detail display
   - Test custom ingredient creation
@@ -1397,25 +1397,25 @@ aibake/
 
 ### 25C. FSSAI Compliance & Label Generation
 
-- [/] 25C.1 Data Preparation & Sorting
+- [x] 25C.1 Data Preparation & Sorting
   - Backend: Auto-sort ingredients by weight (descending) for the label declaration
   - Backend: Aggregate allergens from all recipe ingredients ("Contains: Wheat, Milk, etc.")
-- [ ] 25C.2 Label Designer & Sizes
+- [x] 25C.2 Label Designer & Sizes
   - Frontend: Implement adaptive label component with 3 sizes: Small (2x2"), Medium (3x4"), Large (4x6")
   - UI: Include FSSAI mandatory fields (MRP, Best Before, Packed Date, Veg/Non-Veg icons)
   - UI: Label nutrition section as **"Special Claims (Not Certified)"**
-- [ ] 25C.3 PDF Export
+- [x] 25C.3 PDF Export
   - Export: Implement PDF generation using `react-pdf` with size-based layout optimization
 
 
 ### 25D. Recipe Smart Import (AI-Powered)
 
-- [ ] 25D.1 Backend: Unstructured Text Parsing
+- [x] 25D.1 Backend: Unstructured Text Parsing
   - Implement API endpoint `POST /recipes/import/text` to parse raw text into a structured recipe format using Mistral AI
   - Extract title, ingredients, quantities, instructions, and baking settings
-- [ ] 25D.2 Backend: URL Parsing
+- [x] 25D.2 Backend: URL Parsing
   - Implement API endpoint `POST /recipes/import/url` to fetch webpage content and pass it to the AI parser
-- [ ] 25D.3 Backend: Document Upload (Excel/Word)
+- [x] 25D.3 Backend: Document Upload (Excel/Word)
   - Implement API endpoint `POST /recipes/import/file` to accept file uploads (`.xlsx`, `.csv`, `.docx`)
   - Extract text/tabular data and pass to the AI parser
 - [x] 25D.4 Frontend: Smart Import Modal
@@ -1436,6 +1436,16 @@ aibake/
   - Implement a multi-select Tag input in `RecipeForm` that autosuggests
   - Display tags on `RecipeCard`
   - Enhance `RecipeList` to allow filtering by tags
+
+### 25F. Pre-Inventory Core Fixes (Gap Tasks 1-4)
+- [x] 25F.1 Dashboard Redesign
+  - Add KPI widgets (recipes, inventory status, journal stats)
+- [x] 25F.2 Recipe Version Comparison UI
+  - Implement a side-by-side diff modal in `RecipeDetail.tsx` for tracking version changes
+- [x] 25F.3 Comprehensive Ingredient Mapping & Deduplication UI
+  - Build frontend Settings panel hitting `POST /api/v1/ingredients/merge` to irreversibly merge duplicates
+- [x] 25F.4 Hands-Free Timer UI
+  - Implement global context/floating widget for Timers with Wake Lock support
 
 ### 26. Frontend - Inventory Management Interface
 

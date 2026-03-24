@@ -197,10 +197,13 @@ export async function mergeIngredients(
       throw new ForbiddenError('System ingredients cannot be merged. You can only merge your own custom ingredients.');
     }
 
+    const sourceUserId = String(sourceRes.rows[0].user_id);
+    const authUserId = String(userId);
+
     // Allow merge if user owns the source OR if it's a system merge request
     // (Internal system merges are permitted now as requested)
-    if (sourceRes.rows[0].user_id !== null && sourceRes.rows[0].user_id !== userId) {
-      throw new ForbiddenError('You can only merge custom ingredients you created, or system items for cleanup.');
+    if (sourceRes.rows[0].user_id !== null && sourceUserId !== authUserId) {
+      throw new ForbiddenError(`Ownership mismatch. You can only merge ingredients you created. Found source user_id=${sourceUserId}, but auth userId=${authUserId}`);
     }
 
     const targetRes = await client.query(
@@ -263,15 +266,9 @@ export interface DuplicateSuggestion {
 export async function getDuplicateSuggestions(userId: string): Promise<DuplicateSuggestion[]> {
   // 1. Fetch used system items and all user's custom items
   const candidatesRes = await db.query(
-    `WITH used_system_ingredients AS (
-        SELECT DISTINCT ingredient_master_id 
-        FROM recipe_ingredients 
-        WHERE ingredient_master_id IN (SELECT id FROM ingredient_master WHERE user_id IS NULL)
-    )
-    SELECT id, name, user_id, category 
-    FROM ingredient_master 
-    WHERE (user_id = $1)
-       OR (user_id IS NULL AND id IN (SELECT ingredient_master_id FROM used_system_ingredients))`,
+    `SELECT id, name, user_id, category 
+     FROM ingredient_master 
+     WHERE user_id = $1`,
     [userId]
   );
   

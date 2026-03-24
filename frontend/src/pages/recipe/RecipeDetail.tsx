@@ -11,6 +11,7 @@ import { LoadingSpinner } from '../../components/common/LoadingSpinner'
 import { Button } from '../../components/common/Button'
 import { Badge } from '../../components/common/Badge'
 import { Modal } from '../../components/common/Modal'
+import { VersionDiffModal } from '../../components/common/VersionDiffModal'
 import { IngredientList } from '../../components/recipe/IngredientList'
 import { StepList } from '../../components/recipe/StepList'
 import { NutritionDisplay } from '../../components/recipe/NutritionDisplay'
@@ -260,6 +261,7 @@ export const RecipeDetail = () => {
   const [showVersions, setShowVersions] = useState(false)
   const [showLabelDesigner, setShowLabelDesigner] = useState(false)
   const [userTags, setUserTags] = useState<UserTag[]>([])
+  const [diffVersion, setDiffVersion] = useState<number | null>(null)
 
   useEffect(() => {
 
@@ -600,7 +602,9 @@ export const RecipeDetail = () => {
           {showVersions && (
             <ul className="mt-4 divide-y divide-gray-50" aria-label="Version history">
               {versions.map((v) => (
-                <VersionRow key={v.id} version={v} formatDate={formatDate} />
+                <div key={v.id} onClick={() => setDiffVersion(v.version_number)} className="cursor-pointer hover:bg-gray-50">
+                   <VersionRow version={v} formatDate={formatDate} />
+                </div>
               ))}
             </ul>
           )}
@@ -656,12 +660,19 @@ export const RecipeDetail = () => {
         </div>
       </Modal>
 
-      {/* ── Label Designer Modal ── */}
       {showLabelDesigner && id && (
         <LabelDesigner
           recipeId={id}
           onClose={() => setShowLabelDesigner(false)}
         />
+      )}
+      
+      {diffVersion !== null && (
+         <VersionDiffModal 
+           isOpen={true} 
+           versionNumber={diffVersion}
+           onClose={() => setDiffVersion(null)} 
+         />
       )}
     </div>
   )

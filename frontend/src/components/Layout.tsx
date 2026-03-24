@@ -1,6 +1,7 @@
 import React from 'react'
 import { Navigation } from './Navigation'
 import { Breadcrumb } from './Breadcrumb'
+import { TimerWidget } from './common/TimerWidget'
 
 interface LayoutProps {
   children: React.ReactNode
@@ -21,6 +22,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       <main id="main-content" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {children}
       </main>
+      <TimerWidget />
     </div>
   )
 }
