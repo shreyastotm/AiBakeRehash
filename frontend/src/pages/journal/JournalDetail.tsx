@@ -5,13 +5,14 @@ import { Button } from '../../components/common/Button';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { EmptyState } from '../../components/common/EmptyState';
 import { format } from 'date-fns';
+import { ChevronLeft, Star, Pencil } from 'lucide-react';
 import { MEDIA_BASE_URL } from '../../services/api';
 
 export const JournalDetail = () => {
     const { recipeId, entryId } = useParams<{ recipeId: string; entryId: string }>();
     const navigate = useNavigate();
 
-    // If we only have entryId, we might need a way to look it up, 
+    // If we only have entryId, we might need a way to look it up,
     // but if we enforce routing like `/recipes/:recipeId/journal/:entryId` it is easier.
     // Assuming route is `/recipes/:recipeId/journal/:entryId`
     const { data: entries, isLoading, error } = useJournalEntries(recipeId!);
@@ -46,115 +47,162 @@ export const JournalDetail = () => {
 
     return (
         <div className="container mx-auto px-4 py-6 max-w-4xl">
-            <Link to={`/recipes/${recipeId}/journal`} className="text-sm text-gray-500 hover:text-gray-900 mb-6 inline-block">
-                ← Back to Journal List
-            </Link>
-
-            <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
-                <div className="p-6 border-b border-gray-100 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-                    <div>
-                        <h1 className="text-2xl font-bold text-gray-900 mb-1">
-                            Bake Session: {format(new Date(entry.bake_date), 'PPP')}
-                        </h1>
-                        <div className="flex items-center gap-3 mt-2">
-                            {entry.rating && (
-                                <span className="bg-amber-100 text-amber-800 px-2.5 py-1 rounded text-sm font-semibold">
-                                    ★ {entry.rating} / 5
-                                </span>
-                            )}
-                        </div>
-                    </div>
+            {/* Page header */}
+            <div className="page-header">
+                <button
+                    onClick={() => navigate(-1)}
+                    className="flex items-center gap-2 text-sm text-neutral-500 hover:text-neutral-700 transition-colors mb-4"
+                >
+                    <ChevronLeft size={16} /> Back to Journal
+                </button>
+                <div className="flex items-center justify-between">
+                    <h1 className="page-title">
+                        {entry.recipe_title ?? 'Baking Session'}
+                    </h1>
                     <div className="flex gap-2">
                         <Link to={`/recipes/${recipeId}/journal/${entryId}/edit`}>
-                            <Button variant="secondary">Edit Entry</Button>
+                            <Button variant="outline" size="sm" leftIcon={<Pencil size={14} />}>Edit</Button>
                         </Link>
-                        <Button variant="danger" disabled={deleteMutation.isPending} onClick={handleDelete}>
+                        <Button variant="danger" size="sm" disabled={deleteMutation.isPending} onClick={handleDelete}>
                             {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
                         </Button>
                     </div>
                 </div>
+            </div>
 
-                <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-8">
-                    <div className="md:col-span-2 space-y-6">
-                        <section>
-                            <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2">Metrics</h3>
-                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-gray-50 p-4 rounded-lg border border-gray-100">
+            {/* Meta section: date, rating */}
+            <div className="card p-6 mb-6">
+                <div className="flex flex-wrap gap-6">
+                    <div>
+                        <p className="text-xs text-neutral-500 font-medium uppercase tracking-wide mb-1">Date</p>
+                        <p className="text-sm font-semibold text-neutral-800">
+                            {format(new Date(entry.bake_date), 'PPPP')}
+                        </p>
+                    </div>
+                    {entry.rating != null && (
+                        <div>
+                            <p className="text-xs text-neutral-500 font-medium uppercase tracking-wide mb-1">Rating</p>
+                            <div className="flex items-center gap-1">
+                                {Array.from({ length: 5 }).map((_, i) => (
+                                    <Star
+                                        key={i}
+                                        size={16}
+                                        className={i < entry.rating! ? 'text-accent-500 fill-accent-500' : 'text-neutral-200 fill-neutral-200'}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="md:col-span-2 space-y-6">
+                    {/* Metrics */}
+                    <section className="card">
+                        <div className="card-header">
+                            <h2 className="text-base font-semibold text-neutral-800">Metrics</h2>
+                        </div>
+                        <div className="card-body">
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-neutral-50 p-4 rounded-lg border border-neutral-100">
                                 <div>
-                                    <div className="text-xs text-gray-500 mb-1">Pre-bake</div>
-                                    <div className="font-semibold text-gray-900">{entry.pre_bake_weight_grams ? `${entry.pre_bake_weight_grams}g` : '-'}</div>
+                                    <div className="text-xs text-neutral-500 mb-1">Pre-bake</div>
+                                    <div className="font-semibold text-neutral-900">{entry.pre_bake_weight_grams ? `${entry.pre_bake_weight_grams}g` : '-'}</div>
                                 </div>
                                 <div>
-                                    <div className="text-xs text-gray-500 mb-1">Outcome</div>
-                                    <div className="font-semibold text-gray-900">{entry.outcome_weight_grams ? `${entry.outcome_weight_grams}g` : '-'}</div>
+                                    <div className="text-xs text-neutral-500 mb-1">Outcome</div>
+                                    <div className="font-semibold text-neutral-900">{entry.outcome_weight_grams ? `${entry.outcome_weight_grams}g` : '-'}</div>
                                 </div>
                                 <div>
-                                    <div className="text-xs text-gray-500 mb-1">Baking Loss</div>
-                                    <div className="font-semibold text-amber-600">{entry.baking_loss_percentage != null ? `${Number(entry.baking_loss_percentage).toFixed(1)}%` : '-'}</div>
+                                    <div className="text-xs text-neutral-500 mb-1">Baking Loss</div>
+                                    <div className="font-semibold text-accent-600">{entry.baking_loss_percentage != null ? `${Number(entry.baking_loss_percentage).toFixed(1)}%` : '-'}</div>
                                 </div>
                                 <div>
-                                    <div className="text-xs text-gray-500 mb-1">Water Activity</div>
-                                    <div className="font-semibold text-gray-900">{entry.measured_water_activity ?? '-'}</div>
+                                    <div className="text-xs text-neutral-500 mb-1">Water Activity</div>
+                                    <div className="font-semibold text-neutral-900">{entry.measured_water_activity ?? '-'}</div>
                                 </div>
                             </div>
+                        </div>
+                    </section>
+
+                    {/* Notes */}
+                    {entry.notes && (
+                        <section className="card mb-6">
+                            <div className="card-header"><h2 className="text-base font-semibold text-neutral-800">Notes</h2></div>
+                            <div className="card-body">
+                                <p className="text-sm text-neutral-700 leading-relaxed whitespace-pre-wrap">{entry.notes}</p>
+                            </div>
                         </section>
+                    )}
 
-                        {entry.notes && (
-                            <section>
-                                <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2">Notes</h3>
-                                <div className="text-gray-700 whitespace-pre-wrap leading-relaxed">
-                                    {entry.notes}
-                                </div>
-                            </section>
-                        )}
-
-                        {entry.private_notes && (
-                            <section>
-                                <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-2">Private Notes</h3>
-                                <div className="text-gray-600 italic whitespace-pre-wrap leading-relaxed bg-gray-50 p-4 rounded-lg border border-gray-100">
+                    {/* Private Notes */}
+                    {entry.private_notes && (
+                        <section className="card mb-6">
+                            <div className="card-header"><h2 className="text-base font-semibold text-neutral-500">Private Notes</h2></div>
+                            <div className="card-body">
+                                <p className="text-sm text-neutral-600 italic leading-relaxed whitespace-pre-wrap bg-neutral-50 p-4 rounded-lg border border-neutral-100">
                                     {entry.private_notes}
-                                </div>
-                            </section>
-                        )}
+                                </p>
+                            </div>
+                        </section>
+                    )}
 
-                        {entry.audio_notes && entry.audio_notes.length > 0 && (
-                            <section>
-                                <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Audio Notes</h3>
-                                <div className="space-y-3">
-                                    {entry.audio_notes.map((audio) => (
-                                        <div key={audio.id} className="border border-gray-200 rounded-lg p-4 bg-gray-50 flex flex-col gap-2">
-                                            <audio controls src={audio.audio_url.startsWith('http') ? audio.audio_url : `${MEDIA_BASE_URL}${audio.audio_url}`} className="w-full" />
-                                            {audio.transcription_text ? (
-                                                <p className="text-sm text-gray-700 italic border-l-2 border-amber-400 pl-3">
-                                                    "{audio.transcription_text}"
-                                                </p>
-                                            ) : (
-                                                <p className="text-xs text-gray-500">Transcription {audio.transcription_status}...</p>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
-                            </section>
-                        )}
-                    </div>
+                    {/* Audio Notes */}
+                    {entry.audio_notes && entry.audio_notes.length > 0 && (
+                        <section className="card">
+                            <div className="card-header">
+                                <h2 className="text-base font-semibold text-neutral-800">Audio Notes</h2>
+                            </div>
+                            <div className="card-body space-y-3">
+                                {entry.audio_notes.map((audio) => (
+                                    <div key={audio.id} className="border border-neutral-200 rounded-lg p-4 bg-neutral-50 flex flex-col gap-2">
+                                        <audio controls src={audio.audio_url.startsWith('http') ? audio.audio_url : `${MEDIA_BASE_URL}${audio.audio_url}`} className="w-full" />
+                                        {audio.transcription_text ? (
+                                            <p className="text-sm text-neutral-700 italic border-l-2 border-accent-400 pl-3">
+                                                "{audio.transcription_text}"
+                                            </p>
+                                        ) : (
+                                            <p className="text-xs text-neutral-500">Transcription {audio.transcription_status}...</p>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        </section>
+                    )}
+                </div>
 
-                    <div className="md:col-span-1 border-t md:border-t-0 md:border-l border-gray-100 pt-6 md:pt-0 md:pl-6 space-y-6">
-                        <section>
-                            <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Photos</h3>
+                {/* Photos sidebar */}
+                <div className="md:col-span-1">
+                    <section className="card">
+                        <div className="card-header">
+                            <h2 className="text-base font-semibold text-neutral-800">Photos</h2>
+                        </div>
+                        <div className="card-body">
                             {entry.images && entry.images.length > 0 ? (
                                 <div className="grid grid-cols-2 gap-2">
                                     {entry.images.map((img, i) => (
-                                        <a href={img.startsWith('http') ? img : `${MEDIA_BASE_URL}${img}`} target="_blank" rel="noreferrer" key={i} className="aspect-square bg-gray-100 rounded-lg overflow-hidden border border-gray-200 hover:border-amber-400 transition-colors">
-                                            <img src={img.startsWith('http') ? img : `${MEDIA_BASE_URL}${img}`} alt={`Journal entry snapshot ${i}`} className="w-full h-full object-cover" />
+                                        <a
+                                            href={img.startsWith('http') ? img : `${MEDIA_BASE_URL}${img}`}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            key={i}
+                                            className="aspect-square bg-neutral-100 rounded-lg overflow-hidden border border-neutral-200 hover:border-primary-400 transition-colors"
+                                        >
+                                            <img
+                                                src={img.startsWith('http') ? img : `${MEDIA_BASE_URL}${img}`}
+                                                alt={`Journal entry snapshot ${i}`}
+                                                className="w-full h-full object-cover"
+                                            />
                                         </a>
                                     ))}
                                 </div>
                             ) : (
-                                <div className="text-gray-400 text-sm py-4 text-center bg-gray-50 rounded-lg border border-dashed border-gray-200">
+                                <div className="text-neutral-400 text-sm py-4 text-center bg-neutral-50 rounded-lg border border-dashed border-neutral-200">
                                     No photos attached
                                 </div>
                             )}
-                        </section>
-                    </div>
+                        </div>
+                    </section>
                 </div>
             </div>
         </div>

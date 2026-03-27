@@ -1,21 +1,11 @@
+import React from 'react'
 import { Link } from 'react-router-dom'
-
-import { useLocalization } from '../../hooks/useLocalization'
-import { Badge } from '../common/Badge'
+import { Users, ChefHat, ChevronRight } from 'lucide-react'
+import { cn } from '../../utils/cn'
+import { Badge, BadgeVariant } from '../common/Badge'
+import { Button } from '../common/Button'
 import { MEDIA_BASE_URL } from '../../services/api'
 import { UserTag } from '../../services/recipe.service'
-
-const TAG_COLORS: Record<string, { bg: string, text: string }> = {
-  gray: { bg: 'bg-gray-100', text: 'text-gray-700' },
-  amber: { bg: 'bg-amber-100', text: 'text-amber-700' },
-  blue: { bg: 'bg-blue-100', text: 'text-blue-700' },
-  emerald: { bg: 'bg-emerald-100', text: 'text-emerald-700' },
-  rose: { bg: 'bg-rose-100', text: 'text-rose-700' },
-  indigo: { bg: 'bg-indigo-100', text: 'text-indigo-700' },
-  orange: { bg: 'bg-orange-100', text: 'text-orange-700' },
-  teal: { bg: 'bg-teal-100', text: 'text-teal-700' },
-  violet: { bg: 'bg-violet-100', text: 'text-violet-700' },
-}
 
 export interface RecipeCardData {
   id: string
@@ -34,86 +24,127 @@ interface RecipeCardProps {
   recipe: RecipeCardData
   userTags?: UserTag[]
   className?: string
+  listMode?: boolean
 }
 
-const statusColors: Record<'draft' | 'active' | 'archived', string> = {
-  active: 'bg-green-100 text-green-700',
-  draft: 'bg-yellow-100 text-yellow-700',
-  archived: 'bg-gray-100 text-gray-500',
+function formatRelativeDate(dateStr: string): string {
+  const date = new Date(dateStr)
+  const now = new Date()
+  const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24))
+  if (diffDays === 0) return 'Today'
+  if (diffDays === 1) return 'Yesterday'
+  if (diffDays < 7) return `${diffDays}d ago`
+  return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
 }
 
-export function RecipeCard({ recipe, userTags = [], className = '' }: RecipeCardProps) {
-  const { t, formatDate } = useLocalization()
+type StatusVariant = 'draft' | 'active' | 'archived'
+
+const statusBadgeVariant: Record<StatusVariant, BadgeVariant> = {
+  active:   'active',
+  draft:    'draft',
+  archived: 'default',
+}
+
+export function RecipeCard({ recipe, userTags = [], className, listMode = false }: RecipeCardProps) {
+  if (listMode) {
+    return (
+      <article className={cn('card flex items-center gap-4 p-4 hover:shadow-md transition-shadow group', className)}>
+        <div className="h-14 w-14 rounded-lg bg-neutral-100 flex-shrink-0 overflow-hidden">
+          {recipe.thumbnail_url
+            ? <img
+                src={recipe.thumbnail_url.startsWith('http') ? recipe.thumbnail_url : `${MEDIA_BASE_URL}${recipe.thumbnail_url}`}
+                alt=""
+                className="w-full h-full object-cover"
+                loading="lazy"
+              />
+            : <div className="w-full h-full flex items-center justify-center">
+                <ChefHat size={18} className="text-neutral-300" aria-hidden="true" />
+              </div>
+          }
+        </div>
+        <div className="flex-1 min-w-0">
+          <h3 className="font-semibold text-sm text-neutral-900 truncate group-hover:text-primary-600 transition-colors">
+            {recipe.title}
+          </h3>
+          <div className="flex items-center gap-3 text-xs text-neutral-500 mt-0.5">
+            {recipe.servings > 0 && (
+              <span className="flex items-center gap-1">
+                <Users size={11} aria-hidden="true" />{recipe.servings} srv
+              </span>
+            )}
+            {recipe.status !== 'active' && (
+              <Badge variant={statusBadgeVariant[recipe.status]} dot>{recipe.status}</Badge>
+            )}
+            <span className="ml-auto text-2xs text-neutral-400">{formatRelativeDate(recipe.updated_at)}</span>
+          </div>
+        </div>
+        <Link to={`/recipes/${recipe.id}`}>
+          <Button variant="ghost" size="sm" rightIcon={<ChevronRight size={14} />}>View</Button>
+        </Link>
+      </article>
+    )
+  }
 
   return (
-    <Link
-      to={`/recipes/${recipe.id}`}
-      className={`group block bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 ${className}`}
-      aria-label={recipe.title}
-    >
+    <article className={cn('card-interactive group overflow-hidden flex flex-col', className)}>
       {/* Thumbnail */}
-      <div className="aspect-video bg-amber-50 overflow-hidden">
-        {recipe.thumbnail_url ? (
-          <img
-            src={recipe.thumbnail_url.startsWith('http') ? recipe.thumbnail_url : `${MEDIA_BASE_URL}${recipe.thumbnail_url}`}
-            alt={recipe.title}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-            loading="lazy"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-4xl" aria-hidden="true">
-            🍞
+      <div className="aspect-[4/3] bg-gradient-to-br from-neutral-100 to-neutral-50 relative overflow-hidden flex-shrink-0">
+        {recipe.thumbnail_url
+          ? <img
+              src={recipe.thumbnail_url.startsWith('http') ? recipe.thumbnail_url : `${MEDIA_BASE_URL}${recipe.thumbnail_url}`}
+              alt={recipe.title}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-slow"
+              loading="lazy"
+            />
+          : <div className="w-full h-full flex items-center justify-center">
+              <ChefHat size={36} className="text-neutral-300" aria-hidden="true" />
+            </div>
+        }
+        {recipe.status !== 'active' && (
+          <div className="absolute top-2 left-2">
+            <Badge variant={statusBadgeVariant[recipe.status]} dot>{recipe.status}</Badge>
           </div>
         )}
       </div>
 
-      {/* Content */}
-      <div className="p-4">
-        <div className="flex items-start justify-between gap-2 mb-1">
-          <h2 className="font-semibold text-gray-900 text-base leading-snug line-clamp-2 flex-1">
-            {recipe.title}
-          </h2>
-          <span
-            className={`shrink-0 text-xs font-medium px-2 py-0.5 rounded-full capitalize ${statusColors[recipe.status]}`}
+      {/* Body */}
+      <div className="p-4 flex flex-col flex-1">
+        <h3 className="font-semibold text-neutral-900 text-sm leading-snug line-clamp-2 mb-2 group-hover:text-primary-600 transition-colors">
+          {recipe.title}
+        </h3>
+
+        {/* Meta */}
+        <div className="flex items-center gap-3 text-xs text-neutral-500">
+          {recipe.servings > 0 && (
+            <span className="flex items-center gap-1">
+              <Users size={11} aria-hidden="true" />{recipe.servings} srv
+            </span>
+          )}
+          {/* Tags */}
+          {recipe.tags && recipe.tags.length > 0 && (
+            <div className="flex flex-wrap gap-1 ml-auto">
+              {recipe.tags.slice(0, 2).map(tag => (
+                <Badge key={tag} variant="default" className="text-2xs">{tag}</Badge>
+              ))}
+              {recipe.tags.length > 2 && (
+                <Badge variant="default" className="text-2xs">+{recipe.tags.length - 2}</Badge>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-between mt-auto pt-3 border-t border-neutral-100">
+          <span className="text-2xs text-neutral-400">{formatRelativeDate(recipe.updated_at)}</span>
+          <Link
+            to={`/recipes/${recipe.id}`}
+            className="text-xs text-primary-500 hover:text-primary-600 font-medium flex items-center gap-0.5 transition-colors"
+            onClick={e => e.stopPropagation()}
           >
-            {t(`recipes.${recipe.status}`, recipe.status)}
-          </span>
-        </div>
-
-        {recipe.description && (
-          <p className="text-gray-500 text-sm line-clamp-2 mb-3">{recipe.description}</p>
-        )}
-
-        {/* Tags */}
-        {recipe.tags && recipe.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1 mb-3">
-            {recipe.tags.slice(0, 3).map(tag => {
-              const userTag = userTags.find(ut => ut.label.toLowerCase() === tag.toLowerCase())
-              const colorConfig = TAG_COLORS[userTag?.color || 'gray'] || TAG_COLORS.gray
-              return (
-                <Badge
-                  key={tag}
-                  variant="default"
-                  className={`text-[10px] px-1.5 py-0 border-none shadow-sm ${colorConfig.bg} ${colorConfig.text}`}
-                >
-                  {tag}
-                </Badge>
-              )
-            })}
-            {recipe.tags.length > 3 && (
-              <span className="text-[10px] text-gray-400 font-medium ml-0.5">+{recipe.tags.length - 3}</span>
-            )}
-          </div>
-        )}
-
-        <div className="flex items-center justify-between text-xs text-gray-400 mt-2 pt-2 border-t border-gray-50">
-          <span>
-            {recipe.servings} {t('recipes.servings', 'servings')}
-          </span>
-          <span>{recipe.yield_weight_grams}g</span>
-          <span>{formatDate(recipe.updated_at, 'PP')}</span>
+            Open <ChevronRight size={12} aria-hidden="true" />
+          </Link>
         </div>
       </div>
-    </Link>
+    </article>
   )
 }

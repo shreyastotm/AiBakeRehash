@@ -1,96 +1,209 @@
-import { useAuth } from '../hooks/useAuth'
-import { Card } from '../components/common/Card'
-import { LoadingSpinner } from '../components/common/LoadingSpinner'
+import React from 'react'
 import { Link } from 'react-router-dom'
+import {
+  BookOpen, Package, Calculator, BookMarked,
+  TrendingUp, AlertTriangle, Plus, ArrowRight,
+} from 'lucide-react'
+import { useAuth } from '../hooks/useAuth'
 import { useRecipes } from '../hooks/useRecipes'
 import { useAllJournalEntries } from '../hooks/useJournalEntries'
+import { Card } from '../components/common/Card'
+import { Button } from '../components/common/Button'
+import { StatCardSkeleton } from '../components/common/Skeleton'
+import { cn } from '../utils/cn'
 
-export const Dashboard = () => {
-  const { currentUser, isLoading: isAuthLoading } = useAuth()
-  const { data: recipesData, isLoading: isRecipesLoading } = useRecipes()
-  const { data: journalData, isLoading: isJournalLoading } = useAllJournalEntries()
+// ── KPI Stat Card ─────────────────────────────────────────────────────────────
 
-  if (isAuthLoading) return <LoadingSpinner />
+interface StatCardProps {
+  label: string
+  value: string | number
+  icon: React.ComponentType<{ size?: number; className?: string }>
+  iconBg: string
+  iconColor: string
+  trend?: string
+  loading?: boolean
+}
 
-  const recipesCount = recipesData?.recipes?.length || 0
+const StatCard: React.FC<StatCardProps> = ({
+  label, value, icon: Icon, iconBg, iconColor, trend, loading,
+}) => {
+  if (loading) return <StatCardSkeleton />
+  return (
+    <div className="stat-card animate-fade-in-up">
+      <div className={cn('stat-icon', iconBg)}>
+        <Icon size={22} className={iconColor} aria-hidden="true" />
+      </div>
+      <div className="min-w-0">
+        <p className="stat-value">{value}</p>
+        <p className="stat-label">{label}</p>
+        {trend && (
+          <p className="text-xs text-success mt-0.5 flex items-center gap-1">
+            <TrendingUp size={10} aria-hidden="true" />
+            {trend}
+          </p>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ── Quick Action Card ─────────────────────────────────────────────────────────
+
+interface QuickActionProps {
+  to: string
+  label: string
+  description: string
+  icon: React.ComponentType<{ size?: number; className?: string }>
+  iconBg: string
+  iconColor: string
+}
+
+const QuickActionCard: React.FC<QuickActionProps> = ({
+  to, label, description, icon: Icon, iconBg, iconColor,
+}) => (
+  <Link to={to} className="block group">
+    <div className={cn(
+      'card p-5 flex items-center gap-4',
+      'transition-all duration-150 hover:shadow-md hover:-translate-y-0.5',
+      'animate-fade-in-up',
+    )}>
+      <div className={cn('w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0', iconBg)}>
+        <Icon size={20} className={iconColor} aria-hidden="true" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="font-semibold text-neutral-800 group-hover:text-primary-600 transition-colors text-sm">
+          {label}
+        </p>
+        <p className="text-xs text-neutral-500 mt-0.5 truncate">{description}</p>
+      </div>
+      <ArrowRight
+        size={16}
+        className="text-neutral-300 group-hover:text-primary-500 group-hover:translate-x-0.5 transition-all flex-shrink-0"
+        aria-hidden="true"
+      />
+    </div>
+  </Link>
+)
+
+// ── Dashboard Page ────────────────────────────────────────────────────────────
+
+export const Dashboard: React.FC = () => {
+  const { currentUser } = useAuth()
+  const { data: recipesData, isLoading: recipesLoading } = useRecipes()
+  const { data: journalData, isLoading: journalLoading } = useAllJournalEntries()
+
+  const recipesCount = recipesData?.recipes?.length ?? 0
   const journalCount = Array.isArray(journalData) ? journalData.length : 0
-  
-  // Placeholder since Inventory isn't fully built
-  const inventoryAlertsCount = 0
+
+  const firstName = currentUser?.display_name?.split(' ')[0] ?? 'Baker'
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-3xl font-bold mb-6 text-gray-800">Welcome to AiBake</h1>
+    <div className="space-y-8 animate-fade-in">
 
-      {currentUser && (
-        <p className="text-lg text-gray-600 mb-8">
-          Hello, <span className="font-semibold text-gray-900">{currentUser.display_name}</span>! Ready for baking?
-        </p>
-      )}
-
-      {/* KPI Widgets */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 flex items-center justify-between">
-          <div>
-            <p className="text-sm text-gray-500 font-medium">Total Recipes</p>
-            <p className="text-3xl font-bold text-blue-600">{isRecipesLoading ? '-' : recipesCount}</p>
-          </div>
-          <div className="text-blue-200">
-            <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
-          </div>
+      {/* ── Welcome banner ── */}
+      <div className="relative overflow-hidden rounded-2xl gradient-brand p-6 sm:p-8 text-white">
+        <div className="relative z-10">
+          <p className="text-primary-100 text-sm font-medium mb-1">
+            Welcome back
+          </p>
+          <h2 className="text-2xl sm:text-3xl font-bold font-display mb-2">
+            Hello, {firstName}! 👋
+          </h2>
+          <p className="text-primary-100 text-sm max-w-md">
+            Ready to bake something amazing today? You have {recipesCount} recipes waiting for you.
+          </p>
         </div>
-
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 flex items-center justify-between">
-          <div>
-            <p className="text-sm text-gray-500 font-medium">Journal Entries</p>
-            <p className="text-3xl font-bold text-green-600">{isJournalLoading ? '-' : journalCount}</p>
-          </div>
-          <div className="text-green-200">
-            <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 flex items-center justify-between">
-          <div>
-            <p className="text-sm text-gray-500 font-medium">Inventory Alerts</p>
-            <p className="text-3xl font-bold text-amber-600">{inventoryAlertsCount}</p>
-          </div>
-          <div className="text-amber-200">
-             <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-          </div>
-        </div>
+        {/* Decorative circles */}
+        <div className="absolute -right-8 -top-8 w-32 h-32 rounded-full bg-white/10" aria-hidden="true" />
+        <div className="absolute -right-4 -bottom-10 w-48 h-48 rounded-full bg-white/5" aria-hidden="true" />
       </div>
 
-      <h2 className="text-2xl font-semibold mb-4 text-gray-800">Quick Actions</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Link to="/recipes">
-          <Card className="hover:shadow-lg transition-all hover:-translate-y-1 cursor-pointer bg-gradient-to-br from-blue-50 to-white text-blue-900 border-blue-100">
-            <h2 className="text-xl font-semibold mb-2 flex items-center"><span className="mr-2">📖</span> Recipes</h2>
-            <p className="text-blue-700/80">Manage your baking recipes</p>
-          </Card>
-        </Link>
+      {/* ── KPI Stats ── */}
+      <section aria-labelledby="stats-heading">
+        <h2 id="stats-heading" className="sr-only">Key metrics</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatCard
+            label="Total Recipes"
+            value={recipesCount}
+            icon={BookOpen}
+            iconBg="bg-primary-50"
+            iconColor="text-primary-500"
+            loading={recipesLoading}
+          />
+          <StatCard
+            label="Journal Entries"
+            value={journalCount}
+            icon={BookMarked}
+            iconBg="bg-secondary-50"
+            iconColor="text-secondary-500"
+            loading={journalLoading}
+          />
+          <StatCard
+            label="Inventory Alerts"
+            value={0}
+            icon={AlertTriangle}
+            iconBg="bg-warning-light"
+            iconColor="text-warning"
+          />
+          <StatCard
+            label="Recipes This Month"
+            value="—"
+            icon={TrendingUp}
+            iconBg="bg-success-light"
+            iconColor="text-success"
+          />
+        </div>
+      </section>
 
-        <Link to="/inventory">
-          <Card className="hover:shadow-lg transition-all hover:-translate-y-1 cursor-pointer bg-gradient-to-br from-amber-50 to-white text-amber-900 border-amber-100">
-            <h2 className="text-xl font-semibold mb-2 flex items-center"><span className="mr-2">📦</span> Inventory</h2>
-            <p className="text-amber-700/80">Track your ingredients</p>
-          </Card>
-        </Link>
+      {/* ── Quick Actions + New Recipe ── */}
+      <section aria-labelledby="actions-heading">
+        <div className="flex items-center justify-between mb-4">
+          <h2 id="actions-heading" className="text-lg font-bold font-display text-neutral-800">
+            Quick Actions
+          </h2>
+          <Link to="/recipes/new">
+            <Button variant="primary" size="sm" leftIcon={<Plus size={14} />}>
+              New Recipe
+            </Button>
+          </Link>
+        </div>
 
-        <Link to="/costing">
-          <Card className="hover:shadow-lg transition-all hover:-translate-y-1 cursor-pointer bg-gradient-to-br from-purple-50 to-white text-purple-900 border-purple-100">
-            <h2 className="text-xl font-semibold mb-2 flex items-center"><span className="mr-2">💰</span> Costing</h2>
-            <p className="text-purple-700/80">Calculate recipe costs</p>
-          </Card>
-        </Link>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <QuickActionCard
+            to="/recipes"
+            label="Browse Recipes"
+            description="View and manage your collection"
+            icon={BookOpen}
+            iconBg="bg-primary-50"
+            iconColor="text-primary-500"
+          />
+          <QuickActionCard
+            to="/inventory"
+            label="Check Inventory"
+            description="Track ingredient stock levels"
+            icon={Package}
+            iconBg="bg-accent-50"
+            iconColor="text-accent-600"
+          />
+          <QuickActionCard
+            to="/costing"
+            label="Recipe Costing"
+            description="Calculate costs and margins"
+            icon={Calculator}
+            iconBg="bg-secondary-50"
+            iconColor="text-secondary-500"
+          />
+          <QuickActionCard
+            to="/journal"
+            label="Baking Journal"
+            description="Log your baking sessions"
+            icon={BookMarked}
+            iconBg="bg-success-light"
+            iconColor="text-success"
+          />
+        </div>
+      </section>
 
-        <Link to="/journal">
-          <Card className="hover:shadow-lg transition-all hover:-translate-y-1 cursor-pointer bg-gradient-to-br from-green-50 to-white text-green-900 border-green-100">
-            <h2 className="text-xl font-semibold mb-2 flex items-center"><span className="mr-2">📔</span> Journal</h2>
-            <p className="text-green-700/80">Log your baking attempts</p>
-          </Card>
-        </Link>
-      </div>
     </div>
   )
 }

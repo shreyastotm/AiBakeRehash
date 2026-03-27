@@ -1,18 +1,20 @@
 import React, { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useJournalEntries, useAllJournalEntries } from '../../hooks/useJournalEntries';
 import { useRecipe } from '../../hooks/useRecipes';
 import { Button } from '../../components/common/Button';
 import { EmptyState } from '../../components/common/EmptyState';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
+import { SearchInput } from '../../components/common/SearchInput';
 import { format } from 'date-fns';
-
-import { MEDIA_BASE_URL } from '../../services/api';
+import { Plus, Star, Camera } from 'lucide-react';
 
 export const JournalList = () => {
     const { recipeId } = useParams<{ recipeId: string }>();
+    const navigate = useNavigate();
     const isGlobal = !recipeId;
     const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
+    const [search, setSearch] = useState('');
 
     const { data: recipe, isLoading: isLoadingRecipe } = useRecipe(recipeId || '');
 
@@ -23,15 +25,22 @@ export const JournalList = () => {
     const isLoadingEntries = isGlobal ? allEntriesQuery.isLoading : recipeEntriesQuery.isLoading;
     const error = isGlobal ? allEntriesQuery.error : recipeEntriesQuery.error;
 
+    const handleSearch = (value: string) => setSearch(value);
 
     const sortedEntries = React.useMemo(() => {
         if (!entries) return [];
-        return [...entries].sort((a, b) => {
+        const filtered = search.trim()
+            ? entries.filter(e =>
+                (e.recipe_title ?? '').toLowerCase().includes(search.toLowerCase()) ||
+                (e.notes ?? '').toLowerCase().includes(search.toLowerCase())
+            )
+            : entries;
+        return [...filtered].sort((a, b) => {
             const dateA = new Date(a.bake_date).getTime();
             const dateB = new Date(b.bake_date).getTime();
             return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
         });
-    }, [entries, sortOrder]);
+    }, [entries, sortOrder, search]);
 
     const toggleSort = () => setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc');
 
@@ -56,33 +65,44 @@ export const JournalList = () => {
     return (
         <div className="container mx-auto px-4 py-6 max-w-4xl">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+            <div className="page-header">
                 <div>
                     {!isGlobal && (
-                        <Link to={`/recipes/${recipeId}`} className="text-sm text-gray-500 hover:text-gray-900 mb-2 inline-block">
+                        <Link to={`/recipes/${recipeId}`} className="text-sm text-neutral-500 hover:text-neutral-900 mb-2 inline-block">
                             ← Back to Recipe
                         </Link>
                     )}
                     {isGlobal && (
-                        <Link to="/dashboard" className="text-sm text-gray-500 hover:text-gray-900 mb-2 inline-block">
+                        <Link to="/dashboard" className="text-sm text-neutral-500 hover:text-neutral-900 mb-2 inline-block">
                             ← Back to Dashboard
                         </Link>
                     )}
-                    <h1 className="text-2xl font-bold text-gray-900">Baking Journal</h1>
-                    {!isGlobal && recipe && <p className="text-gray-600 font-medium">For: {recipe.title}</p>}
-                    {isGlobal && <p className="text-gray-600 font-medium">History of all your bakes</p>}
+                    <h1 className="page-title">Baking Journal</h1>
+                    <p className="page-subtitle">
+                        {!isGlobal && recipe ? `For: ${recipe.title}` : 'Log and review your baking sessions'}
+                    </p>
                 </div>
                 {!isGlobal && (
                     <Link to={`/recipes/${recipeId}/journal/new`}>
-                        <Button>+ New Entry</Button>
+                        <Button leftIcon={<Plus size={16} />}>Log a Bake</Button>
                     </Link>
                 )}
             </div>
 
+            {/* Search bar */}
+            <div className="card p-4 mb-6">
+                <SearchInput
+                    value={search}
+                    onSearch={handleSearch}
+                    placeholder="Search journal entries…"
+                />
+            </div>
+
+            {/* Sort toggle */}
             <div className="flex justify-end mb-4">
                 <button
                     onClick={toggleSort}
-                    className="text-sm flex items-center gap-1 text-gray-600 hover:text-gray-900"
+                    className="text-sm flex items-center gap-1 text-neutral-600 hover:text-neutral-900"
                 >
                     Sort by Date {sortOrder === 'desc' ? '↓' : '↑'}
                 </button>
@@ -90,74 +110,72 @@ export const JournalList = () => {
 
             {sortedEntries.length === 0 ? (
                 <EmptyState
-                    icon={<span className="text-4xl">📝</span>}
                     title="No journal entries yet"
-                    description={isGlobal ? "You haven't logged any bakes yet. Go to a recipe to start your journal." : "Log your first bake to start tracking progress, notes, and photos."}
+                    description={
+                        search.trim()
+                            ? 'No entries match your search. Try a different term.'
+                            : isGlobal
+                            ? "You haven't logged any bakes yet. Go to a recipe to start your journal."
+                            : 'Log your first baking session to track your progress'
+                    }
                     action={{
-                        label: isGlobal ? 'View Recipes' : 'Add Journal Entry',
-                        onClick: () => {
-                            window.location.href = isGlobal ? '/recipes' : `/recipes/${recipeId}/journal/new`;
-                        }
+                        label: isGlobal ? 'View Recipes' : 'Log a Bake',
+                        onClick: () => navigate(isGlobal ? '/recipes' : `/recipes/${recipeId}/journal/new`)
                     }}
                 />
             ) : (
-                <div className="space-y-4">
-                    {sortedEntries.map((entry) => (
-                        <Link
-                            key={entry.id}
-                            to={`/recipes/${entry.recipe_id}/journal/${entry.id}`}
-                            className="block bg-white border border-gray-200 rounded-xl p-5 hover:border-amber-500 hover:shadow-sm transition-all"
-                        >
-                            <div className="flex justify-between items-start mb-2">
-                                <h3 className="text-lg font-bold text-gray-900">
-                                    {format(new Date(entry.bake_date), 'PPP')}
-                                </h3>
-                                {entry.rating && (
-                                    <div className="flex items-center text-amber-500 text-sm font-medium bg-amber-50 px-2 py-1 rounded">
-                                        ★ {entry.rating}/5
+                <div className="space-y-3">
+                    {sortedEntries.map(entry => (
+                        <Link key={entry.id} to={`/recipes/${entry.recipe_id}/journal/${entry.id}`} className="block group">
+                            <article className="card p-5 hover:shadow-md transition-all hover:-translate-y-0.5 group-hover:border-primary-100">
+                                {/* Date + recipe name header */}
+                                <div className="flex items-start justify-between gap-4 mb-3">
+                                    <div className="min-w-0">
+                                        <h3 className="font-semibold text-neutral-900 text-sm group-hover:text-primary-600 transition-colors truncate">
+                                            {entry.recipe_title ?? 'Untitled Bake'}
+                                        </h3>
+                                        <p className="text-xs text-neutral-500 mt-0.5">
+                                            {format(new Date(entry.bake_date), 'PPP')}
+                                        </p>
                                     </div>
-                                )}
-                            </div>
-
-                            {entry.recipe_title && (
-                                <p className="text-sm font-semibold text-primary mb-1">
-                                    {entry.recipe_title}
-                                </p>
-                            )}
-
-                            {entry.notes && (
-                                <p className="text-gray-600 mb-4 line-clamp-2">
-                                    {entry.notes}
-                                </p>
-                            )}
-
-
-                            <div className="flex flex-wrap gap-4 text-sm text-gray-500">
-                                {entry.pre_bake_weight_grams && (
-                                    <div>Pre-bake: <span className="font-medium text-gray-900">{entry.pre_bake_weight_grams}g</span></div>
-                                )}
-                                {entry.outcome_weight_grams && (
-                                    <div>Outcome: <span className="font-medium text-gray-900">{entry.outcome_weight_grams}g</span></div>
-                                )}
-                                {entry.baking_loss_percentage != null && (
-                                    <div>Loss: <span className="font-medium text-amber-600">{Number(entry.baking_loss_percentage).toFixed(1)}%</span></div>
-                                )}
-                            </div>
-
-                            {entry.images && entry.images.length > 0 && (
-                                <div className="mt-4 flex gap-2">
-                                    {entry.images.slice(0, 3).map((img, idx) => (
-                                        <div key={idx} className="w-16 h-16 rounded-lg bg-gray-100 overflow-hidden border border-gray-200">
-                                            <img src={img.startsWith('http') ? img : `${MEDIA_BASE_URL}${img}`} alt="Bake thumbnail" className="w-full h-full object-cover" />
-                                        </div>
-                                    ))}
-                                    {entry.images.length > 3 && (
-                                        <div className="w-16 h-16 rounded-lg bg-gray-50 flex items-center justify-center text-gray-500 font-medium text-xs border border-gray-200">
-                                            +{entry.images.length - 3} more
+                                    {/* Star rating */}
+                                    {entry.rating != null && (
+                                        <div className="flex items-center gap-1 flex-shrink-0">
+                                            {Array.from({ length: 5 }).map((_, i) => (
+                                                <Star
+                                                    key={i}
+                                                    size={13}
+                                                    className={i < entry.rating! ? 'text-accent-500 fill-accent-500' : 'text-neutral-200 fill-neutral-200'}
+                                                    aria-hidden="true"
+                                                />
+                                            ))}
                                         </div>
                                     )}
                                 </div>
-                            )}
+
+                                {/* Notes preview */}
+                                {entry.notes && (
+                                    <p className="text-sm text-neutral-600 line-clamp-2 leading-relaxed">{entry.notes}</p>
+                                )}
+
+                                {/* Footer: metrics + photo count */}
+                                <div className="flex flex-wrap items-center gap-3 mt-3 pt-3 border-t border-neutral-100 text-xs text-neutral-500">
+                                    {entry.pre_bake_weight_grams && (
+                                        <span>Pre-bake: <span className="font-medium text-neutral-900">{entry.pre_bake_weight_grams}g</span></span>
+                                    )}
+                                    {entry.outcome_weight_grams && (
+                                        <span>Outcome: <span className="font-medium text-neutral-900">{entry.outcome_weight_grams}g</span></span>
+                                    )}
+                                    {entry.baking_loss_percentage != null && (
+                                        <span>Loss: <span className="font-medium text-accent-600">{Number(entry.baking_loss_percentage).toFixed(1)}%</span></span>
+                                    )}
+                                    {entry.images && entry.images.length > 0 && (
+                                        <span className="flex items-center gap-1 ml-auto">
+                                            <Camera size={12} aria-hidden="true" />{entry.images.length} photo{entry.images.length > 1 ? 's' : ''}
+                                        </span>
+                                    )}
+                                </div>
+                            </article>
                         </Link>
                     ))}
                 </div>

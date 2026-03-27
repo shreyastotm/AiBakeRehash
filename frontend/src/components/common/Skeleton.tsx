@@ -1,4 +1,5 @@
 import React from 'react'
+import { cn } from '../../utils/cn'
 
 interface SkeletonProps {
   className?: string
@@ -9,30 +10,30 @@ interface SkeletonProps {
 }
 
 const SkeletonBase: React.FC<{ className?: string; style?: React.CSSProperties }> = ({
-  className = '',
+  className,
   style,
 }) => (
   <div
-    className={`animate-pulse bg-gray-200 rounded ${className}`}
+    className={cn('skeleton', className)}
     style={style}
     aria-hidden="true"
   />
 )
 
 export const Skeleton: React.FC<SkeletonProps> = ({
-  className = '',
+  className,
   variant = 'rect',
   width,
   height,
   lines = 1,
 }) => {
   const style: React.CSSProperties = {
-    width: width !== undefined ? (typeof width === 'number' ? `${width}px` : width) : undefined,
+    width:  width  !== undefined ? (typeof width  === 'number' ? `${width}px`  : width)  : undefined,
     height: height !== undefined ? (typeof height === 'number' ? `${height}px` : height) : undefined,
   }
 
   if (variant === 'circle') {
-    return <SkeletonBase className={`rounded-full ${className}`} style={style} />
+    return <SkeletonBase className={cn('rounded-full', className)} style={style} />
   }
 
   if (variant === 'text') {
@@ -41,7 +42,7 @@ export const Skeleton: React.FC<SkeletonProps> = ({
         {Array.from({ length: lines }).map((_, i) => (
           <SkeletonBase
             key={i}
-            className={`h-4 ${i === lines - 1 && lines > 1 ? 'w-3/4' : 'w-full'} ${className}`}
+            className={cn('h-4', i === lines - 1 && lines > 1 ? 'w-3/4' : 'w-full', className)}
           />
         ))}
       </div>
@@ -50,18 +51,28 @@ export const Skeleton: React.FC<SkeletonProps> = ({
 
   return (
     <div role="status" aria-label="Loading content" style={style}>
-      <SkeletonBase className={`w-full h-full ${className}`} />
+      <SkeletonBase className={cn('w-full h-full', className)} />
     </div>
   )
 }
 
 export const RecipeCardSkeleton: React.FC = () => (
-  <div className="bg-white rounded-lg shadow p-4 space-y-3" role="status" aria-label="Loading recipe">
-    <Skeleton variant="rect" className="h-40 w-full rounded-md" />
+  <div className="card p-4 space-y-3" role="status" aria-label="Loading recipe">
+    <Skeleton variant="rect" className="h-40 w-full rounded-lg" />
     <Skeleton variant="text" lines={2} />
     <div className="flex gap-2">
       <Skeleton variant="rect" className="h-6 w-16 rounded-full" />
       <Skeleton variant="rect" className="h-6 w-16 rounded-full" />
+    </div>
+  </div>
+)
+
+export const StatCardSkeleton: React.FC = () => (
+  <div className="stat-card" role="status" aria-label="Loading stat">
+    <Skeleton variant="circle" width={48} height={48} />
+    <div className="flex-1 space-y-2">
+      <Skeleton variant="rect" className="h-8 w-16" />
+      <Skeleton variant="rect" className="h-4 w-24" />
     </div>
   </div>
 )

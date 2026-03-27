@@ -1,0 +1,261 @@
+name: aibake-ui-improvement-pipeline
+version: "1.0.0"
+description: >
+  Multi-phase UI/UX improvement pipeline for AiBakeRehash.
+  Standardizes the design system, refactors the component library,
+  redesigns every page, and enforces visual consistency across the
+  entire React/Tailwind frontend.
+
+topology: hierarchical
+max_agents: 8
+strategy: specialized
+consensus: raft
+memory_namespace: aibake-ui
+
+# ─────────────────────────────────────────────────────────────────────────────
+# GLOBAL CONTEXT (injected into every agent's system prompt)
+# ─────────────────────────────────────────────────────────────────────────────
+context:
+  project_root: "."
+  frontend_root: "frontend/src"
+  design_tokens_file: "frontend/tailwind.config.js"
+  globals_css_file: "frontend/src/styles/globals.css"
+  components_dir: "frontend/src/components/common"
+  pages_dir: "frontend/src/pages"
+  brand_colors:
+    primary: "#FF6B35"       # Vibrant warm orange — main brand CTA
+    primary_dark: "#E55A22"
+    primary_light: "#FF8C60"
+    secondary: "#004E89"     # Deep navy — trust & structure
+    secondary_dark: "#003A66"
+    secondary_light: "#1A6BA8"
+    accent: "#F7931E"        # Golden amber — highlights & active states
+    accent_dark: "#D97D0D"
+    accent_light: "#FAA84B"
+    neutral_50: "#FAFAF9"
+    neutral_100: "#F5F5F4"
+    neutral_200: "#E7E5E4"
+    neutral_300: "#D6D3D1"
+    neutral_400: "#A8A29E"
+    neutral_500: "#78716C"
+    neutral_600: "#57534E"
+    neutral_700: "#44403C"
+    neutral_800: "#292524"
+    neutral_900: "#1C1917"
+    success: "#16A34A"
+    warning: "#D97706"
+    error: "#DC2626"
+    info: "#2563EB"
+  typography:
+    font_sans: "'Inter', system-ui, -apple-system, sans-serif"
+    font_display: "'Plus Jakarta Sans', 'Inter', sans-serif"
+    font_mono: "'JetBrains Mono', 'Fira Code', monospace"
+  rules:
+    - "ALWAYS read a file before editing it"
+    - "NEVER use hardcoded color values — use design token classes (bg-primary, text-secondary, etc.)"
+    - "NEVER use emoji in JSX unless explicitly in the design spec"
+    - "ALL interactive elements must have min-h-[44px] min-w-[44px] for touch targets"
+    - "ALWAYS use lucide-react icons instead of inline SVGs"
+    - "Keep every component file under 300 lines"
+    - "Use cn() utility (clsx + tailwind-merge) for conditional class merging"
+    - "ALL color usage must come from the design token palette"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PHASES
+# ─────────────────────────────────────────────────────────────────────────────
+phases:
+
+  # ── PHASE 1: Design System Foundation ──────────────────────────────────────
+  - id: phase-1-design-system
+    name: "Design System Foundation"
+    description: >
+      Establish the single source of truth for all visual tokens.
+      Update tailwind.config.js with full color palette, typography scale,
+      spacing system, shadows, border-radius, and animation tokens.
+      Update globals.css with CSS custom properties and base typography styles.
+    prompt_file: "docs/prompts/01-design-system.md"
+    agent_type: coder
+    model: sonnet
+    outputs:
+      - file: "frontend/tailwind.config.js"
+        description: "Complete design token configuration"
+      - file: "frontend/src/styles/globals.css"
+        description: "CSS custom properties, base styles, typography"
+      - file: "frontend/src/utils/cn.ts"
+        description: "Class name utility (clsx + tailwind-merge)"
+    depends_on: []
+
+  # ── PHASE 2: Component Library Standardization ──────────────────────────────
+  - id: phase-2-components
+    name: "Component Library Standardization"
+    description: >
+      Refactor every component in frontend/src/components/common/ to use
+      design tokens, fix broken Tailwind class names (spaces inside class
+      strings), standardize variants, add proper focus/hover states,
+      and ensure WCAG AA accessibility throughout.
+    prompt_file: "docs/prompts/02-component-library.md"
+    agent_type: coder
+    model: sonnet
+    target_files:
+      - "frontend/src/components/common/Button.tsx"
+      - "frontend/src/components/common/Card.tsx"
+      - "frontend/src/components/common/Input.tsx"
+      - "frontend/src/components/common/Select.tsx"
+      - "frontend/src/components/common/Badge.tsx"
+      - "frontend/src/components/common/Modal.tsx"
+      - "frontend/src/components/common/Toast.tsx"
+      - "frontend/src/components/common/EmptyState.tsx"
+      - "frontend/src/components/common/LoadingSpinner.tsx"
+      - "frontend/src/components/common/SearchInput.tsx"
+      - "frontend/src/components/common/TagInput.tsx"
+      - "frontend/src/components/common/Skeleton.tsx"
+    depends_on:
+      - phase-1-design-system
+
+  # ── PHASE 3: Layout & Navigation ───────────────────────────────────────────
+  - id: phase-3-layout
+    name: "Layout & Navigation"
+    description: >
+      Redesign the main layout and navigation system. Replace the top-nav-only
+      layout with a professional sidebar + top-bar layout. Add collapsible
+      sidebar with icons, page titles, active state indicators, and a
+      contextual header with search and user menu.
+    prompt_file: "docs/prompts/03-layout-navigation.md"
+    agent_type: coder
+    model: sonnet
+    target_files:
+      - "frontend/src/components/Layout.tsx"
+      - "frontend/src/components/Navigation.tsx"
+      - "frontend/src/components/Breadcrumb.tsx"
+    outputs:
+      - file: "frontend/src/components/Sidebar.tsx"
+        description: "New collapsible sidebar component"
+      - file: "frontend/src/components/TopBar.tsx"
+        description: "Top bar with search and user menu"
+    depends_on:
+      - phase-2-components
+
+  # ── PHASE 4: Dashboard Redesign ─────────────────────────────────────────────
+  - id: phase-4-dashboard
+    name: "Dashboard Redesign"
+    description: >
+      Redesign the Dashboard page with brand-aligned KPI cards,
+      recent activity section, quick-action shortcuts, and a
+      contextual welcome block.
+    prompt_file: "docs/prompts/04-dashboard.md"
+    agent_type: coder
+    model: sonnet
+    target_files:
+      - "frontend/src/pages/Dashboard.tsx"
+    depends_on:
+      - phase-3-layout
+
+  # ── PHASE 5: Recipe Pages ────────────────────────────────────────────────────
+  - id: phase-5-recipes
+    name: "Recipe Pages Improvement"
+    description: >
+      Improve RecipeList (fix broken class strings, standardize filter bar,
+      upgrade RecipeCard design), RecipeDetail (better section layout,
+      versioning UI, nutrition panel), and RecipeForm (multi-step wizard UI).
+    prompt_file: "docs/prompts/05-recipe-pages.md"
+    agent_type: coder
+    model: sonnet
+    target_files:
+      - "frontend/src/pages/recipe/RecipeList.tsx"
+      - "frontend/src/pages/recipe/RecipeDetail.tsx"
+      - "frontend/src/pages/recipe/RecipeForm.tsx"
+      - "frontend/src/components/recipe/RecipeCard.tsx"
+    depends_on:
+      - phase-3-layout
+
+  # ── PHASE 6: Journal Pages ──────────────────────────────────────────────────
+  - id: phase-6-journal
+    name: "Journal Pages Improvement"
+    description: >
+      Redesign the baking journal with a timeline-style list view,
+      rich entry detail (photo gallery, ratings, notes), and a
+      clean new/edit form with step-linked notes.
+    prompt_file: "docs/prompts/06-journal-pages.md"
+    agent_type: coder
+    model: sonnet
+    target_files:
+      - "frontend/src/pages/journal/JournalList.tsx"
+      - "frontend/src/pages/journal/JournalDetail.tsx"
+      - "frontend/src/pages/journal/JournalEntryNew.tsx"
+      - "frontend/src/pages/journal/JournalEntryEdit.tsx"
+    depends_on:
+      - phase-3-layout
+
+  # ── PHASE 7: Inventory & Costing Pages ─────────────────────────────────────
+  - id: phase-7-inventory-costing
+    name: "Inventory & Costing Pages"
+    description: >
+      Build inventory management with stock-level indicators and
+      low-stock alerts, and a costing calculator with clear
+      cost breakdowns, profit margin visualizations.
+    prompt_file: "docs/prompts/07-inventory-costing.md"
+    agent_type: coder
+    model: sonnet
+    depends_on:
+      - phase-3-layout
+
+  # ── PHASE 8: Auth Pages ─────────────────────────────────────────────────────
+  - id: phase-8-auth
+    name: "Auth Pages Redesign"
+    description: >
+      Redesign Login and Register pages with brand identity,
+      a split-panel layout (brand panel left, form right),
+      proper form validation UX, and onboarding flow.
+    prompt_file: "docs/prompts/08-auth-pages.md"
+    agent_type: coder
+    model: sonnet
+    target_files:
+      - "frontend/src/pages/auth/Login.tsx"
+      - "frontend/src/pages/auth/Register.tsx"
+    depends_on:
+      - phase-2-components
+
+# ─────────────────────────────────────────────────────────────────────────────
+# EXECUTION ORDER (sequential by default, parallel where depends_on allows)
+# ─────────────────────────────────────────────────────────────────────────────
+execution:
+  # Phase 1 must complete first (foundation)
+  # Phase 2 depends on Phase 1
+  # Phase 3 depends on Phase 2
+  # Phases 4–8 can run in parallel after Phase 3 (or Phase 2 for auth)
+  parallel_groups:
+    - [phase-4-dashboard, phase-5-recipes, phase-6-journal, phase-7-inventory-costing, phase-8-auth]
+
+# ─────────────────────────────────────────────────────────────────────────────
+# HOOKS
+# ─────────────────────────────────────────────────────────────────────────────
+hooks:
+  pre_phase:
+    - action: memory_store
+      key: "pipeline:phase:{phase_id}:start"
+      value: "Phase {phase_name} started at {timestamp}"
+  post_phase:
+    - action: memory_store
+      key: "pipeline:phase:{phase_id}:complete"
+      value: "Phase {phase_name} completed at {timestamp}"
+    - action: run_command
+      command: "cd frontend && npx tsc --noEmit --project tsconfig.json"
+      on_failure: alert
+  post_pipeline:
+    - action: run_command
+      command: "cd frontend && npm run lint"
+    - action: run_command
+      command: "cd frontend && npm run build"
+      on_failure: alert
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CLI INVOCATION
+# ─────────────────────────────────────────────────────────────────────────────
+# To run this pipeline:
+#   npx @claude-flow/cli@latest workflow run .agents/aibake-ui-pipeline.yml
+#
+# To run a single phase:
+#   npx @claude-flow/cli@latest workflow run .agents/aibake-ui-pipeline.yml --phase phase-1-design-system
+#
+# To check status:
+#   npx @claude-flow/cli@latest workflow status aibake-ui-improvement-pipeline

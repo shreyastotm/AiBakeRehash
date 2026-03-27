@@ -1,8 +1,10 @@
-import { useParams, Link } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { JournalEntryForm } from '../../components/journal/JournalEntryForm';
+import { ChevronLeft } from 'lucide-react';
 
 export const JournalEntryNew = () => {
     const { recipeId } = useParams<{ recipeId: string }>();
+    const navigate = useNavigate();
 
     if (!recipeId) {
         return <div>Recipe ID missing</div>;
@@ -10,14 +12,14 @@ export const JournalEntryNew = () => {
 
     return (
         <div className="container mx-auto px-4 py-6 max-w-4xl">
-            <Link to={`/recipes/${recipeId}`} className="text-sm text-gray-500 hover:text-amber-700 mb-6 inline-flex items-center gap-1 transition-colors">
-                ← Back to Recipe
-            </Link>
+            <button
+                onClick={() => navigate(-1)}
+                className="flex items-center gap-2 text-sm text-neutral-500 hover:text-neutral-700 transition-colors mb-6"
+            >
+                <ChevronLeft size={16} /> Back to Recipe
+            </button>
 
-            <div className="mb-6">
-                <h1 className="text-2xl font-bold text-gray-900">Log a Bake</h1>
-                <p className="text-gray-600">Document your baking process, track metrics, and add notes for your recipe.</p>
-            </div>
+            <h1 className="page-title mb-8">Log a Bake</h1>
 
             <JournalEntryForm recipeId={recipeId} />
         </div>
