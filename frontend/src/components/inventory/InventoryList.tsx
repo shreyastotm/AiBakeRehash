@@ -1,6 +1,8 @@
 import React from 'react'
 import { ProgressBar } from '../common/ProgressBar'
 import { EmptyState } from '../common/EmptyState'
+import { Badge } from '../common/Badge'
+import { cn } from '../../utils/cn'
 
 export interface InventoryItem {
   id: string
@@ -46,61 +48,103 @@ export const InventoryList: React.FC<InventoryListProps> = ({
   }
 
   return (
-    <div className={`space-y-3 ${className}`} role="list" aria-label="Inventory items">
-      {items.map((item) => {
-        const pct = stockPercent(item)
-        const color = stockColor(pct)
-        const isLow = item.quantity_on_hand <= item.min_stock_level
+    <div className={cn('card overflow-hidden', className)}>
+      <div className="overflow-x-auto">
+        <table className="w-full" role="table" aria-label="Inventory items">
+          <thead>
+            <tr className="border-b border-neutral-100">
+              <th className="text-left px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wide">
+                Ingredient
+              </th>
+              <th className="text-right px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wide">
+                On Hand
+              </th>
+              <th className="text-right px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wide hidden sm:table-cell">
+                Cost/Unit
+              </th>
+              <th className="text-center px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wide hidden md:table-cell">
+                Stock Level
+              </th>
+              <th className="text-center px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wide">
+                Status
+              </th>
+              {onAddPurchase && (
+                <th className="px-4 py-3 text-xs font-semibold text-neutral-500 uppercase tracking-wide" />
+              )}
+            </tr>
+          </thead>
+          <tbody>
+            {items.map((item) => {
+              const pct = stockPercent(item)
+              const color = stockColor(pct)
+              const isLow = item.quantity_on_hand <= item.min_stock_level
+              const isOut = item.quantity_on_hand === 0
 
-        return (
-          <div
-            key={item.id}
-            role="listitem"
-            className="bg-white rounded-lg border border-gray-200 p-4"
-          >
-            <div className="flex items-start justify-between gap-3 mb-2">
-              <div className="flex-1 min-w-0">
-                <h3 className="font-medium text-gray-900 truncate">{item.ingredient_name}</h3>
-                <p className="text-sm text-gray-500">
-                  {item.quantity_on_hand} {item.unit} on hand
-                  {item.expiration_date && (
-                    <span className="ml-2 text-xs text-gray-400">
-                      · Expires {new Date(item.expiration_date).toLocaleDateString('en-IN')}
-                    </span>
+              return (
+                <tr
+                  key={item.id}
+                  className={cn(
+                    'border-b border-neutral-100 last:border-0 transition-colors',
+                    isOut ? 'bg-error-light/20' : isLow ? 'bg-warning-light/30' : 'hover:bg-neutral-50',
                   )}
-                </p>
-              </div>
-              <div className="text-right shrink-0">
-                <p className="text-sm font-medium text-gray-700">
-                  ₹{item.cost_per_unit.toFixed(2)}/{item.unit}
-                </p>
-                {isLow && (
-                  <span className="text-xs font-medium text-red-600 bg-red-50 px-2 py-0.5 rounded-full">
-                    Low stock
-                  </span>
-                )}
-              </div>
-            </div>
-
-            <ProgressBar
-              value={pct}
-              color={color}
-              size="sm"
-              aria-label={`${item.ingredient_name} stock level`}
-            />
-
-            {onAddPurchase && (
-              <button
-                onClick={() => onAddPurchase(item)}
-                className="mt-2 text-xs text-amber-600 hover:text-amber-700 font-medium focus:outline-none focus:underline"
-                aria-label={`Add purchase for ${item.ingredient_name}`}
-              >
-                + Add purchase
-              </button>
-            )}
-          </div>
-        )
-      })}
+                >
+                  <td className="px-4 py-3">
+                    <p className="font-medium text-neutral-900 truncate max-w-[180px]">
+                      {item.ingredient_name}
+                    </p>
+                    {item.expiration_date && (
+                      <p className="text-xs text-neutral-400 mt-0.5">
+                        Expires {new Date(item.expiration_date).toLocaleDateString('en-IN')}
+                      </p>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <span className="text-sm font-medium text-neutral-800">
+                      {item.quantity_on_hand} {item.unit}
+                    </span>
+                    <p className="text-xs text-neutral-400">min {item.min_stock_level} {item.unit}</p>
+                  </td>
+                  <td className="px-4 py-3 text-right hidden sm:table-cell">
+                    <span className="text-sm text-neutral-700">
+                      ₹{item.cost_per_unit.toFixed(2)}/{item.unit}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 hidden md:table-cell">
+                    <div className="w-24 mx-auto">
+                      <ProgressBar
+                        value={pct}
+                        color={color}
+                        size="sm"
+                        aria-label={`${item.ingredient_name} stock level`}
+                      />
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    {isOut ? (
+                      <Badge variant="danger" dot>Out of Stock</Badge>
+                    ) : isLow ? (
+                      <Badge variant="warning" dot>Low Stock</Badge>
+                    ) : (
+                      <Badge variant="success" dot>In Stock</Badge>
+                    )}
+                  </td>
+                  {onAddPurchase && (
+                    <td className="px-4 py-3 text-right">
+                      <button
+                        onClick={() => onAddPurchase(item)}
+                        className="text-xs text-primary-500 hover:text-primary-600 font-medium focus:outline-none focus:underline whitespace-nowrap"
+                        aria-label={`Add purchase for ${item.ingredient_name}`}
+                      >
+                        + Add purchase
+                      </button>
+                    </td>
+                  )}
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
     </div>
   )
 }

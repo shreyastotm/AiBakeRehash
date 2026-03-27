@@ -1,0 +1,98 @@
+name: aibake-full-ui-pipeline
+version: "2.0.0"
+description: >
+  Full UI/UX overhaul pipeline for AiBakeRehash (v2).
+  Phases 1-3 have been EXECUTED DIRECTLY (design tokens, component library,
+  sidebar layout, dashboard, login). Phases 4-8 are the remaining roadmap.
+
+status:
+  phase-1-design-system:  COMPLETE
+  phase-2-components:     COMPLETE
+  phase-3-layout:         COMPLETE
+  phase-4-dashboard:      COMPLETE
+  phase-5-auth:           COMPLETE
+  phase-6-recipes:        PENDING
+  phase-7-journal:        PENDING
+  phase-8-inventory-costing: PENDING
+
+# ── How to run remaining phases in Claude Code ──────────────────────────────
+# Say: "Execute docs/prompts/05-recipe-pages.md"
+# Say: "Execute docs/prompts/06-journal-pages.md"
+# Say: "Execute docs/prompts/07-inventory-costing.md"
+# Say: "Execute docs/prompts/08-auth-pages.md" (Register page still pending)
+#
+# Or fix npm cache then run:
+#   npm cache clean --force
+#   cd frontend && npm install
+#   npx @claude-flow/cli@latest workflow run .agents/aibake-ui-pipeline.yml --phase phase-6-recipes
+
+topology: hierarchical
+max_agents: 8
+strategy: specialized
+consensus: raft
+memory_namespace: aibake-ui-v2
+
+context:
+  worktree: ".claude/worktrees/distracted-jones"
+  frontend_root: "frontend/src"
+  design_system: APPLIED
+  brand_colors:
+    primary: "#FF6B35"
+    secondary: "#004E89"
+    accent: "#F7931E"
+    neutral_base: "#FAFAF9"
+  fonts:
+    display: "Plus Jakarta Sans"
+    body: "Inter"
+    mono: "JetBrains Mono"
+  files_created:
+    - "frontend/tailwind.config.js"          # Full design token config
+    - "frontend/src/styles/globals.css"      # CSS vars + component layer
+    - "frontend/src/utils/cn.ts"             # clsx + tailwind-merge utility
+    - "frontend/index.html"                  # Google Fonts added
+    - "frontend/src/components/Sidebar.tsx"  # New collapsible sidebar
+    - "frontend/src/components/TopBar.tsx"   # New top bar
+    - "frontend/src/components/Layout.tsx"   # Rewritten: sidebar+topbar layout
+    - "frontend/src/pages/Dashboard.tsx"     # Rewritten: KPI cards + welcome
+    - "frontend/src/pages/auth/Login.tsx"    # Rewritten: split-panel layout
+  components_updated:
+    - Button (design tokens + leftIcon/rightIcon + fullWidth)
+    - Card (variant prop + cn utility)
+    - Input (icons + form-* token classes)
+    - Badge (design tokens + dot indicator)
+    - LoadingSpinner (neutral-*/primary-* tokens)
+    - EmptyState (lucide icon + Button component)
+    - Skeleton (shimmer animation + StatCardSkeleton)
+    - SearchInput (cn + design tokens + lucide icons)
+  dependencies_added:
+    - "clsx@^2.1.0"
+    - "tailwind-merge@^2.2.0"
+
+phases:
+  - id: phase-6-recipes
+    name: "Recipe Pages Improvement"
+    prompt_file: "docs/prompts/05-recipe-pages.md"
+    agent_type: coder
+    model: sonnet
+    status: PENDING
+
+  - id: phase-7-journal
+    name: "Journal Pages Improvement"
+    prompt_file: "docs/prompts/06-journal-pages.md"
+    agent_type: coder
+    model: sonnet
+    status: PENDING
+
+  - id: phase-8-inventory-costing
+    name: "Inventory & Costing Pages"
+    prompt_file: "docs/prompts/07-inventory-costing.md"
+    agent_type: coder
+    model: sonnet
+    status: PENDING
+
+  - id: phase-9-register
+    name: "Register Page"
+    prompt_file: "docs/prompts/08-auth-pages.md"
+    agent_type: coder
+    model: sonnet
+    status: PENDING

@@ -1,5 +1,7 @@
 import React, { useState } from 'react'
+import { Calculator } from 'lucide-react'
 import { Input } from '../common/Input'
+import { cn } from '../../utils/cn'
 
 interface PricingCalculatorProps {
   totalCost: number
@@ -25,13 +27,14 @@ export const PricingCalculator: React.FC<PricingCalculatorProps> = ({
   const profit = effectivePrice - costPerServing
 
   return (
-    <div className={`bg-white rounded-lg border border-gray-200 overflow-hidden ${className}`}>
-      <div className="bg-amber-50 px-4 py-3 border-b border-amber-100">
-        <h3 className="font-bold text-gray-900">Pricing Calculator</h3>
-        <p className="text-xs text-gray-500 mt-0.5">Set your selling price and margin</p>
-      </div>
+    <div className={cn('card mb-6 overflow-hidden', className)}>
+      <h2 className="text-base font-semibold text-neutral-800 px-6 py-4 border-b border-neutral-100 flex items-center gap-2">
+        <Calculator size={16} className="text-neutral-500" />
+        Pricing Calculator
+      </h2>
+      <p className="text-xs text-neutral-500 px-6 pt-3">Set your selling price and margin</p>
 
-      <div className="p-4 space-y-4">
+      <div className="p-6 space-y-4">
         <div className="grid grid-cols-2 gap-3">
           <Input
             label="Target Margin (%)"
@@ -53,24 +56,27 @@ export const PricingCalculator: React.FC<PricingCalculatorProps> = ({
           />
         </div>
 
-        <dl className="space-y-2 text-sm">
+        <dl>
           {[
             { label: 'Cost per serving', value: fmt(costPerServing) },
             { label: 'Suggested price', value: fmt(suggestedPrice) },
             { label: 'Effective margin', value: `${effectiveMargin.toFixed(1)}%` },
             { label: 'Profit per serving', value: fmt(profit) },
           ].map(({ label, value }) => (
-            <div key={label} className="flex justify-between">
-              <dt className="text-gray-600">{label}</dt>
-              <dd className="font-medium text-gray-900">{value}</dd>
+            <div
+              key={label}
+              className="flex items-center justify-between py-2.5 border-b border-neutral-100 last:border-0 text-sm"
+            >
+              <dt className="text-neutral-600">{label}</dt>
+              <dd className="font-medium text-neutral-900">{value}</dd>
             </div>
           ))}
         </dl>
 
-        <div className="bg-amber-50 rounded-lg px-4 py-3 text-center">
-          <p className="text-xs text-gray-500 mb-0.5">Recommended selling price</p>
-          <p className="text-2xl font-bold text-amber-700">{fmt(effectivePrice)}</p>
-          <p className="text-xs text-gray-500">per serving</p>
+        <div className="bg-neutral-50 rounded-xl px-4 py-4 text-center border border-neutral-100">
+          <p className="text-xs text-neutral-500 mb-1">Recommended selling price</p>
+          <p className="text-2xl font-bold text-primary-500">{fmt(effectivePrice)}</p>
+          <p className="text-xs text-neutral-500 mt-0.5">per serving</p>
         </div>
       </div>
     </div>

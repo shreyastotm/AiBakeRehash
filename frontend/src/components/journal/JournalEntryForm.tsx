@@ -114,10 +114,11 @@ export const JournalEntryForm: React.FC<JournalEntryFormProps> = ({ recipeId, in
     };
 
     return (
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-8 bg-white p-6 rounded-xl border border-gray-200">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
 
-            <section className="space-y-4">
-                <h3 className="text-lg font-semibold text-gray-900 border-b border-gray-100 pb-2">Basic Info</h3>
+            {/* Basic Info */}
+            <div className="card mb-6 p-6">
+                <h3 className="text-base font-semibold text-neutral-900 mb-4 border-b border-neutral-100 pb-2">Basic Info</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <Input
                         label="Bake Date *"
@@ -133,10 +134,11 @@ export const JournalEntryForm: React.FC<JournalEntryFormProps> = ({ recipeId, in
                         error={errors.rating?.message}
                     />
                 </div>
-            </section>
+            </div>
 
-            <section className="space-y-4">
-                <h3 className="text-lg font-semibold text-gray-900 border-b border-gray-100 pb-2">Metrics</h3>
+            {/* Metrics */}
+            <div className="card mb-6 p-6">
+                <h3 className="text-base font-semibold text-neutral-900 mb-4 border-b border-neutral-100 pb-2">Metrics</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <Input
                         label="Pre-bake Weight (g)"
@@ -171,45 +173,46 @@ export const JournalEntryForm: React.FC<JournalEntryFormProps> = ({ recipeId, in
                                 size="sm"
                                 onClick={handleEstimateAw}
                                 disabled={estimateAwMutation.isPending}
-                                className="mb-[2px] text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+                                className="mb-[2px] text-accent-600 hover:text-accent-700 hover:bg-accent-50"
                             >
-                                {estimateAwMutation.isPending ? '...' : '✨ Auto-Estimate'}
+                                {estimateAwMutation.isPending ? '...' : 'Auto-Estimate'}
                             </Button>
                         </div>
                         {awExplanation && (
-                            <p className="text-xs text-amber-700 bg-amber-50 p-2 rounded-md border border-amber-100 italic">
+                            <p className="text-xs text-accent-700 bg-accent-50 p-2 rounded-md border border-accent-100 italic">
                                 {awExplanation}
                             </p>
                         )}
                     </div>
                 </div>
-            </section>
+            </div>
 
-            <section className="space-y-4">
-                <h3 className="text-lg font-semibold text-gray-900 border-b border-gray-100 pb-2">Notes & Media</h3>
+            {/* Notes & Media */}
+            <div className="card mb-6 p-6">
+                <h3 className="text-base font-semibold text-neutral-900 mb-4 border-b border-neutral-100 pb-2">Notes &amp; Media</h3>
 
-                <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">Public Notes</label>
+                <div className="space-y-2 mb-4">
+                    <label className="block text-sm font-medium text-neutral-700">Public Notes</label>
                     <textarea
-                        className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                        className="w-full border border-neutral-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                         rows={3}
                         placeholder="How did the bake turn out? Any modifications?"
                         {...register('notes')}
                     />
                 </div>
 
-                <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">Private Notes</label>
+                <div className="space-y-2 mb-4">
+                    <label className="block text-sm font-medium text-neutral-700">Private Notes</label>
                     <textarea
-                        className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                        className="w-full border border-neutral-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                         rows={2}
                         placeholder="Costing notes, secret adjustments, etc..."
                         {...register('private_notes')}
                     />
                 </div>
 
-                <div className="pt-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Photos</label>
+                <div className="pt-2 mb-4">
+                    <label className="block text-sm font-medium text-neutral-700 mb-2">Photos</label>
                     <ImageUpload
                         images={[]}
                         onFilesSelect={(files) => setImages(prev => [...prev, ...files])}
@@ -218,37 +221,39 @@ export const JournalEntryForm: React.FC<JournalEntryFormProps> = ({ recipeId, in
                 </div>
 
                 <div className="pt-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Audio Note</label>
+                    <label className="block text-sm font-medium text-neutral-700 mb-2">Audio Note</label>
                     <AudioRecorder
                         onRecordingComplete={(file, duration) => setAudioFile({ file, duration })}
                         disabled={isSubmitting}
                     />
                 </div>
-            </section>
+            </div>
 
-            <section className="bg-amber-50 rounded-lg p-4 border border-amber-200">
+            {/* Inventory deduction */}
+            <div className="card mb-6 p-6 bg-accent-50 border-accent-200">
                 <label className="flex items-center gap-3 cursor-pointer">
                     <input
                         type="checkbox"
-                        className="w-5 h-5 text-amber-600 rounded border-amber-300 focus:ring-amber-500"
+                        className="w-5 h-5 text-accent-600 rounded border-accent-300 focus:ring-accent-500"
                         {...register('deduct_inventory')}
                     />
                     <div>
-                        <span className="block text-sm font-medium text-amber-900">Deduct from inventory</span>
-                        <span className="block text-xs text-amber-700 mt-0.5">Automatically subtract these ingredients from your stock.</span>
+                        <span className="block text-sm font-medium text-neutral-900">Deduct from inventory</span>
+                        <span className="block text-xs text-neutral-600 mt-0.5">Automatically subtract these ingredients from your stock.</span>
                     </div>
                 </label>
-            </section>
+            </div>
 
-            <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+            {/* Form actions */}
+            <div className="flex flex-col gap-3 pt-4 border-t border-neutral-100">
+                <Button type="submit" variant="primary" size="lg" loading={isSubmitting} fullWidth>
+                    {isEdit ? 'Save Changes' : 'Save Journal Entry'}
+                </Button>
                 <Button variant="ghost" type="button" onClick={() => navigate(-1)} disabled={isSubmitting}>
                     Cancel
-                </Button>
-                <Button type="submit" disabled={isSubmitting} loading={isSubmitting}>
-                    Save Journal Entry
                 </Button>
             </div>
 
         </form>
-    )
-}
+    );
+};

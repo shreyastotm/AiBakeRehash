@@ -1,40 +1,54 @@
 import React from 'react'
+import { cn } from '../../utils/cn'
 
 interface LoadingSpinnerProps {
-  size?: 'sm' | 'md' | 'lg'
+  size?: 'sm' | 'md' | 'lg' | 'xl'
   label?: string
   fullScreen?: boolean
+  className?: string
+}
+
+const sizeClasses = {
+  sm:  'w-4 h-4 border-2',
+  md:  'w-8 h-8 border-[3px]',
+  lg:  'w-12 h-12 border-4',
+  xl:  'w-16 h-16 border-4',
 }
 
 export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
   size = 'md',
   label,
   fullScreen = false,
+  className,
 }) => {
-  const sizeClasses = {
-    sm: 'w-4 h-4 border-2',
-    md: 'w-8 h-8 border-4',
-    lg: 'w-12 h-12 border-4',
-  }
-
   const spinner = (
-    <div className="flex flex-col items-center justify-center gap-2">
+    <div className={cn('flex flex-col items-center justify-center gap-3', className)}>
       <div
         role="status"
         aria-label={label ?? 'Loading'}
-        className={`${sizeClasses[size]} border-gray-200 border-t-primary rounded-full animate-spin`}
+        className={cn(
+          'rounded-full animate-spin',
+          'border-neutral-200 border-t-primary-500',
+          sizeClasses[size],
+        )}
       />
-      {label && <span className="text-sm text-gray-500">{label}</span>}
+      {label && (
+        <span className="text-sm text-neutral-500 font-medium">{label}</span>
+      )}
     </div>
   )
 
   if (fullScreen) {
     return (
-      <div className="fixed inset-0 flex items-center justify-center bg-white/70 z-50">
+      <div className="fixed inset-0 flex items-center justify-center bg-white/75 backdrop-blur-sm z-modal">
         {spinner}
       </div>
     )
   }
 
-  return <div className="flex justify-center items-center p-4">{spinner}</div>
+  return (
+    <div className="flex justify-center items-center p-8">
+      {spinner}
+    </div>
+  )
 }

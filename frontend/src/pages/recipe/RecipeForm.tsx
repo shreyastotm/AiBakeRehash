@@ -154,11 +154,11 @@ const StepIndicator = ({ steps, current, onStepClick }: StepIndicatorProps) => (
                             ? 'bg-amber-600 text-white'
                             : done
                                 ? 'text-amber-700 hover:bg-amber-50'
-                                : 'text-gray-400'
+                                : 'text-neutral-400'
                             }`}
                     >
                         <span
-                            className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${active ? 'bg-white text-amber-600' : done ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-400'
+                            className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${active ? 'bg-white text-amber-600' : done ? 'bg-amber-100 text-amber-700' : 'bg-neutral-100 text-neutral-400'
                                 }`}
                         >
                             {done ? '✓' : i + 1}
@@ -166,7 +166,7 @@ const StepIndicator = ({ steps, current, onStepClick }: StepIndicatorProps) => (
                         {label}
                     </button>
                     {i < steps.length - 1 && (
-                        <span className="flex-1 h-px bg-gray-200 mx-1" aria-hidden="true" />
+                        <span className="flex-1 h-px bg-neutral-200 mx-1" aria-hidden="true" />
                     )}
                 </React.Fragment>
             )
@@ -179,7 +179,7 @@ const StepIndicator = ({ steps, current, onStepClick }: StepIndicatorProps) => (
 const AutoSaveIndicator = ({ lastSaved }: { lastSaved: Date | null }) => {
     if (!lastSaved) return null
     return (
-        <span className="text-xs text-gray-400" aria-live="polite">
+        <span className="text-xs text-neutral-400" aria-live="polite">
             Saved {lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
         </span>
     )
@@ -242,7 +242,7 @@ const IngredientRow = ({
             onDragStart={() => onDragStart(index)}
             onDragOver={(e) => { e.preventDefault(); onDragOver(index) }}
             onDrop={onDrop}
-            className={`flex flex-col gap-3 p-4 rounded-xl border transition-all ${isDragging ? 'border-amber-400 bg-amber-50 shadow-md' : 'border-gray-200 bg-white hover:border-amber-200'
+            className={`flex flex-col gap-3 p-4 rounded-xl border transition-all ${isDragging ? 'border-amber-400 bg-amber-50 shadow-md' : 'border-neutral-200 bg-white hover:border-amber-200'
                 }`}
             aria-label={`Ingredient ${index + 1}`}
         >
@@ -251,7 +251,7 @@ const IngredientRow = ({
                 <button
                     type="button"
                     aria-label="Drag to reorder"
-                    className="mt-3 cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-500 shrink-0"
+                    className="mt-3 cursor-grab active:cursor-grabbing text-neutral-300 hover:text-neutral-500 shrink-0"
                 >
                     ⠿
                 </button>
@@ -299,7 +299,7 @@ const IngredientRow = ({
                         placeholder="Unit"
                     />
                     {ingredient.ingredient_master_id && ingredient.quantity_grams > 0 && ingredient.unit_original !== 'g' && (
-                        <div className="text-[10px] text-gray-400 mt-1 pl-1">
+                        <div className="text-[10px] text-neutral-400 mt-1 pl-1">
                             ≈ {Math.round(ingredient.quantity_grams)}g
                         </div>
                     )}
@@ -310,7 +310,7 @@ const IngredientRow = ({
                     type="button"
                     onClick={() => onRemove(index)}
                     aria-label={`Remove ingredient ${index + 1}`}
-                    className="mt-2 text-gray-300 hover:text-red-500 transition-colors shrink-0 min-w-[44px] min-h-[44px] flex items-center justify-center"
+                    className="mt-2 text-neutral-300 hover:text-red-500 transition-colors shrink-0 min-w-[44px] min-h-[44px] flex items-center justify-center"
                 >
                     ✕
                 </button>
@@ -386,7 +386,7 @@ interface StepRowProps {
 }
 
 const StepRow = ({ step, stepIndex, sectionIndex, onChange, onRemove }: StepRowProps) => (
-    <div className="flex gap-2 items-start p-3 rounded-lg border border-gray-100 bg-gray-50">
+    <div className="flex gap-2 items-start p-3 rounded-lg border border-neutral-100 bg-neutral-50">
         <span className="mt-3 w-6 h-6 rounded-full bg-amber-100 text-amber-700 text-xs font-bold flex items-center justify-center shrink-0">
             {stepIndex + 1}
         </span>
@@ -430,7 +430,7 @@ const StepRow = ({ step, stepIndex, sectionIndex, onChange, onRemove }: StepRowP
             type="button"
             onClick={() => onRemove(sectionIndex, stepIndex)}
             aria-label={`Remove step ${stepIndex + 1}`}
-            className="mt-2 text-gray-300 hover:text-red-500 transition-colors shrink-0 min-w-[44px] min-h-[44px] flex items-center justify-center"
+            className="mt-2 text-neutral-300 hover:text-red-500 transition-colors shrink-0 min-w-[44px] min-h-[44px] flex items-center justify-center"
         >
             ✕
         </button>
@@ -1098,12 +1098,12 @@ export const RecipeForm = () => {
     return (
         <div className="container mx-auto px-4 py-6 max-w-3xl">
             {/* Page header */}
-            <div className="flex items-center justify-between mb-6">
+            <div className="page-header mb-6">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900">
+                    <h1 className="text-2xl font-bold text-neutral-900">
                         {isEditing ? 'Edit Recipe' : 'New Recipe'}
                     </h1>
-                    <p className="text-sm text-gray-500 mt-0.5">
+                    <p className="text-sm text-neutral-500 mt-0.5">
                         {isEditing ? 'Update your recipe details below' : 'Fill in the details to create your recipe'}
                     </p>
                 </div>
@@ -1132,13 +1132,13 @@ export const RecipeForm = () => {
             <StepIndicator steps={STEPS} current={step} onStepClick={goToStep} />
 
             {/* Step content */}
-            <div className="bg-white rounded-xl border border-gray-100 p-6 shadow-sm">
+            <div className="card mb-6 p-6">
 
                 {/* ── Step 0: Details ─────────────────────────────────────────── */}
                 {step === 0 && (
                     <div className="space-y-5">
                         <div>
-                            <label htmlFor="recipe-title" className="block text-sm font-medium text-gray-700 mb-1">
+                            <label htmlFor="recipe-title" className="block text-sm font-medium text-neutral-700 mb-1">
                                 Recipe Title <span className="text-red-500">*</span>
                             </label>
                             <Input
@@ -1158,7 +1158,7 @@ export const RecipeForm = () => {
                         </div>
 
                         <div>
-                            <label htmlFor="recipe-description" className="block text-sm font-medium text-gray-700 mb-1">
+                            <label htmlFor="recipe-description" className="block text-sm font-medium text-neutral-700 mb-1">
                                 Description
                             </label>
                             <Textarea
@@ -1173,7 +1173,7 @@ export const RecipeForm = () => {
 
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label htmlFor="original-author" className="block text-sm font-medium text-gray-700 mb-1">
+                                <label htmlFor="original-author" className="block text-sm font-medium text-neutral-700 mb-1">
                                     Original Author (Optional)
                                 </label>
                                 <Input
@@ -1185,7 +1185,7 @@ export const RecipeForm = () => {
                                 />
                             </div>
                             <div>
-                                <label htmlFor="original-author-url" className="block text-sm font-medium text-gray-700 mb-1">
+                                <label htmlFor="original-author-url" className="block text-sm font-medium text-neutral-700 mb-1">
                                     Source URL (Optional)
                                 </label>
                                 <Input
@@ -1211,7 +1211,7 @@ export const RecipeForm = () => {
 
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label htmlFor="recipe-servings" className="block text-sm font-medium text-gray-700 mb-1">
+                                <label htmlFor="recipe-servings" className="block text-sm font-medium text-neutral-700 mb-1">
                                     Servings <span className="text-red-500">*</span>
                                 </label>
                                 <Input
@@ -1234,7 +1234,7 @@ export const RecipeForm = () => {
 
                             <div>
                                 <label htmlFor="recipe-yield" className="flex justify-between items-end mb-1">
-                                    <span className="block text-sm font-medium text-gray-700">Yield Weight (g) <span className="text-gray-400 font-normal text-xs ml-1">(Optional)</span></span>
+                                    <span className="block text-sm font-medium text-neutral-700">Yield Weight (g) <span className="text-neutral-400 font-normal text-xs ml-1">(Optional)</span></span>
                                     {form.ingredients.length > 0 && (
                                         <button
                                             type="button"
@@ -1268,7 +1268,7 @@ export const RecipeForm = () => {
 
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                                <label className="block text-sm font-medium text-neutral-700 mb-1">Status</label>
                                 <Select
                                     options={STATUS_OPTIONS}
                                     value={form.status}
@@ -1276,7 +1276,7 @@ export const RecipeForm = () => {
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Unit System</label>
+                                <label className="block text-sm font-medium text-neutral-700 mb-1">Unit System</label>
                                 <Select
                                     options={UNIT_SYSTEM_OPTIONS}
                                     value={form.preferred_unit_system}
@@ -1292,7 +1292,7 @@ export const RecipeForm = () => {
                     <div className="space-y-4">
                         <div className="flex items-center justify-between mb-2">
                             <div className="flex items-center gap-3">
-                                <h2 className="text-base font-semibold text-gray-800">Ingredients</h2>
+                                <h2 className="text-base font-semibold text-neutral-800">Ingredients</h2>
                                 <Button
                                     type="button"
                                     variant="outline"
@@ -1304,11 +1304,11 @@ export const RecipeForm = () => {
                                     ✨ Auto-Map & Normalize
                                 </Button>
                             </div>
-                            <span className="text-sm text-gray-400">{form.ingredients.length} added</span>
+                            <span className="text-sm text-neutral-400">{form.ingredients.length} added</span>
                         </div>
 
                         {form.ingredients.length === 0 && (
-                            <div className="text-center py-10 text-gray-400">
+                            <div className="text-center py-10 text-neutral-400">
                                 <p className="text-4xl mb-3">🧂</p>
                                 <p className="text-sm">No ingredients yet. Add your first one below.</p>
                             </div>
@@ -1344,13 +1344,13 @@ export const RecipeForm = () => {
                             + Add Ingredient
                         </Button>
 
-                        <div className="flex justify-between items-center bg-gray-50 border border-gray-200 rounded-xl p-4 shadow-sm">
+                        <div className="flex justify-between items-center bg-neutral-50 border border-neutral-200 rounded-xl p-4 shadow-sm">
                             <div>
-                                <h3 className="text-sm font-semibold text-gray-800">Total Raw Weight</h3>
-                                <p className="text-xs text-gray-500">Sum of all ingredients added</p>
+                                <h3 className="text-sm font-semibold text-neutral-800">Total Raw Weight</h3>
+                                <p className="text-xs text-neutral-500">Sum of all ingredients added</p>
                             </div>
                             <div className="flex items-center gap-4">
-                                <span className="text-lg font-bold text-gray-900">{calculateTotalWeight()}g</span>
+                                <span className="text-lg font-bold text-neutral-900">{calculateTotalWeight()}g</span>
                                 <Button
                                     type="button"
                                     variant="outline"
@@ -1372,12 +1372,12 @@ export const RecipeForm = () => {
                 {step === 2 && (
                     <div className="space-y-4">
                         <div className="flex items-center justify-between mb-2">
-                            <h2 className="text-base font-semibold text-gray-800">Instructions</h2>
-                            <span className="text-sm text-gray-400">{form.sections.length} section{form.sections.length !== 1 ? 's' : ''}</span>
+                            <h2 className="text-base font-semibold text-neutral-800">Instructions</h2>
+                            <span className="text-sm text-neutral-400">{form.sections.length} section{form.sections.length !== 1 ? 's' : ''}</span>
                         </div>
 
                         {form.sections.length === 0 && (
-                            <div className="text-center py-10 text-gray-400">
+                            <div className="text-center py-10 text-neutral-400">
                                 <p className="text-4xl mb-3">📋</p>
                                 <p className="text-sm">No sections yet. Add a section to start writing instructions.</p>
                             </div>
@@ -1385,7 +1385,7 @@ export const RecipeForm = () => {
 
                         <div className="space-y-6">
                             {form.sections.map((section, si) => (
-                                <div key={section._key} className="rounded-xl border border-gray-200 p-4 space-y-3">
+                                <div key={section._key} className="rounded-xl border border-neutral-200 p-4 space-y-3">
                                     {/* Section header */}
                                     <div className="flex items-center gap-3">
                                         <div className="w-36 shrink-0">
@@ -1407,7 +1407,7 @@ export const RecipeForm = () => {
                                             type="button"
                                             onClick={() => removeSection(si)}
                                             aria-label={`Remove section ${si + 1}`}
-                                            className="text-gray-300 hover:text-red-500 transition-colors shrink-0 min-w-[44px] min-h-[44px] flex items-center justify-center"
+                                            className="text-neutral-300 hover:text-red-500 transition-colors shrink-0 min-w-[44px] min-h-[44px] flex items-center justify-center"
                                         >
                                             ✕
                                         </button>
@@ -1469,19 +1469,18 @@ export const RecipeForm = () => {
                 )}
 
                 {step < STEPS.length - 1 ? (
-                    <Button onClick={goNext} disabled={isPending}>
+                    <Button variant="primary" onClick={goNext} disabled={isPending}>
                         Next: {STEPS[step + 1]} →
                     </Button>
                 ) : (
-                    <Button onClick={handleSubmit} disabled={isPending}>
-                        {isPending ? (
-                            <span className="flex items-center gap-2">
-                                <LoadingSpinner size="sm" />
-                                {isEditing ? 'Saving…' : 'Creating…'}
-                            </span>
-                        ) : (
-                            isEditing ? 'Save Changes' : 'Create Recipe'
-                        )}
+                    <Button
+                        variant="primary"
+                        size="lg"
+                        onClick={handleSubmit}
+                        loading={isPending}
+                        disabled={isPending}
+                    >
+                        {isEditing ? 'Save Changes' : 'Create Recipe'}
                     </Button>
                 )}
             </div>

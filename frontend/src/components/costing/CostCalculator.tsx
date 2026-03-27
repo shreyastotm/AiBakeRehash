@@ -1,4 +1,7 @@
 import React from 'react'
+import { IndianRupee } from 'lucide-react'
+import { ProgressBar } from '../common/ProgressBar'
+import { cn } from '../../utils/cn'
 
 export interface IngredientCost {
   ingredient_name: string
@@ -28,24 +31,30 @@ export const CostCalculator: React.FC<CostCalculatorProps> = ({ breakdown, class
   const ingredientTotal = breakdown.ingredients.reduce((s, i) => s + i.cost, 0)
 
   return (
-    <div className={`bg-white rounded-lg border border-gray-200 overflow-hidden ${className}`}>
-      <div className="bg-amber-50 px-4 py-3 border-b border-amber-100">
-        <h3 className="font-bold text-gray-900">Cost Breakdown</h3>
-      </div>
+    <div className={cn('card mb-6 overflow-hidden', className)}>
+      <h2 className="text-base font-semibold text-neutral-800 px-6 py-4 border-b border-neutral-100 flex items-center gap-2">
+        <IndianRupee size={16} className="text-neutral-500" />
+        Cost Breakdown
+      </h2>
 
-      <div className="p-4 space-y-4">
+      <div className="p-6 space-y-4">
         {/* Ingredient costs */}
         <section aria-label="Ingredient costs">
-          <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Ingredients</h4>
-          <ul className="space-y-1" role="list">
+          <h4 className="text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-2">
+            Ingredients
+          </h4>
+          <ul role="list">
             {breakdown.ingredients.map((item, i) => (
-              <li key={i} className="flex justify-between text-sm">
-                <span className="text-gray-700 truncate flex-1 mr-2">{item.ingredient_name}</span>
-                <span className="text-gray-900 font-medium shrink-0">{fmt(item.cost)}</span>
+              <li
+                key={i}
+                className="flex items-center justify-between py-2.5 border-b border-neutral-100 last:border-0 text-sm"
+              >
+                <span className="text-neutral-700 truncate flex-1 mr-2">{item.ingredient_name}</span>
+                <span className="text-neutral-900 font-medium shrink-0">{fmt(item.cost)}</span>
               </li>
             ))}
           </ul>
-          <div className="flex justify-between text-sm font-semibold border-t border-gray-100 pt-2 mt-2">
+          <div className="flex items-center justify-between pt-3 font-semibold text-neutral-900">
             <span>Ingredient subtotal</span>
             <span>{fmt(ingredientTotal)}</span>
           </div>
@@ -53,28 +62,33 @@ export const CostCalculator: React.FC<CostCalculatorProps> = ({ breakdown, class
 
         {/* Other costs */}
         <section aria-label="Other costs">
-          <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Other Costs</h4>
-          <ul className="space-y-1" role="list">
+          <h4 className="text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-2">
+            Other Costs
+          </h4>
+          <ul role="list">
             {[
               { label: 'Overhead', value: breakdown.overhead_cost },
               { label: 'Packaging', value: breakdown.packaging_cost },
               { label: 'Labour', value: breakdown.labor_cost },
             ].map(({ label, value }) => (
-              <li key={label} className="flex justify-between text-sm">
-                <span className="text-gray-700">{label}</span>
-                <span className="text-gray-900">{fmt(value)}</span>
+              <li
+                key={label}
+                className="flex items-center justify-between py-2.5 border-b border-neutral-100 last:border-0 text-sm"
+              >
+                <span className="text-neutral-700">{label}</span>
+                <span className="text-neutral-900">{fmt(value)}</span>
               </li>
             ))}
           </ul>
         </section>
 
         {/* Totals */}
-        <div className="border-t-2 border-gray-200 pt-3 space-y-1">
-          <div className="flex justify-between font-bold text-base">
+        <div className="border-t-2 border-neutral-200 pt-3 space-y-1">
+          <div className="flex items-center justify-between pt-3 font-semibold text-neutral-900">
             <span>Total Cost</span>
-            <span className="text-amber-700">{fmt(breakdown.total_cost)}</span>
+            <span className="text-primary-500">{fmt(breakdown.total_cost)}</span>
           </div>
-          <div className="flex justify-between text-sm text-gray-500">
+          <div className="flex justify-between text-sm text-neutral-500">
             <span>Per serving ({breakdown.servings} servings)</span>
             <span>{fmt(breakdown.cost_per_serving)}</span>
           </div>

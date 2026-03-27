@@ -4,6 +4,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useRecipe, useDeleteRecipe, useRecipeVersions, useRecipeNutrition, useScaleRecipe, useCalculateNutrition } from '../../hooks/useRecipes'
 import { MEDIA_BASE_URL } from '../../services/api'
 import { userTagService, type RecipeVersion, type UserTag } from '../../services/recipe.service'
+import { cn } from '../../utils/cn'
 
 import { useJournalEntries, useEstimateWaterActivity } from '../../hooks/useJournalEntries'
 import { LabelDesigner } from '../../components/label/LabelDesigner'
@@ -35,7 +36,7 @@ const sourceLabels: Record<string, string> = {
 }
 
 const TAG_COLORS: Record<string, { bg: string, text: string }> = {
-  gray: { bg: 'bg-gray-100', text: 'text-gray-700' },
+  gray: { bg: 'bg-neutral-100', text: 'text-neutral-700' },
   amber: { bg: 'bg-amber-100', text: 'text-amber-700' },
   blue: { bg: 'bg-blue-100', text: 'text-blue-700' },
   emerald: { bg: 'bg-emerald-100', text: 'text-emerald-700' },
@@ -54,9 +55,9 @@ interface StatCardProps {
 }
 
 const StatCard = ({ label, value }: StatCardProps) => (
-  <div className="bg-white rounded-xl border border-gray-100 p-4 text-center">
-    <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">{label}</p>
-    <p className="text-xl font-bold text-gray-900">{value}</p>
+  <div className="card p-4 text-center">
+    <p className="text-xs text-neutral-500 uppercase tracking-wide mb-1">{label}</p>
+    <p className="text-xl font-bold text-neutral-900">{value}</p>
   </div>
 )
 
@@ -68,16 +69,16 @@ interface VersionRowProps {
 }
 
 const VersionRow = ({ version, formatDate }: VersionRowProps) => (
-  <li className="flex items-start justify-between gap-3 py-2.5 border-b border-gray-50 last:border-0">
+  <li className="flex items-start justify-between gap-3 py-2.5 border-b border-neutral-50 last:border-0">
     <div className="flex items-center gap-2">
       <span className="flex-shrink-0 w-7 h-7 rounded-full bg-amber-100 text-amber-700 text-xs font-bold flex items-center justify-center">
         v{version.version_number}
       </span>
-      <span className="text-sm text-gray-700">
+      <span className="text-sm text-neutral-700">
         {version.change_summary || 'No description'}
       </span>
     </div>
-    <span className="text-xs text-gray-400 shrink-0 mt-0.5">
+    <span className="text-xs text-neutral-400 shrink-0 mt-0.5">
       {formatDate(version.created_at, 'PP')}
     </span>
   </li>
@@ -103,11 +104,9 @@ const BakingInfo = ({ waterActivity, minSafeWaterActivity, shelfLifeDays, hydrat
   if (!hasAny) return null
 
   return (
-    <section aria-labelledby="baking-info-heading" className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
-      <div className="flex items-center justify-between mb-5">
-        <h2 id="baking-info-heading" className="text-base font-semibold text-gray-900">
-          Advanced Baking Info
-        </h2>
+    <section aria-labelledby="baking-info-heading" className="card mb-6 p-5">
+      <h2 id="baking-info-heading" className="text-base font-semibold text-neutral-800 px-0 py-0 border-b border-neutral-100 pb-4 mb-5 flex items-center justify-between">
+        <span>Advanced Baking Info</span>
         <div className="flex items-center gap-3">
           {onRefresh && (
             <button
@@ -119,18 +118,18 @@ const BakingInfo = ({ waterActivity, minSafeWaterActivity, shelfLifeDays, hydrat
             </button>
           )}
           <Tooltip content="AI estimates are for guidance only. Actual shelf life may vary based on hygiene, storage conditions, and ambient humidity. Use as a guide, not a certified lab result.">
-            <span className="text-[10px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded cursor-help flex items-center gap-1 font-medium italic">
-              <span>✨ AI Powered</span>
-              <span className="w-3 h-3 border border-gray-300 rounded-full flex items-center justify-center text-[8px] not-italic">i</span>
+            <span className="text-[10px] bg-neutral-100 text-neutral-500 px-2 py-0.5 rounded cursor-help flex items-center gap-1 font-medium italic">
+              <span>AI Powered</span>
+              <span className="w-3 h-3 border border-neutral-300 rounded-full flex items-center justify-center text-[8px] not-italic">i</span>
             </span>
           </Tooltip>
         </div>
-      </div>
+      </h2>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-6">
         {hydrationPercentage != null && (
           <div className="flex flex-col gap-1">
-            <dt className="text-[10px] font-semibold text-gray-400 uppercase tracking-tight">Hydration Percentage</dt>
+            <dt className="text-[10px] font-semibold text-neutral-400 uppercase tracking-tight">Hydration Percentage</dt>
             <dd className="text-xl font-bold text-amber-600">{(Number(hydrationPercentage) || 0).toFixed(1)}%</dd>
           </div>
         )}
@@ -158,14 +157,14 @@ const BakingInfo = ({ waterActivity, minSafeWaterActivity, shelfLifeDays, hydrat
 
         {minSafeWaterActivity != null && (
           <div className="flex flex-col gap-1 opacity-60">
-            <dt className="text-[10px] font-semibold text-gray-400 uppercase tracking-tight">System Safe aw Limit</dt>
-            <dd className="text-sm font-bold text-gray-700">{(Number(minSafeWaterActivity) || 0).toFixed(2)}</dd>
+            <dt className="text-[10px] font-semibold text-neutral-400 uppercase tracking-tight">System Safe aw Limit</dt>
+            <dd className="text-sm font-bold text-neutral-700">{(Number(minSafeWaterActivity) || 0).toFixed(2)}</dd>
           </div>
         )}
       </div>
 
       {explanation && (
-        <div className="mt-6 pt-4 border-t border-gray-50 italic text-[11px] text-gray-400 leading-relaxed">
+        <div className="mt-6 pt-4 border-t border-neutral-50 italic text-[11px] text-neutral-400 leading-relaxed">
           <strong>Observation:</strong> {explanation}
         </div>
       )}
@@ -183,32 +182,30 @@ interface BakeHistoryProps {
 const BakeHistory = ({ recipeId, formatDate }: BakeHistoryProps) => {
   const { data: bakes, isLoading } = useJournalEntries(recipeId)
 
-  if (isLoading) return <div className="py-4 text-center text-gray-400">Loading bakes...</div>
+  if (isLoading) return <div className="py-4 text-center text-neutral-400">Loading bakes...</div>
   if (!bakes || bakes.length === 0) return null
 
   return (
-    <section aria-labelledby="bakes-heading" className="bg-white rounded-xl border border-gray-100 p-5">
-      <div className="flex items-center justify-between mb-4">
-        <h2 id="bakes-heading" className="text-base font-semibold text-gray-900">
-          Bake History
-        </h2>
+    <section aria-labelledby="bakes-heading" className="card mb-6">
+      <h2 id="bakes-heading" className="text-base font-semibold text-neutral-800 px-6 py-4 border-b border-neutral-100 flex items-center justify-between">
+        <span>Bake History</span>
         <Link
           to={`/recipes/${recipeId}/journal`}
           className="text-sm text-amber-600 hover:text-amber-700 font-medium"
         >
           View All →
         </Link>
-      </div>
-      <div className="space-y-3">
+      </h2>
+      <div className="space-y-3 p-5">
         {bakes.slice(0, 5).map((bake) => (
           <Link
             key={bake.id}
             to={`/recipes/${recipeId}/journal/${bake.id}`}
-            className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 border border-transparent hover:border-gray-100 transition-all group"
+            className="flex items-center justify-between p-3 rounded-lg hover:bg-neutral-50 border border-transparent hover:border-neutral-100 transition-all group"
           >
             <div className="flex items-center gap-3">
               {bake.images && bake.images.length > 0 ? (
-                <div className="w-10 h-10 rounded bg-gray-100 overflow-hidden border border-gray-100 shrink-0">
+                <div className="w-10 h-10 rounded bg-neutral-100 overflow-hidden border border-neutral-100 shrink-0">
                   <img
                     src={bake.images[0].startsWith('http') ? bake.images[0] : `${MEDIA_BASE_URL}${bake.images[0]}`}
                     alt=""
@@ -223,15 +220,15 @@ const BakeHistory = ({ recipeId, formatDate }: BakeHistoryProps) => {
                 </div>
               )}
               <div className="min-w-0">
-                <p className="text-sm font-medium text-gray-900 group-hover:text-amber-700 transition-colors truncate">
+                <p className="text-sm font-medium text-neutral-900 group-hover:text-amber-700 transition-colors truncate">
                   {bake.rating ? `★ ${bake.rating}/5` : 'No rating'}
                 </p>
-                <p className="text-xs text-gray-500 line-clamp-1">
+                <p className="text-xs text-neutral-500 line-clamp-1">
                   {bake.notes || 'No notes recorded'}
                 </p>
               </div>
             </div>
-            <span className="text-gray-300 group-hover:text-amber-400 transition-colors ml-2">→</span>
+            <span className="text-neutral-300 group-hover:text-amber-400 transition-colors ml-2">→</span>
           </Link>
         ))}
       </div>
@@ -304,7 +301,7 @@ export const RecipeDetail = () => {
     return (
       <div className="container mx-auto px-4 py-12 max-w-3xl text-center">
         <p className="text-red-600 font-medium mb-2">Failed to load recipe</p>
-        <p className="text-gray-500 text-sm mb-4">{(error as Error)?.message}</p>
+        <p className="text-neutral-500 text-sm mb-4">{(error as Error)?.message}</p>
         <Button variant="ghost" onClick={() => navigate('/recipes')}>← Back to recipes</Button>
       </div>
     )
@@ -313,7 +310,7 @@ export const RecipeDetail = () => {
   if (!recipe) {
     return (
       <div className="container mx-auto px-4 py-12 max-w-3xl text-center">
-        <p className="text-gray-500 mb-4">Recipe not found.</p>
+        <p className="text-neutral-500 mb-4">Recipe not found.</p>
         <Button variant="ghost" onClick={() => navigate('/recipes')}>← Back to recipes</Button>
       </div>
     )
@@ -355,14 +352,14 @@ export const RecipeDetail = () => {
     <div className="container mx-auto px-4 py-6 max-w-4xl space-y-6">
 
       {/* ── Breadcrumb ── */}
-      <nav aria-label="Breadcrumb" className="text-sm text-gray-500">
+      <nav aria-label="Breadcrumb" className="text-sm text-neutral-500">
         <Link to="/recipes" className="hover:text-amber-700 transition-colors">Recipes</Link>
         <span className="mx-2" aria-hidden="true">/</span>
-        <span className="text-gray-900 font-medium">{recipe.title}</span>
+        <span className="text-neutral-900 font-medium">{recipe.title}</span>
       </nav>
 
       {/* ── Header ── */}
-      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+      <div className="page-header">
         <div className="flex-1 min-w-0">
           <div className="flex flex-wrap items-center gap-2 mb-2">
             <Badge variant={statusVariant[recipe.status]} size="sm">
@@ -379,21 +376,21 @@ export const RecipeDetail = () => {
                   key={tag}
                   variant="default"
                   size="sm"
-                  className={`border-none shadow-sm ${color.bg} ${color.text}`}
+                  className={cn('border-none shadow-sm', color.bg, color.text)}
                 >
                   {tag}
                 </Badge>
               )
             })}
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 leading-tight">
+          <h1 className="text-2xl sm:text-3xl font-bold text-neutral-900 leading-tight">
             {recipe.title}
           </h1>
           {recipe.description && (
-            <p className="text-gray-600 mt-2 leading-relaxed">{recipe.description}</p>
+            <p className="text-neutral-600 mt-2 leading-relaxed">{recipe.description}</p>
           )}
           {(recipe.original_author || recipe.source_url) && (
-            <p className="text-sm text-gray-400 mt-1">
+            <p className="text-sm text-neutral-400 mt-1">
               {recipe.original_author && <span>By {recipe.original_author}</span>}
               {recipe.source_url && (
                 <a
@@ -415,18 +412,18 @@ export const RecipeDetail = () => {
             size="sm"
             onClick={() => navigate(`/recipes/${id}/journal/new`)}
           >
-            ➕ Log Bake
+            Log Bake
           </Button>
           <Button
-            variant="ghost"
+            variant="outline"
             size="sm"
             onClick={() => setShowScaling((v) => !v)}
             aria-expanded={showScaling}
           >
-            ⚖ Scale
+            Scale
           </Button>
           <Button
-            variant="secondary"
+            variant="outline"
             size="sm"
             onClick={() => navigate(`/recipes/${id}/edit`)}
           >
@@ -445,7 +442,7 @@ export const RecipeDetail = () => {
             className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
             onClick={() => setShowLabelDesigner(true)}
           >
-            🏷 FSSAI Label
+            FSSAI Label
           </Button>
         </div>
       </div>
@@ -476,51 +473,53 @@ export const RecipeDetail = () => {
       )}
 
       {/* ── Ingredients ── */}
-      <section aria-labelledby="ingredients-heading" className="bg-white rounded-xl border border-gray-100 p-5">
-        <div className="flex items-center justify-between mb-4">
-          <h2 id="ingredients-heading" className="text-base font-semibold text-gray-900">
+      <section aria-labelledby="ingredients-heading" className="card mb-6">
+        <h2 id="ingredients-heading" className="text-base font-semibold text-neutral-800 px-6 py-4 border-b border-neutral-100 flex items-center justify-between">
+          <span>
             {t('recipes.ingredients', 'Ingredients')}
             {scalingFactor !== 1 && (
               <span className="ml-2 text-sm font-normal text-amber-600">
                 ({scalingFactor.toFixed(2)}×)
               </span>
             )}
-          </h2>
-          <span className="text-sm text-gray-400">{recipe.ingredients.length} items</span>
+          </span>
+          <span className="text-sm text-neutral-400">{recipe.ingredients.length} items</span>
+        </h2>
+        <div className="p-5">
+          <IngredientList
+            ingredients={recipe.ingredients}
+            scalingFactor={scalingFactor}
+            showGrams={recipe.preferred_unit_system !== 'metric'}
+          />
         </div>
-        <IngredientList
-          ingredients={recipe.ingredients}
-          scalingFactor={scalingFactor}
-          showGrams={recipe.preferred_unit_system !== 'metric'}
-        />
       </section>
 
       {/* ── Steps ── */}
       {recipe.sections && recipe.sections.length > 0 && (
-        <section aria-labelledby="steps-heading" className="bg-white rounded-xl border border-gray-100 p-5">
-          <h2 id="steps-heading" className="text-base font-semibold text-gray-900 mb-4">
+        <section aria-labelledby="steps-heading" className="card mb-6">
+          <h2 id="steps-heading" className="text-base font-semibold text-neutral-800 px-6 py-4 border-b border-neutral-100">
             {t('recipes.instructions', 'Instructions')}
           </h2>
-          <StepList
-            sections={recipe.sections.map((s) => ({
-              ...s,
-              title: s.title ?? s.type,
-              steps: s.steps.map((step) => ({
-                ...step,
-                section_id: step.section_id ?? undefined,
-              })),
-            }))}
-          />
+          <div className="p-5">
+            <StepList
+              sections={recipe.sections.map((s) => ({
+                ...s,
+                title: s.title ?? s.type,
+                steps: s.steps.map((step) => ({
+                  ...step,
+                  section_id: step.section_id ?? undefined,
+                })),
+              }))}
+            />
+          </div>
         </section>
       )}
 
       {/* ── Nutrition ── */}
       {nutrition ? (
-        <section aria-labelledby="nutrition-heading">
-          <div className="flex items-center justify-between mb-4">
-            <h2 id="nutrition-heading" className="text-base font-semibold text-gray-900">
-              {t('recipes.nutritionFacts', 'Nutrition Facts')}
-            </h2>
+        <section aria-labelledby="nutrition-heading" className="card mb-6">
+          <h2 id="nutrition-heading" className="text-base font-semibold text-neutral-800 px-6 py-4 border-b border-neutral-100 flex items-center justify-between">
+            <span>{t('recipes.nutritionFacts', 'Nutrition Facts')}</span>
             <button
               onClick={handleCalculateNutrition}
               disabled={calculateNutrition.isPending}
@@ -528,15 +527,17 @@ export const RecipeDetail = () => {
             >
               <span className={calculateNutrition.isPending ? 'animate-spin' : ''}>↻</span> Refresh
             </button>
+          </h2>
+          <div className="p-5">
+            <NutritionDisplay nutrition={nutrition} />
           </div>
-          <NutritionDisplay nutrition={nutrition} />
         </section>
       ) : (
-        <section aria-labelledby="nutrition-heading" className="bg-white rounded-xl border border-gray-100 p-5 text-center">
-          <h2 id="nutrition-heading" className="text-base font-semibold text-gray-900 mb-2">
+        <section aria-labelledby="nutrition-heading" className="card mb-6 p-5 text-center">
+          <h2 id="nutrition-heading" className="text-base font-semibold text-neutral-800 mb-2">
             Nutritional Information
           </h2>
-          <p className="text-sm text-gray-500 mb-4">
+          <p className="text-sm text-neutral-500 mb-4">
             AI can estimate the nutritional facts for your recipe based on its ingredients.
           </p>
           <Button
@@ -545,7 +546,7 @@ export const RecipeDetail = () => {
             onClick={handleCalculateNutrition}
             loading={calculateNutrition.isPending}
           >
-            ✨ Calculate with AI
+            Calculate with AI
           </Button>
         </section>
       )}
@@ -562,11 +563,11 @@ export const RecipeDetail = () => {
           refreshing={estimateAw.isPending}
         />
       ) : (
-        <section aria-labelledby="ai-baking-heading" className="bg-white rounded-xl border border-gray-100 p-5 text-center">
-          <h2 id="ai-baking-heading" className="text-base font-semibold text-gray-900 mb-2">
+        <section aria-labelledby="ai-baking-heading" className="card mb-6 p-5 text-center">
+          <h2 id="ai-baking-heading" className="text-base font-semibold text-neutral-800 mb-2">
             Water Activity & Shelf Life
           </h2>
-          <p className="text-sm text-gray-500 mb-4">
+          <p className="text-sm text-neutral-500 mb-4">
             AI can analyze your recipe to predict water activity and shelf life based on your process and ingredients.
           </p>
           <Button
@@ -575,7 +576,7 @@ export const RecipeDetail = () => {
             onClick={handleTriggerAIEstimate}
             loading={estimateAw.isPending}
           >
-            ✨ Predict Stability
+            Predict Stability
           </Button>
         </section>
       )}
@@ -585,24 +586,24 @@ export const RecipeDetail = () => {
 
       {/* ── Version history ── */}
       {versions && versions.length > 0 && (
-        <section aria-labelledby="versions-heading" className="bg-white rounded-xl border border-gray-100 p-5">
+        <section aria-labelledby="versions-heading" className="card mb-6 p-5">
           <button
             id="versions-heading"
-            className="w-full flex items-center justify-between text-base font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-500 rounded"
+            className="w-full flex items-center justify-between text-base font-semibold text-neutral-800 focus:outline-none focus:ring-2 focus:ring-primary-500 rounded"
             onClick={() => setShowVersions((v) => !v)}
             aria-expanded={showVersions}
           >
             <span>Version History</span>
-            <span className="flex items-center gap-2 text-sm font-normal text-gray-400">
+            <span className="flex items-center gap-2 text-sm font-normal text-neutral-400">
               {versions.length} {versions.length === 1 ? 'version' : 'versions'}
               <span aria-hidden="true">{showVersions ? '▲' : '▼'}</span>
             </span>
           </button>
 
           {showVersions && (
-            <ul className="mt-4 divide-y divide-gray-50" aria-label="Version history">
+            <ul className="mt-4 divide-y divide-neutral-50" aria-label="Version history">
               {versions.map((v) => (
-                <div key={v.id} onClick={() => setDiffVersion(v.version_number)} className="cursor-pointer hover:bg-gray-50">
+                <div key={v.id} onClick={() => setDiffVersion(v.version_number)} className="cursor-pointer hover:bg-neutral-50">
                    <VersionRow version={v} formatDate={formatDate} />
                 </div>
               ))}
@@ -618,8 +619,8 @@ export const RecipeDetail = () => {
         title="Delete Recipe"
       >
         <div className="space-y-4">
-          <p className="text-gray-700">
-            Are you sure you want to delete <strong className="text-gray-900">{recipe.title}</strong>?
+          <p className="text-neutral-700">
+            Are you sure you want to delete <strong className="text-neutral-900">{recipe.title}</strong>?
           </p>
 
           <div className="bg-red-50 border border-red-200 rounded-lg p-4">
