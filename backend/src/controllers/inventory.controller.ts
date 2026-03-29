@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
-import * as inventoryService from '../services/inventory.service';
+
 import { InventoryListQuery, PurchaseListQuery } from '../models/inventory.model';
+import * as inventoryService from '../services/inventory.service';
 
 /** Extract a single string param (Express v5 params can be string | string[]) */
 function paramStr(val: string | string[]): string {

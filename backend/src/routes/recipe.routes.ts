@@ -1,9 +1,11 @@
 import { Router } from 'express';
 import { body, param, query } from 'express-validator';
-import { validate } from '../middleware/validate';
-import { requireAuth } from '../middleware/auth';
-import * as recipeController from '../controllers/recipe.controller';
 import multer from 'multer';
+
+import * as recipeController from '../controllers/recipe.controller';
+import { requireAuth } from '../middleware/auth';
+import { validate } from '../middleware/validate';
+
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -97,6 +99,7 @@ router.get('/recipes/tags', requireAuth, recipeController.getTags);
 router.get('/recipes', requireAuth, recipeController.list);
 router.get('/recipes/:id/nutrition', requireAuth, validate(idParamValidation), recipeController.getNutrition);
 router.post('/recipes/:id/nutrition/calculate', requireAuth, validate(idParamValidation), recipeController.calculateNutrition);
+router.get('/recipes/:id/ingredients/expanded', requireAuth, validate(idParamValidation), recipeController.getExpandedIngredients);
 router.get('/recipes/:id', requireAuth, validate(idParamValidation), recipeController.getById);
 router.post('/recipes', requireAuth, validate(createRecipeValidation), recipeController.create);
 router.patch('/recipes/:id', requireAuth, validate(updateRecipeValidation), recipeController.update);

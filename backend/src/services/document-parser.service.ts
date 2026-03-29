@@ -1,8 +1,10 @@
 import * as cheerio from 'cheerio';
 import * as mammoth from 'mammoth';
-const pdfParse = require('pdf-parse');
 import * as xlsx from 'xlsx';
+
 import { logger } from '../utils/logger';
+
+const pdfParse = require('pdf-parse');
 
 export class DocumentParserService {
     /**

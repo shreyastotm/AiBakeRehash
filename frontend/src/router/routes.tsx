@@ -1,4 +1,4 @@
-import { RouteObject } from 'react-router-dom'
+import { RouteObject, Navigate } from 'react-router-dom'
 import { Layout } from '../components/Layout'
 import { ProtectedRoute } from '../components/ProtectedRoute'
 import { Login } from '../pages/auth/Login'
@@ -12,6 +12,17 @@ import { JournalList } from '../pages/journal/JournalList'
 import { JournalEntryNew } from '../pages/journal/JournalEntryNew'
 import { JournalDetail } from '../pages/journal/JournalDetail'
 import { JournalEntryEdit } from '../pages/journal/JournalEntryEdit'
+import { InventoryListPage } from '../pages/inventory/InventoryListPage'
+import { InventoryItemForm } from '../pages/inventory/InventoryItemForm'
+import { PurchaseLogPage } from '../pages/inventory/PurchaseLogPage'
+import { InventoryAlertsPage } from '../pages/inventory/InventoryAlertsPage'
+import { InventoryReportsPage } from '../pages/inventory/InventoryReportsPage'
+import { CostCalculatorPage } from '../pages/costing/CostCalculatorPage'
+import { ProfitAnalysisPage } from '../pages/costing/ProfitAnalysisPage'
+import { BulkPricingPage } from '../pages/costing/BulkPricingPage'
+import { ShoppingListPage } from '../pages/tools/ShoppingListPage'
+import { EmergencyHelpPage } from '../pages/help/EmergencyHelpPage'
+import { TimerPage } from '../pages/timer/TimerPage'
 
 export const routes: RouteObject[] = [
   // Auth routes (no layout)
@@ -86,31 +97,105 @@ export const routes: RouteObject[] = [
     ),
   },
 
-  // Inventory routes (placeholder for future implementation)
+  // Inventory routes
   {
     path: '/inventory',
     element: (
       <ProtectedRoute>
         <Layout>
-          <div className="text-center py-12">
-            <h1 className="text-2xl font-bold text-gray-900">Inventory Management</h1>
-            <p className="text-gray-600 mt-2">Coming soon...</p>
-          </div>
+          <InventoryListPage />
+        </Layout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/inventory/items/new',
+    element: (
+      <ProtectedRoute>
+        <Layout>
+          <InventoryItemForm />
+        </Layout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/inventory/items/:id/edit',
+    element: (
+      <ProtectedRoute>
+        <Layout>
+          <InventoryItemForm />
+        </Layout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/inventory/purchase-log',
+    element: (
+      <ProtectedRoute>
+        <Layout>
+          <PurchaseLogPage />
+        </Layout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/inventory/alerts',
+    element: (
+      <ProtectedRoute>
+        <Layout>
+          <InventoryAlertsPage />
+        </Layout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/inventory/reports',
+    element: (
+      <ProtectedRoute>
+        <Layout>
+          <InventoryReportsPage />
         </Layout>
       </ProtectedRoute>
     ),
   },
 
-  // Costing routes (placeholder for future implementation)
+  // Costing routes
   {
     path: '/costing',
     element: (
       <ProtectedRoute>
         <Layout>
-          <div className="text-center py-12">
-            <h1 className="text-2xl font-bold text-gray-900">Costing & Pricing</h1>
-            <p className="text-gray-600 mt-2">Coming soon...</p>
-          </div>
+          <CostCalculatorPage />
+        </Layout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/costing/recipes/:recipeId',
+    element: (
+      <ProtectedRoute>
+        <Layout>
+          <CostCalculatorPage />
+        </Layout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/costing/profit-analysis',
+    element: (
+      <ProtectedRoute>
+        <Layout>
+          <ProfitAnalysisPage />
+        </Layout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/costing/bulk-pricing',
+    element: (
+      <ProtectedRoute>
+        <Layout>
+          <BulkPricingPage />
         </Layout>
       </ProtectedRoute>
     ),
@@ -137,7 +222,6 @@ export const routes: RouteObject[] = [
       </ProtectedRoute>
     ),
   },
-
   {
     path: '/recipes/:recipeId/journal/new',
     element: (
@@ -169,6 +253,48 @@ export const routes: RouteObject[] = [
     ),
   },
 
+  // Tools & Help
+  {
+    path: '/timer',
+    element: (
+      <ProtectedRoute>
+        <Layout>
+          <TimerPage />
+        </Layout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/timer/:recipeId',
+    element: (
+      <ProtectedRoute>
+        <Layout>
+          <TimerPage />
+        </Layout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/tools/shopping-list',
+    element: (
+      <ProtectedRoute>
+        <Layout>
+          <ShoppingListPage />
+        </Layout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/help/emergency',
+    element: (
+      <ProtectedRoute>
+        <Layout>
+          <EmergencyHelpPage />
+        </Layout>
+      </ProtectedRoute>
+    ),
+  },
+
   // Settings
   {
     path: '/settings',
@@ -181,12 +307,9 @@ export const routes: RouteObject[] = [
     ),
   },
 
-  // Catch-all redirect to home
+  // Catch-all
   {
     path: '*',
     element: <Navigate to="/" replace />,
   },
 ]
-
-// Import Navigate for catch-all route
-import { Navigate } from 'react-router-dom'

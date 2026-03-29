@@ -42,4 +42,14 @@ export const costingService = {
     const response = await api.post(`/recipes/${recipeId}/pricing`, { target_profit_margin: profitMargin })
     return response.data
   },
+
+  getProfitMargins: async () => {
+    const response = await api.get('/costing/reports/profit-margins')
+    return response.data
+  },
+
+  getCostTrends: async () => {
+    const response = await api.get('/costing/reports/cost-trends')
+    return response.data
+  },
 }

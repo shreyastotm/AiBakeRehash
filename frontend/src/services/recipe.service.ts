@@ -185,6 +185,11 @@ export const recipeService = {
     return response.data.hasOwnProperty('data') ? response.data.data : response.data
   },
 
+  getRecipeIngredientsExpanded: async (id: string): Promise<any[]> => {
+    const response = await api.get(`/recipes/${id}/ingredients/expanded`)
+    return response.data.hasOwnProperty('data') ? response.data.data : response.data
+  },
+
   getRecipeVersions: async (id: string): Promise<RecipeVersion[]> => {
     const response = await api.get(`/recipes/${id}/versions`)
     const payload = response.data.hasOwnProperty('data') ? response.data.data : response.data

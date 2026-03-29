@@ -116,16 +116,15 @@ export function normalizeUnit(unit: string): string {
 }
 
 export function isVolumeUnit(unit: string): unit is VolumeUnit {
-  return VOLUME_UNITS.has(normalizeUnit(unit));
+  return VOLUME_UNITS.has(unit);
 }
 
 export function isWeightUnit(unit: string): unit is WeightUnit {
-  return WEIGHT_UNITS.has(normalizeUnit(unit));
+  return WEIGHT_UNITS.has(unit);
 }
 
 export function isSupportedUnit(unit: string): unit is Unit {
-  const norm = normalizeUnit(unit);
-  return VOLUME_UNITS.has(norm) || WEIGHT_UNITS.has(norm);
+  return VOLUME_UNITS.has(unit) || WEIGHT_UNITS.has(unit);
 }
 
 
@@ -164,8 +163,12 @@ function requireDensity(ingredient: IngredientDensity): number {
 }
 
 function validateUnit(unit: string): asserts unit is Unit {
+  if (unit !== unit.toLowerCase()) {
+    throw new InvalidUnitError(unit);
+  }
+
   const norm = normalizeUnit(unit);
-  if (!isSupportedUnit(norm)) {
+  if (!VOLUME_UNITS.has(norm) && !WEIGHT_UNITS.has(norm)) {
     throw new InvalidUnitError(unit);
   }
 }
@@ -188,8 +191,8 @@ export function convertToGrams(
   quantity: number,
   fromUnit: string,
 ): number {
-  const norm = normalizeUnit(fromUnit);
-  validateUnit(norm);
+  validateUnit(fromUnit);
+  const norm = normalizeUnit(fromUnit) as Unit;
 
   if (isWeightUnit(norm)) {
     return toGrams(quantity, norm as WeightUnit);
@@ -215,8 +218,8 @@ export function convertFromGrams(
   grams: number,
   toUnit: string,
 ): number {
-  const norm = normalizeUnit(toUnit);
-  validateUnit(norm);
+  validateUnit(toUnit);
+  const norm = normalizeUnit(toUnit) as Unit;
 
   if (isWeightUnit(norm)) {
     return fromGrams(grams, norm as WeightUnit);

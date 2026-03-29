@@ -1,3 +1,10 @@
+import {
+  searchIngredient,
+  SearchResult,
+  SearchableIngredient,
+  SearchableAlias,
+  trigramSimilarity
+} from '../../../middleware/src/searchEngine';
 import { db } from '../config/database';
 import { NotFoundError, ForbiddenError, ValidationError } from '../middleware/errorHandler';
 import {
@@ -6,14 +13,8 @@ import {
   CreateIngredientInput,
   IngredientListQuery,
 } from '../models/ingredient.model';
-import {
-  searchIngredient,
-  SearchResult,
-  SearchableIngredient,
-  SearchableAlias,
-  trigramSimilarity
-} from '../../../middleware/src/searchEngine';
 import { logger } from '../utils/logger';
+
 import { AIService } from './ai.service';
 
 // ---------------------------------------------------------------------------

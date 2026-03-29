@@ -1,4 +1,5 @@
 import { Pool, PoolClient, PoolConfig, QueryResult, QueryResultRow } from 'pg';
+
 import { logger } from '../utils/logger';
 
 // ---------------------------------------------------------------------------

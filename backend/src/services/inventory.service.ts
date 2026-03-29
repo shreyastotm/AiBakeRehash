@@ -1,4 +1,7 @@
 import { PoolClient } from 'pg';
+
+import { calculateDeductions, applyDeductions, type DeductionIngredient, type InventoryItem as MwInventoryItem, type DeductionResult } from '../../../middleware/src/inventoryManager';
+import { type IngredientDensity } from '../../../middleware/src/unitConverter';
 import { db } from '../config/database';
 import {
   NotFoundError,
@@ -19,9 +22,7 @@ import {
   ValueReportItem,
 } from '../models/inventory.model';
 // @ts-ignore TS6059 - cross-package import
-import { calculateDeductions, applyDeductions, type DeductionIngredient, type InventoryItem as MwInventoryItem, type DeductionResult } from '../../../middleware/src/inventoryManager';
 // @ts-ignore TS6059 - cross-package import
-import { type IngredientDensity } from '../../../middleware/src/unitConverter';
 import { logger } from '../utils/logger';
 
 // ---------------------------------------------------------------------------

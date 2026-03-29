@@ -1,8 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
-import * as ingredientService from '../services/ingredient.service';
-import { IngredientListQuery } from '../models/ingredient.model';
-import { logger } from '../utils/logger';
+
 import { ValidationError } from '../middleware/errorHandler';
+import { IngredientListQuery } from '../models/ingredient.model';
+import * as ingredientService from '../services/ingredient.service';
+import { logger } from '../utils/logger';
 
 /** Extract a single string param (Express v5 params can be string | string[]) */
 function paramStr(val: string | string[]): string {

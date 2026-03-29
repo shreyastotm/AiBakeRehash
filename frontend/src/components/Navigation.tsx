@@ -5,9 +5,21 @@ import { Button } from './common/Button'
 
 export const Navigation: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [isOnline, setIsOnline] = useState(navigator.onLine)
   const location = useLocation()
   const navigate = useNavigate()
   const { isAuthenticated, logout, currentUser } = useAuth()
+
+  React.useEffect(() => {
+    const handleOnline = () => setIsOnline(true)
+    const handleOffline = () => setIsOnline(false)
+    window.addEventListener('online', handleOnline)
+    window.addEventListener('offline', handleOffline)
+    return () => {
+      window.removeEventListener('online', handleOnline)
+      window.removeEventListener('offline', handleOffline)
+    }
+  }, [])
 
   const handleLogout = () => {
     logout()
@@ -36,6 +48,12 @@ export const Navigation: React.FC = () => {
               <span className="text-white font-bold text-lg">A</span>
             </div>
             <span className="text-xl font-bold text-gray-900 hidden sm:inline">AiBake</span>
+            {!isOnline && (
+              <span className="ml-2 px-2 py-0.5 bg-gray-100 text-gray-500 text-[10px] font-bold rounded-full border border-gray-200 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-pulse"></span>
+                OFFLINE
+              </span>
+            )}
           </Link>
 
           {/* Desktop Navigation */}

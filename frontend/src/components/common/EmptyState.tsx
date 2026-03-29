@@ -15,6 +15,7 @@ interface EmptyStateProps {
   icon?: React.ReactNode
   action?: EmptyStateAction
   secondaryAction?: EmptyStateAction
+  actionNode?: React.ReactNode
   className?: string
 }
 
@@ -24,6 +25,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   icon,
   action,
   secondaryAction,
+  actionNode,
   className,
 }) => (
   <div
@@ -38,8 +40,9 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
     {description && (
       <p className="empty-state-description mt-1">{description}</p>
     )}
-    {(action || secondaryAction) && (
+    {(action || secondaryAction || actionNode) && (
       <div className="flex flex-col sm:flex-row items-center gap-3 mt-6">
+        {actionNode}
         {action && (
           <Button
             variant="primary"

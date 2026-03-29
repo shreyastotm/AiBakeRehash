@@ -6,6 +6,7 @@ import { cn } from '../../utils/cn'
 interface PricingCalculatorProps {
   totalCost: number
   servings: number
+  overheadCost?: number
   className?: string
 }
 
@@ -15,6 +16,7 @@ const fmt = (n: number) =>
 export const PricingCalculator: React.FC<PricingCalculatorProps> = ({
   totalCost,
   servings,
+  overheadCost = 0,
   className = '',
 }) => {
   const [marginPct, setMarginPct] = useState(40)
@@ -23,8 +25,16 @@ export const PricingCalculator: React.FC<PricingCalculatorProps> = ({
   const costPerServing = totalCost / servings
   const suggestedPrice = costPerServing / (1 - marginPct / 100)
   const effectivePrice = sellingPrice ?? suggestedPrice
-  const effectiveMargin = ((effectivePrice - costPerServing) / effectivePrice) * 100
+  const effectiveMargin = effectivePrice > 0 ? ((effectivePrice - costPerServing) / effectivePrice) * 100 : 0
   const profit = effectivePrice - costPerServing
+  
+  // Break-even is traditionally Fixed Costs / (Price - Variable Cost)
+  // If we treat overhead as fixed and (ingredients + labor + packaging) as variable:
+  // Here totalCost includes all three. 
+  // Let's assume variableCost = totalCost - overheadCost
+  const variableCostPerServing = (totalCost - overheadCost) / servings
+  const contributionMargin = effectivePrice - variableCostPerServing
+  const breakEvenUnits = contributionMargin > 0 ? Math.ceil(overheadCost / contributionMargin) : '—'
 
   return (
     <div className={cn('card mb-6 overflow-hidden', className)}>
@@ -62,6 +72,7 @@ export const PricingCalculator: React.FC<PricingCalculatorProps> = ({
             { label: 'Suggested price', value: fmt(suggestedPrice) },
             { label: 'Effective margin', value: `${effectiveMargin.toFixed(1)}%` },
             { label: 'Profit per serving', value: fmt(profit) },
+            { label: 'Break-even quantity (units)', value: breakEvenUnits },
           ].map(({ label, value }) => (
             <div
               key={label}
@@ -77,6 +88,36 @@ export const PricingCalculator: React.FC<PricingCalculatorProps> = ({
           <p className="text-xs text-neutral-500 mb-1">Recommended selling price</p>
           <p className="text-2xl font-bold text-primary-500">{fmt(effectivePrice)}</p>
           <p className="text-xs text-neutral-500 mt-0.5">per serving</p>
+        </div>
+        
+        {overheadCost > 0 && (
+          <p className="text-[10px] text-gray-400 text-center italic">
+            *Break-even calculated assuming ₹{overheadCost} as fixed cost.
+          </p>
+        )}
+
+        {/* Bulk Tiers */}
+        <div className="mt-4 pt-4 border-t border-gray-100">
+          <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Bulk Pricing Tiers</h4>
+          <div className="space-y-2">
+            {[5, 10, 25].map(qty => {
+              const tierDiscount = qty >= 25 ? 0.15 : qty >= 10 ? 0.10 : 0.05
+              const tierPrice = (effectivePrice * (1 - tierDiscount)) * qty
+              const tierProfit = tierPrice - (costPerServing * qty)
+              return (
+                <div key={qty} className="flex items-center justify-between p-2 rounded-lg bg-gray-50 text-xs">
+                  <div className="flex flex-col">
+                    <span className="font-bold text-gray-700">{qty} Units</span>
+                    <span className="text-[10px] text-gray-500">{(tierDiscount * 100).toFixed(0)}% discount</span>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-bold text-gray-900">{fmt(tierPrice)}</p>
+                    <p className="text-[10px] text-green-600">Profit: {fmt(tierProfit)}</p>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
         </div>
       </div>
     </div>

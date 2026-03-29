@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { Logger } from 'pino';
+
 import { getRequestId, createRequestLogger } from '../utils/logger';
 
 // ---------------------------------------------------------------------------

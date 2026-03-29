@@ -1,10 +1,11 @@
 import { Router } from 'express';
 import { body, param } from 'express-validator';
 import multer from 'multer';
-import { validate } from '../middleware/validate';
-import { requireAuth } from '../middleware/auth';
+
 import * as journalController from '../controllers/journal.controller';
 import * as recipeController from '../controllers/recipe.controller';
+import { requireAuth } from '../middleware/auth';
+import { validate } from '../middleware/validate';
 
 const router = Router();
 

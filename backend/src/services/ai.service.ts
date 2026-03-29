@@ -1,7 +1,8 @@
 import { Mistral } from '@mistralai/mistralai';
+import dotenv from 'dotenv';
+
 import { RecipeWithDetails } from '../models/recipe.model';
 import { logger } from '../utils/logger';
-import dotenv from 'dotenv';
 
 dotenv.config();
 
@@ -313,7 +314,7 @@ export class AIService {
 
     private static mockNutrition(displayName: string): EstimatedNutrition {
         const lowerName = displayName.toLowerCase();
-        let base = {
+        const base = {
             calories: 0,
             fats_grams: 0,
             carbs_grams: 0,

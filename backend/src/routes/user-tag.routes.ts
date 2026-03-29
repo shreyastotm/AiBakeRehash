@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { body, param } from 'express-validator';
+
 import * as userTagController from '../controllers/user-tag.controller';
 import { requireAuth } from '../middleware/auth';
 import { validate } from '../middleware/validate';

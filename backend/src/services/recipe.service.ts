@@ -1,4 +1,6 @@
 import { PoolClient } from 'pg';
+
+import { convertToGrams, normalizeUnit, isVolumeUnit } from '../../../middleware/src/unitConverter';
 import { db } from '../config/database';
 import {
   NotFoundError,
@@ -20,8 +22,8 @@ import {
   LabelData,
 } from '../models/recipe.model';
 import { logger } from '../utils/logger';
+
 import { AIService } from './ai.service';
-import { convertToGrams, normalizeUnit, isVolumeUnit } from '../../../middleware/src/unitConverter';
 
 // ---------------------------------------------------------------------------
 // Fallback density table for when ingredient_master has no density
@@ -240,6 +242,18 @@ export async function listRecipes(
 // ---------------------------------------------------------------------------
 // Get single recipe
 // ---------------------------------------------------------------------------
+
+export async function getRecipeIngredientsExpanded(
+  recipeId: string,
+  userId: string,
+): Promise<any[]> {
+  await assertRecipeOwnership(recipeId, userId);
+  const result = await db.query(
+    'SELECT * FROM get_recipe_ingredients_expanded($1)',
+    [recipeId],
+  );
+  return result.rows;
+}
 
 export async function getRecipe(
   recipeId: string,

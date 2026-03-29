@@ -1,7 +1,5 @@
 import { db } from '../config/database';
 import { redis } from '../config/redis';
-import { hashPassword, verifyPassword } from '../utils/password';
-import { generateTokens, TokenPair } from '../utils/jwt';
 import {
   ConflictError,
   UnauthorizedError,
@@ -15,7 +13,9 @@ import {
   LoginInput,
   toSafeUser,
 } from '../models/user.model';
+import { generateTokens, TokenPair } from '../utils/jwt';
 import { logger } from '../utils/logger';
+import { hashPassword, verifyPassword } from '../utils/password';
 
 // ---------------------------------------------------------------------------
 // Token blacklist (Redis-backed)

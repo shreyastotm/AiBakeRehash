@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+
 import * as userTagService from '../services/user-tag.service';
 
 function paramStr(val: any): string {

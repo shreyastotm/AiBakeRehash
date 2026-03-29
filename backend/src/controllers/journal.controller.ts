@@ -1,8 +1,10 @@
-import { Request, Response, NextFunction } from 'express';
 import fs from 'fs';
 import path from 'path';
-import * as journalService from '../services/journal.service';
+
+import { Request, Response, NextFunction } from 'express';
+
 import { ValidationError } from '../middleware/errorHandler';
+import * as journalService from '../services/journal.service';
 
 /** Extract a single string param (Express v5 params can be string | string[]) */
 function paramStr(val: string | string[]): string {

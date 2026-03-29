@@ -6,8 +6,8 @@
  * OR:       node --loader ts-node/esm src/scripts/normalize-nutrition.ts
  */
 
-import { Pool } from 'pg';
 import dotenv from 'dotenv';
+import { Pool } from 'pg';
 
 dotenv.config();
 

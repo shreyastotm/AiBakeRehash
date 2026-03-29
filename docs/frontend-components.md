@@ -127,4 +127,60 @@ Content placeholder during data fetching.
 <RecipeCardSkeleton />  {/* pre-built recipe card skeleton */}
 ```
 
-**Variants:** `text` | `rect` | `circle`
+---
+
+## DonutChart (SVG)
+
+Lightweight SVG-based donut chart for distribution visualization.
+
+```tsx
+<DonutChart 
+  data={[{ label: 'Dairy', value: 500, color: '#ef4444' }, ...]} 
+  size={200} 
+  holeSize={0.6}
+/>
+```
+
+---
+
+## BarChart (SVG)
+
+Compact SVG bar chart for ranking or comparison.
+
+```tsx
+<BarChart 
+  data={[{ label: 'Flour', value: 120 }, { label: 'Sugar', value: 80 }]} 
+  height={160}
+  color="#3b82f6"
+/>
+```
+
+---
+
+## Sparkline (SVG)
+
+Minimalist trend line for history previews.
+
+```tsx
+<Sparkline 
+  data={[10, 15, 8, 12, 20]} 
+  width={120} 
+  height={32} 
+  color="#10b981"
+/>
+```
+
+---
+
+## PricingCalculator
+
+Comprehensive costing and margin tool.
+
+```tsx
+<PricingCalculator 
+  recipeCost={150.50} 
+  onSellingPriceChange={(price) => console.log(price)}
+/>
+```
+
+Supports bulk pricing tiers (5, 10, 25 units) and profit margin analysis.

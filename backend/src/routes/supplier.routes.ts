@@ -1,8 +1,9 @@
 import { Router } from 'express';
 import { body, param } from 'express-validator';
-import { validate } from '../middleware/validate';
-import { requireAuth } from '../middleware/auth';
+
 import * as supplierController from '../controllers/supplier.controller';
+import { requireAuth } from '../middleware/auth';
+import { validate } from '../middleware/validate';
 
 const router = Router();
 

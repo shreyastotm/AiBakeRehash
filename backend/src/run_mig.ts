@@ -1,6 +1,7 @@
-import { db } from './config/database';
 import * as fs from 'fs';
 import * as path from 'path';
+
+import { db } from './config/database';
 
 async function run() {
   try {

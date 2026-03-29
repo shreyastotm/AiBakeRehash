@@ -1,4 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
+
+import { handleTokenRefresh } from '../middleware/auth';
 import {
   registerUser,
   loginUser,
@@ -7,7 +9,6 @@ import {
   updateUserPreferences,
   changePassword,
 } from '../services/auth.service';
-import { handleTokenRefresh } from '../middleware/auth';
 
 // ---------------------------------------------------------------------------
 // POST /api/v1/auth/register

@@ -1,6 +1,6 @@
 import { db } from '../config/database';
-import { UserTag, CreateUserTagInput, UpdateUserTagInput } from '../models/user-tag.model';
 import { NotFoundError } from '../middleware/errorHandler';
+import { UserTag, CreateUserTagInput, UpdateUserTagInput } from '../models/user-tag.model';
 
 export async function listUserTags(userId: string): Promise<UserTag[]> {
     const result = await db.query<UserTag>(

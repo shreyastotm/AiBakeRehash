@@ -1,4 +1,5 @@
 import { PoolClient } from 'pg';
+
 import { db } from '../config/database';
 import {
   NotFoundError,
@@ -7,6 +8,7 @@ import {
 } from '../middleware/errorHandler';
 import { JournalEntry, JournalEntryWithAudio, AudioNote, CreateJournalEntryInput, UpdateJournalEntryInput } from '../models/journal.model';
 import { logger } from '../utils/logger';
+
 import { AIService } from './ai.service';
 import { getRecipe } from './recipe.service';
 

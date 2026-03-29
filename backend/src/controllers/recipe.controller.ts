@@ -1,10 +1,11 @@
 import { Request, Response, NextFunction } from 'express';
-import * as recipeService from '../services/recipe.service';
-import * as journalService from '../services/journal.service';
+
+import { RecipeListQuery, RecipeSearchQuery } from '../models/recipe.model';
 import { AIService } from '../services/ai.service';
 import { DocumentParserService } from '../services/document-parser.service';
+import * as journalService from '../services/journal.service';
+import * as recipeService from '../services/recipe.service';
 import * as userTagService from '../services/user-tag.service';
-import { RecipeListQuery, RecipeSearchQuery } from '../models/recipe.model';
 
 /** Extract a single string param (Express v5 params can be string | string[]) */
 function paramStr(val: string | string[]): string {
@@ -58,6 +59,19 @@ export async function search(req: Request, res: Response, next: NextFunction): P
   }
 }
 
+
+// ---------------------------------------------------------------------------
+// GET /api/v1/recipes/:id/ingredients/expanded
+// ---------------------------------------------------------------------------
+
+export async function getExpandedIngredients(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const result = await recipeService.getRecipeIngredientsExpanded(paramStr(req.params.id), req.user!.userId);
+    res.json({ success: true, data: result });
+  } catch (err) {
+    next(err);
+  }
+}
 
 // ---------------------------------------------------------------------------
 // GET /api/v1/recipes/:id

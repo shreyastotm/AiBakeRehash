@@ -1,6 +1,8 @@
-import rateLimit from 'express-rate-limit';
 import { Request } from 'express';
+import rateLimit from 'express-rate-limit';
+
 import { logger } from '../utils/logger';
+
 import { RateLimitError } from './errorHandler';
 
 // ---------------------------------------------------------------------------

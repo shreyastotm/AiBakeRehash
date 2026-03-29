@@ -1,9 +1,10 @@
 import { Router } from 'express';
 import { body } from 'express-validator';
-import { validate } from '../middleware/validate';
+
+import * as authController from '../controllers/auth.controller';
 import { requireAuth } from '../middleware/auth';
 import { authRateLimiter } from '../middleware/rateLimiter';
-import * as authController from '../controllers/auth.controller';
+import { validate } from '../middleware/validate';
 
 const router = Router();
 

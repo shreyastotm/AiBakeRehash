@@ -1483,7 +1483,7 @@ aibake/
   - Support WhatsApp reminder sending
   - _Requirements: 102.3, 102.4, 102.5, 102.6, 102.7_
 
-- [ ] 26.5 Create inventory reports
+- [x] 26.5 Create inventory reports
   - Create InventoryReports page with usage and value reports
   - Display consumption over time with charts
   - Display total inventory value by category
@@ -1491,7 +1491,7 @@ aibake/
   - Export reports to CSV/PDF
   - _Requirements: 101.6, 101.7, 103.7_
 
-- [ ] 26.6 Write component tests for inventory
+- [x] 26.6 Write component tests for inventory
   - Test inventory list rendering and filtering
   - Test inventory item form validation
   - Test purchase logging
@@ -1502,7 +1502,7 @@ aibake/
 
 ### 27. Frontend - Costing and Pricing Interface
 
-- [ ] 27.1 Create cost calculator page
+- [x] 27.1 Create cost calculator page
   - Create CostCalculator page for recipe cost calculation
   - **Brand Costing**: Prefer linked `inventory_item` cost over generic averages
   - Display ingredient cost breakdown table
@@ -1512,7 +1512,7 @@ aibake/
   - Save calculated cost to history
   - _Requirements: 104.1, 104.2, 104.3, 104.4, 104.5, 104.6, 104.7_
 
-- [ ] 27.2 Create pricing calculator interface
+- [x] 27.2 Create pricing calculator interface
   - Add pricing section to cost calculator page
   - Input field for target profit margin percentage
   - Display suggested selling price with INR formatting
@@ -1521,14 +1521,14 @@ aibake/
   - Display break-even quantity
   - _Requirements: 105.1, 105.2, 105.3, 105.4, 105.7_
 
-- [ ] 27.3 Create cost history view
+- [x] 27.3 Create cost history view
   - Display cost history table with timestamps
   - Show cost trends over time with line chart
   - Highlight significant cost changes (>10%)
   - Compare costs across time periods
   - _Requirements: 118.1, 118.2, 118.3, 118.4_
 
-- [ ] 27.4 Create profit margin analysis page
+- [x] 27.4 Create profit margin analysis page
   - Create ProfitAnalysis page with profitability dashboard
   - Display profit margin rankings by recipe
   - Group by product category
@@ -1536,14 +1536,14 @@ aibake/
   - Display pricing optimization suggestions
   - _Requirements: 119.1, 119.2, 119.3, 119.4, 119.5_
 
-- [ ] 27.5 Create bulk pricing interface
+- [x] 27.5 Create bulk pricing interface
   - Add bulk pricing section to pricing calculator
   - Define quantity tiers with prices/discounts
   - Display pricing table for different quantities
   - Calculate profit margins for each tier
   - _Requirements: 117.1, 117.2, 117.3, 117.4, 117.5_
 
-- [ ] 27.6 Write component tests for costing
+- [x] 27.6 Write component tests for costing
   - Test cost calculator with all components
   - Test pricing calculator with various margins
   - Test cost history display
@@ -1554,7 +1554,7 @@ aibake/
 
 ### 28. Frontend - Social Media and Sharing
 
-- [ ] 28.1 Create recipe card export interface
+- [x] 28.1 Create recipe card export interface
   - Create RecipeCardExport modal/page
   - Format selector (Instagram Story, Instagram Post, WhatsApp)
   - Language selector (English, Hindi, Bilingual)
@@ -1565,7 +1565,7 @@ aibake/
   - Download button for generated image
   - _Requirements: 108.1, 108.2, 108.3, 108.4, 108.5, 108.6, 108.7_
 
-- [ ] 28.2 Create journal sharing interface
+- [x] 28.2 Create journal sharing interface
   - Add share button to journal entry detail
   - Generate shareable card with photos and notes
   - Option to hide private notes
@@ -1574,20 +1574,20 @@ aibake/
   - Share via WhatsApp button
   - _Requirements: 109.1, 109.2, 109.3, 109.4, 109.7_
 
-- [ ] 28.3 Implement WhatsApp sharing
+- [x] 28.3 Implement WhatsApp sharing
   - Format recipe text for WhatsApp with emojis and structure
   - Generate shareable link with preview metadata
   - Open WhatsApp with pre-filled message using `whatsapp://send` URL scheme
   - Support sharing shopping lists and inventory reminders
   - _Requirements: 110.1, 110.2, 110.3, 110.4_
 
-- [ ] 28.4 Create social media templates
+- [x] 28.4 Create social media templates
   - Display available templates gallery
   - Allow custom template creation with color/font/layout editor
   - Save template preferences per user
   - _Requirements: 108.5_
 
-- [ ] 28.5 Write component tests for social media
+- [x] 28.5 Write component tests for social media
   - Test recipe card export with different formats
   - Test WhatsApp message formatting
   - Test shareable link generation
@@ -1597,7 +1597,7 @@ aibake/
 
 ### 29. Frontend - Timer and Hands-Free Features
 
-- [ ] 29.1 Create timer interface
+- [x] 29.1 Create timer interface
   - Create Timer component displaying active timers
   - Show countdown time remaining for each timer
   - Support starting timers from recipe steps
@@ -1607,7 +1607,7 @@ aibake/
   - Persist timer state in localStorage across page refreshes
   - _Requirements: 33.1, 33.2, 33.3, 33.4, 33.5, 33.6, 33.7_
 
-- [ ] 29.2 Implement screen wake lock
+- [x] 29.2 Implement screen wake lock
   - Use browser Wake Lock API to prevent screen sleep
   - Add toggle button to enable/disable wake lock
   - Automatically enable wake lock when viewing recipe or running timer
@@ -1616,21 +1616,21 @@ aibake/
   - Handle wake lock errors gracefully with fallback message
   - _Requirements: 111.1, 111.2, 111.3, 111.4, 111.5, 111.6, 111.7_
 
-- [ ] 29.3 Implement touch-friendly controls
+- [x] 29.3 Implement touch-friendly controls
   - Ensure all interactive elements have minimum 44x44px touch targets
   - Create large, clearly labeled buttons for common actions
   - Implement swipe gestures for navigation between recipe steps
   - Add auto-scroll for recipe steps during active baking
   - _Requirements: 112.1, 112.2, 112.3, 112.6_
 
-- [ ] 29.4 Implement voice commands (optional)
+- [x] 29.4 Implement voice commands (optional)
   - Integrate Web Speech API for voice recognition
   - Support simple voice commands for timer operations (start, pause, stop)
   - Display voice command status indicator
   - Provide fallback for browsers without speech API support
   - _Requirements: 112.4, 112.7_
 
-- [ ] 29.5 Write component tests for timer and hands-free
+- [x] 29.5 Write component tests for timer and hands-free
   - Test timer countdown and completion
   - Test multiple simultaneous timers
   - Test wake lock activation and release
@@ -1640,7 +1640,7 @@ aibake/
 
 ### 30. Frontend - Dashboard and Additional Features
 
-- [ ] 30.1 Create dashboard page
+- [x] 30.1 Create dashboard page
   - Create Dashboard page as landing page after login
   - Display recent recipes
   - Display upcoming timers
@@ -1650,14 +1650,14 @@ aibake/
   - Display recommended recipes
   - _Requirements: 73.3, 73.4, 98.6_
 
-- [ ] 30.2 Create emergency help interface
+- [x] 30.2 Create emergency help interface
   - Create EmergencyHelp page with prominent access button
   - Search interface for common baking issues
   - Display solutions with step-by-step instructions
   - Display prevention tips
   - _Requirements: 75.1, 75.2, 75.3, 75.4_
 
-- [ ] 30.3 Create shopping list generator
+- [x] 30.3 Create shopping list generator
   - Create ShoppingList page generating list from selected recipes
   - Aggregate duplicate ingredients across recipes
   - Expand composite ingredients into base components
@@ -1667,7 +1667,7 @@ aibake/
   - Share via WhatsApp
   - _Requirements: 71.1, 71.2, 71.3, 71.4, 71.5, 71.6_
 
-- [ ] 30.4 Implement responsive design
+- [x] 30.4 Implement responsive design
   - Ensure all pages work on screen sizes 320px to 2560px
   - Optimize layouts for mobile, tablet, desktop
   - Use responsive images with srcset
@@ -1675,7 +1675,7 @@ aibake/
   - Test on various devices and browsers
   - _Requirements: 60.1, 60.2, 60.3, 60.4_
 
-- [ ] 30.5 Implement PWA features
+- [x] 30.5 Implement PWA features
   - Create service worker for offline support
   - Cache critical assets and API responses
   - Create manifest.json for mobile installation
@@ -1684,14 +1684,14 @@ aibake/
   - Queue operations when offline, sync when online
   - _Requirements: 60.5, 60.6, 87.6, 94.4_
 
-- [ ] 30.6 Write component tests for dashboard and features
+- [x] 30.6 Write component tests for dashboard and features
   - Test dashboard rendering with data
   - Test emergency help search
   - Test shopping list generation and aggregation
   - Test responsive layouts at different breakpoints
   - _Requirements: 73.3, 75.1, 71.1, 60.1_
 
-- [ ] 30.7 Checkpoint - Frontend application complete
+- [x] 30.7 Checkpoint - Frontend application complete
   - All pages and components implemented
   - All component tests passing
   - Responsive design verified on multiple devices

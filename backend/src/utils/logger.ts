@@ -1,5 +1,6 @@
-import pino from 'pino';
 import { randomUUID } from 'crypto';
+
+import pino from 'pino';
 
 // ---------------------------------------------------------------------------
 // Sensitive data patterns for masking

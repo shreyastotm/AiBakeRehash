@@ -47,4 +47,33 @@ export const inventoryService = {
     const response = await api.get(`/inventory/by-ingredient/${ingredientId}`)
     return response.data.data
   },
+
+  logPurchase: async (data: {
+    ingredient_master_id?: string
+    ingredient_name?: string
+    quantity: number
+    unit: string
+    cost: number
+    supplier?: string
+    purchase_date: string
+    invoice_number?: string
+  }) => {
+    const response = await api.post('/inventory/purchases', data)
+    return response.data
+  },
+
+  getPurchases: async (page = 1, limit = 50) => {
+    const response = await api.get('/inventory/purchases', { params: { page, limit } })
+    return response.data
+  },
+
+  getUsageReport: async (from?: string, to?: string) => {
+    const response = await api.get('/inventory/reports/usage', { params: { from, to } })
+    return response.data
+  },
+
+  getValueReport: async () => {
+    const response = await api.get('/inventory/reports/value')
+    return response.data
+  },
 }

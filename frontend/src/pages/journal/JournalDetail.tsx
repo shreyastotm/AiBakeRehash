@@ -60,6 +60,24 @@ export const JournalDetail = () => {
                         {entry.recipe_title ?? 'Baking Session'}
                     </h1>
                     <div className="flex gap-2">
+                        <Button 
+                            variant="secondary" 
+                            onClick={() => {
+                                const date = format(new Date(entry.bake_date), 'PPP');
+                                const rating = entry.rating ? '⭐'.repeat(entry.rating) : '';
+                                const loss = entry.baking_loss_percentage ? `📉 Bake Loss: ${Number(entry.baking_loss_percentage).toFixed(1)}%` : '';
+                                const msg = encodeURIComponent(
+                                    `🍞 *AiBake Session* (${date})\n` +
+                                    `${rating}\n\n` +
+                                    `${entry.notes ? `📝 ${entry.notes}\n\n` : ''}` +
+                                    `${loss}\n` +
+                                    `#AiBake #BakingJournal`
+                                );
+                                window.open(`https://wa.me/?text=${msg}`, '_blank');
+                            }}
+                        >
+                            🔗 Share
+                        </Button>
                         <Link to={`/recipes/${recipeId}/journal/${entryId}/edit`}>
                             <Button variant="outline" size="sm" leftIcon={<Pencil size={14} />}>Edit</Button>
                         </Link>

@@ -5,11 +5,12 @@ import helmet from 'helmet';
 import { db } from './config/database';
 import { redis } from './config/redis';
 import { storage } from './config/storage';
+import { errorHandler, notFoundHandler } from './middleware/errorHandler';
+import { apiRateLimiter } from './middleware/rateLimiter';
+import { requestIdMiddleware } from './middleware/requestId';
+import authRoutes from './routes/auth.routes';
 import { logger } from './utils/logger';
 import { metricsMiddleware, renderMetrics } from './utils/metrics';
-import { requestIdMiddleware } from './middleware/requestId';
-import { apiRateLimiter } from './middleware/rateLimiter';
-import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 
 console.log(`[Backend] Starting. SKIP_RATE_LIMIT="${process.env.SKIP_RATE_LIMIT}", NODE_ENV="${process.env.NODE_ENV}"`);
 const app = express();
@@ -189,7 +190,6 @@ app.get('/metrics', (_req, res) => {
 // ---------------------------------------------------------------------------
 // 9. API routes (RELOAD)
 // ---------------------------------------------------------------------------
-import authRoutes from './routes/auth.routes';
 import recipeRoutes from './routes/recipe.routes';
 import ingredientRoutes from './routes/ingredient.routes';
 import journalRoutes from './routes/journal.routes';
@@ -202,8 +202,10 @@ import userTagRoutes from './routes/user-tag.routes';
 
 // Swagger UI setup
 import swaggerUi from 'swagger-ui-express';
+
 import fs from 'fs';
 import path from 'path';
+
 import YAML from 'yaml';
 
 let swaggerDocument: Record<string, unknown> | null = null;

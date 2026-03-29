@@ -81,8 +81,8 @@ export const Autocomplete: React.FC<AutocompleteProps> = ({
     lastSyncedValue.current = value
 
     // Priority: displayLabel prop > match in current options > empty.
-    if (displayLabel) {
-      setInputValue(displayLabel)
+    if (displayLabel !== undefined) {
+      setInputValue(displayLabel || '')
       return
     }
 

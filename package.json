@@ -4,16 +4,25 @@
   "private": true,
   "description": "AiBake - Professional baking recipe management platform",
   "scripts": {
+    "dev": "concurrently -n backend,frontend -c cyan,magenta \"npm run dev --prefix backend\" \"npm run dev --prefix frontend\"",
     "dev:backend": "npm run dev --prefix backend",
-    "dev:middleware": "npm run build --prefix middleware",
-    "build": "npm run build --prefix middleware && npm run build --prefix backend",
-    "test": "npm run test --prefix middleware && npm run test --prefix backend",
+    "dev:frontend": "npm run dev --prefix frontend",
+    "dev:middleware": "npm run build --prefix middleware && npm run test:watch --prefix middleware",
+    "build": "concurrently -n middleware,backend,frontend -c yellow,cyan,magenta --kill-others-on-fail \"npm run build --prefix middleware\" \"npm run build --prefix backend\" \"npm run build --prefix frontend\"",
+    "build:seq": "npm run build --prefix middleware && npm run build --prefix backend && npm run build --prefix frontend",
+    "test": "concurrently -n middleware,backend,frontend -c yellow,cyan,magenta \"npm run test --prefix middleware\" \"npm run test --prefix backend\" \"npm run test --prefix frontend -- --run\"",
+    "test:watch": "concurrently -n middleware,backend,frontend -c yellow,cyan,magenta \"npm run test:watch --prefix middleware\" \"npm run test:watch --prefix backend\" \"npm run test --prefix frontend\"",
     "test:middleware": "npm run test --prefix middleware",
     "test:backend": "npm run test --prefix backend",
-    "lint": "npm run lint --prefix middleware && npm run lint --prefix backend",
-    "format": "npm run format --prefix middleware && npm run format --prefix backend",
-    "type-check": "npm run type-check --prefix middleware && npm run type-check --prefix backend",
-    "install:all": "npm install --prefix backend && npm install --prefix middleware"
+    "test:frontend": "npm run test:run --prefix frontend",
+    "build:test": "concurrently -n build,test -c blue,green --kill-others-on-fail \"npm run build:seq\" \"npm run test\"",
+    "lint": "concurrently -n middleware,backend,frontend -c yellow,cyan,magenta \"npm run lint --prefix middleware\" \"npm run lint --prefix backend\" \"npm run lint --prefix frontend\"",
+    "format": "npm run format --prefix middleware && npm run format --prefix backend && npm run format --prefix frontend",
+    "type-check": "concurrently -n middleware,backend,frontend -c yellow,cyan,magenta \"npm run type-check --prefix middleware\" \"npm run type-check --prefix backend\" \"npm run type-check --prefix frontend\"",
+    "install:all": "npm install && npm install --prefix backend && npm install --prefix middleware && npm install --prefix frontend"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.0"
   },
   "engines": {
     "node": ">=18.0.0"

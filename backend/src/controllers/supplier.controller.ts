@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+
 import * as supplierService from '../services/supplier.service';
 
 /** Extract a single string param (Express v5 params can be string | string[]) */
